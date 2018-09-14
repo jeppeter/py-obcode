@@ -1053,9 +1053,10 @@ def ob_walk_path(srcdir,dstdir,opthdl,args,params):
     for root,dirs, files in os.walk(srcdir):
         for c in files:
             sfile = os.path.join(root,c)
-            news = '%r'%(srcdir)
-            newd = '%r'%(dstdir)
-            dfile = re.sub(news, newd, sfile)
+            nsfile = sfile.replace(srcdir, '', 1)
+            nsfile = re.sub(r'^[/]+','', nsfile)
+            dfile = os.path.join(dstdir,nsfile)
+            logging.info('sfile %s dfile %s'%(sfile, dfile))
             opthdl(sfile, dfile, args, params)
     return
 
@@ -1080,15 +1081,19 @@ def cob_handler(args,parser):
     srcdir = args.subnargs[0]
     srcdir = os.path.abspath(srcdir)
     dstdir = None
+    logging.info('subnargs [%s]'%(args.subnargs))
     if len(args.subnargs) > 1:
         dstdir = args.subnargs[1]
         dstdir = os.path.abspath(dstdir)
+    logging.info('dstdir [%s]'%(dstdir))
     if os.path.isdir(srcdir):
         if dstdir is None:
+            logging.info(' ')
             dstdir = os.path.abspath('.')
         param = cobparam(srcdir, dstdir,args.cob_config)
     elif os.path.islink(srcdir) and os.path.isdir(os.path.realpath(srcdir)):
         if dstdir is None:
+            logging.info(' ')
             dstdir = os.path.abspath('.')
         param = cobparam(srcdir, dstdir,args.cob_config)
     elif (os.path.islink(srcdir) and os.path.isfile(os.path.realpath(srcdir))) or os.path.isfile(srcdir):
