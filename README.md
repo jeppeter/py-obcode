@@ -3,6 +3,7 @@
 >  this project is to obfuscated for the c code
 
 ## release history
+> Sep 14th 2018 release 0.0.4 to make ok on #line and README ok
 > Sep 13th 2018 release 0.0.2 to support for OB code
 
 ## howto 
@@ -435,7 +436,23 @@ $./main
 [d.c:12] up hello world 1 2 3
 ```
 
-## specification
+## keyword specification
+> some keywords will used
+-----------------
+Key  | function |  Example |
+| :------------: |:---------------|:---------------|
+OB_VAR | to give the variable obfuscated | OB_VAR(x) |
+OB_VAR_SPEC | to give the variable obfuscated with config | OB_VAR_SPEC("namemin=10,namemax=20",x) |
+OB_VAR_DECL  | to give the variable obfuscated in declaration | extern int OB_VAR_DECL(x) |
+OB_VAR_DECL_SPEC  | to give the variable obfuscated in declaration with config | extern int OB_VAR_DECL_SPEC("namemin=10,namemax=20",x) |
+OB_FUNC | to give function obfuscated | int OB_FUNC print_function(const char* fmt) |
+OB_FUNC_SPEC | to give function obfuscated with config | int OB_FUNC_SPEC("namemin=30,namemax=60") print_function(const char* fmt) |
+OB_CODE | to insert non-sense code  with current used variable| OB_CODE(x,b,c) |
+OB_CODE_SPEC | to insert non-sense code  with current used variable with config | OB_CODE_SPEC("funcmin=10,funcmax=20",x,b,c) |
+OB_CONFIG | to give the configuration for current c file | OB_CONFIG("namemin=30,namemax=90") |
+
+
+## config specification
 > OB_CONFIG to make config for the file ,you can specified the value of some good
 Option Keys
 --------
