@@ -971,15 +971,18 @@ class cobparam(object):
     def is_in_filter(self,sfile):
         news = '%r'%(self.srcdir)
         patstr = re.sub(news, '', sfile)
-        news = '%r'%(os.sep)
-        patsarr = re.split(news, patstr)
+        if os.sep == '/':
+            patsarr = re.split('/', patstr)
+        elif os.sep == '\\':
+            patsarr = re.split('\\\\', patstr)
         idx = 0
         while idx < len(self.__filter_exprs):
             c = self.__filter_exprs[idx]
             for cl in patsarr:
-                #logging.info('cl [%s] c [%s]'%(cl,self.__filter_strs[idx]))
+                logging.info('cl [%s] filter [%s]'%(cl,self.__filter_strs[idx]))
                 if len(cl) > 0:
                     if c.match(cl):
+                        logging.info('patstr [%s] filted [%s]'%(patstr, self.__filter_strs[idx]))
                         return True
             idx = idx + 1
         return False
@@ -989,11 +992,10 @@ class cobparam(object):
         patstr = re.sub(news,'',sfile)
         idx = 0
         while idx < len(self.__handle_exprs):
-            c = self.__handle_exprs[idx]            
-            logging.info('[%s] match [%s]'%(patstr, self.__handle_strs[idx]))
+            c = self.__handle_exprs[idx]
             m = c.findall(patstr)
             if m is not None and len(m) > 0:
-                
+                logging.info('[%s] match [%s]'%(patstr, self.__handle_strs[idx]))
                 return True
             idx = idx + 1
         return False
@@ -1054,7 +1056,10 @@ def ob_walk_path(srcdir,dstdir,opthdl,args,params):
         for c in files:
             sfile = os.path.join(root,c)
             nsfile = sfile.replace(srcdir, '', 1)
-            nsfile = re.sub(r'^[/]+','', nsfile)
+            if os.sep == '/':
+                nsfile = re.sub(r'^[/]+','', nsfile)
+            elif os.sep == '\\':
+                nsfile = re.sub(r'^[\\]+', '', nsfile)
             dfile = os.path.join(dstdir,nsfile)
             logging.info('sfile %s dfile %s'%(sfile, dfile))
             opthdl(sfile, dfile, args, params)
