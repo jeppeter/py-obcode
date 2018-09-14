@@ -871,7 +871,7 @@ class COBFile(object):
         startinclude = 0
         for l in self.__in_lines:
             self.__cur_line += 1
-            logging.info('[%d][%s]'%(self.__cur_line, l))
+            #logging.info('[%d][%s]'%(self.__cur_line, l))
             if  startinclude == 0:
                 m = self.__include_expr.findall(l)
                 rets += format_line('%s'%(l),0)
@@ -979,7 +979,6 @@ class cobparam(object):
         while idx < len(self.__filter_exprs):
             c = self.__filter_exprs[idx]
             for cl in patsarr:
-                logging.info('cl [%s] filter [%s]'%(cl,self.__filter_strs[idx]))
                 if len(cl) > 0:
                     if c.match(cl):
                         logging.info('patstr [%s] filted [%s]'%(patstr, self.__filter_strs[idx]))
