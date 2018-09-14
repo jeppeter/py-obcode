@@ -17,9 +17,20 @@ extern "C" {
 #define  OB_CONFIG(x)
 
 #if defined(_MSC_VER)
+#include <Windows.h>
 #define  OB_TYPEOF(x)                       decltype(x)
+
+#ifdef _M_X64
+typedef UINT64                              OB_ADDR;
+#else
+typedef UINT32                              OB_ADDR;
+#endif
+
 #elif defined(__GNUC__)
 #define  OB_TYPEOF(x)                       typeof(x)
+
+#define OB_ADDR                             unsigned long int
+
 #else
 #error "not supported compilers"
 #endif

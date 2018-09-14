@@ -645,7 +645,7 @@ class COBFile(object):
         s += format_debug_line('variables:prefix %s variables:namemax %d'%(cfg.prefix,random.randint(cfg.namemin,cfg.namemax)), tabs + 1 , cfg.debug)
         for i in range(len(varsarr)):
             s += format_line('void* %s = (void*)&(%s);'%(ptrnames[i], varsarr[i]), tabs + 1)
-            s += format_line('unsigned long long %s = (unsigned long long)%s;'%(vcnames[i], ptrnames[i]), tabs+1)
+            s += format_line('unsigned long long %s = (unsigned long long)((OB_ADDR)(%s));'%(vcnames[i], ptrnames[i]), tabs+1)
         bufname = '%s_%s'%(cfg.prefix,get_random_name(random.randint(cfg.namemin,cfg.namemax)))
         sizename = '%s_%s'%(cfg.prefix,get_random_name(random.randint(cfg.namemin,cfg.namemax)))
         lenname = '%s_%s'%(cfg.prefix, get_random_name(random.randint(cfg.namemin,cfg.namemax)))
@@ -690,7 +690,7 @@ class COBFile(object):
 
         s += format_line('',tabs+1)
         for i in range(len(varsarr)):
-            s += format_line('%s = (void*) %s;'%(ptrnames[i],vcnames[i]), tabs + 1)
+            s += format_line('%s = (void*)((OB_ADDR)(%s));'%(ptrnames[i],vcnames[i]), tabs + 1)
 
         s += format_line('',tabs+1)
         for i in range(len(varsarr)):
@@ -727,10 +727,10 @@ class COBFile(object):
         s += self.__format_ob_code_inner(varsarr, cfg,tabs)
         return s
 
-    def __format_ob_func_inner(self,l,funcname,cfg,tabs):
+    def __format_ob_func_inner(self,l,funcname,cfg,tabs,isspec):
         s = ''
         replacename = '%s_%s'%(cfg.prefix,get_random_name(random.randint(cfg.namemin,cfg.namemax)))
-        s += format_line('#define %s %s'%(funcname,replacename),tabs)
+        s += format_line('#define %s %s'%(funcname, replacename), tabs)
         s += format_line('#line %d "%s"'%(self.__cur_line,quote_string(self.__srcfile)),0)
         s += format_line('%s'%(l), 0)
         self.__func_replace[funcname] = replacename
@@ -743,7 +743,7 @@ class COBFile(object):
         tabs = count_tabs(l)
         cfg = self.__cfg
         s += self.__output_ob_header_comment(l, cfg, tabs)
-        s += self.__format_ob_func_inner(l,funcname,cfg,tabs)
+        s += self.__format_ob_func_inner(l,funcname,cfg,tabs,False)
         return s
 
     def __format_ob_func_spec(self,l):
@@ -757,7 +757,7 @@ class COBFile(object):
         cfg = self.__cfg.get_file_config(cfgstr)
         tabs = count_tabs(l)
         s += self.__output_ob_header_comment(l, cfg, tabs)
-        s += self.__format_ob_func_inner(l, funcname, cfg, tabs)
+        s += self.__format_ob_func_inner(l, funcname, cfg, tabs,True)
         return s
 
     def __format_ob_var_inner(self,l,cfg,leftvars,isspec,tabs):
