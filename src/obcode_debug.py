@@ -229,7 +229,7 @@ def format_debug_line(l,tab=0,debug=0):
         rets += format_line('/* %s */'%(format_comment_line(l)), tab)
     return rets
 
-def format_xor_encode_function(nameprefix='prefix_',namelen=10,tabs=0,debug=0):
+def format_xor_encode_function(nameprefix='prefix',namelen=10,tabs=0,debug=0):
     funcstr = ''
     funcname = '%s_%s'%(nameprefix,get_random_name(namelen))
     if debug >= 3:
@@ -423,6 +423,15 @@ class COBAttr(object):
             raise Exception('funcmin [%d] or funcmax [%d] not valid'%(self.funcmin, self.funcmax))
         return
 
+    def format_values(self):
+        global GL_INIT_ATTR
+        s = ''
+        for k in GL_INIT_ATTR.keys():
+            if len(s) > 0:
+                s += ','
+            s += '%s=%s'%(k,GL_INIT_ATTR[k])
+        return s
+
 
     def __init__(self,attrs=None,news=None):
         global GL_DEFAULT_ATTR
@@ -444,7 +453,9 @@ class COBAttr(object):
 class CompoundAttr(COBAttr):
     def __inc_prefix(self):
         self.__basic_inc += 1
-        return '%s_%d'%(self.__basic_prefix,self.__basic_inc)
+        s = '%s_%d'%(self.__basic_prefix,self.__basic_inc)
+        logging.info('prefix [%s]'%(s))
+        return s
 
     def __init__(self,attrs=None):
         self.__basiccfg = COBAttr(attrs,None)
@@ -474,20 +485,23 @@ class CompoundAttr(COBAttr):
 
     def get_file_config(self,name):
         retval = None
+        logging.info('id <%s>'%(self))
         if self.__filecfg is not None and \
             name in self.__filecfg.keys():
-            d = dict()
-            d['prefix'] = self.__inc_prefix()
-            retval = COBAttr(self.__filecfg[name],d)
+            retval = COBAttr(self.__filecfg[name],None)
         elif isinstance(name,str):
-            d = dict()
-            d['prefix'] = self.__inc_prefix()
-            retval = COBAttr(name,d)
+            retval = COBAttr(name,None)
         else:
-            d = dict()
-            d['prefix'] = self.__inc_prefix()
-            retval = COBAttr(None,d)
+            retval = COBAttr(None,None)
         return retval
+
+    def load_new_prefix(self):
+        self.__inc_prefix()
+        d = dict()
+        d['prefix'] = '%s_%d'%(self.__basic_prefix,self.__basic_inc)
+        s = self.__basiccfg.format_values()
+        self.__basiccfg = COBAttr(s,d)
+        return self
 
     def get_count(self):
         return self.__basic_inc
@@ -572,6 +586,7 @@ class COBFile(object):
         self.__cfg = COBAttr()
         if cfg is not None:
             self.__cfg = cfg
+
         self.__ob_code_expr = re.compile('\s+OB_CODE\s*\(([^)]*)\)')
         self.__ob_code_spec_expr = re.compile('\s+OB_CODE_SPEC\s*\(([^)]+)\)')
         self.__ob_func_expr = re.compile('\s+OB_FUNC\s+([a-zA-Z0-9_]+)\s*\(')
@@ -603,6 +618,7 @@ class COBFile(object):
     def __get_variables(self,l,expr1):
         variables = expr1.findall(l)
         assert(len(variables) > 0)
+        # we do this on the increment
         cfgattr = self.__cfg
         leftvars = []
         sarr = re.split(',', variables[0])
@@ -981,7 +997,7 @@ class cobparam(object):
             for cl in patsarr:
                 if len(cl) > 0:
                     if c.match(cl):
-                        logging.info('patstr [%s] filted [%s]'%(patstr, self.__filter_strs[idx]))
+                        #logging.info('patstr [%s] filted [%s]'%(patstr, self.__filter_strs[idx]))
                         return True
             idx = idx + 1
         return False
@@ -994,7 +1010,7 @@ class cobparam(object):
             c = self.__handle_exprs[idx]
             m = c.findall(patstr)
             if m is not None and len(m) > 0:
-                logging.info('[%s] match [%s]'%(patstr, self.__handle_strs[idx]))
+                #logging.info('[%s] match [%s]'%(patstr, self.__handle_strs[idx]))
                 return True
             idx = idx + 1
         return False
@@ -1011,7 +1027,7 @@ def make_dir_safe(ddir):
 
 def raw_copy(sfile,dfile):
     make_dir_safe(os.path.dirname(dfile))
-    logging.info('[%s] => [%s]'%(sfile,dfile))
+    #logging.info('[%s] => [%s]'%(sfile,dfile))
     shutil.copy2(sfile, dfile)
     return
 
@@ -1020,8 +1036,8 @@ def handle_c_file(sfile,dfile,args,param):
     logging.info('c file [%s] => [%s]'%(sfile, dfile))
     clear_random_name()
     if dfile is not None:
-        make_dir_safe(os.path.dirname(dfile))
-    cob = COBFile(sfile,dfile,param.config)
+        make_dir_safe(os.path.dirname(dfile))    
+    cob = COBFile(sfile,dfile,param.config.load_new_prefix())
     s = cob.out_str()
     write_file(s,dfile)
     if args.cob_dump is not None:
@@ -1035,7 +1051,7 @@ def handle_c_file(sfile,dfile,args,param):
 
 def cob_copy_file(sfile,dfile,args,params):
     if params.is_in_filter(sfile):
-        logging.info('skip [%s]'%(sfile))
+        #logging.info('skip [%s]'%(sfile))
         return
 
     if params.is_in_handle(sfile):
@@ -1060,7 +1076,7 @@ def ob_walk_path(srcdir,dstdir,opthdl,args,params):
             elif os.sep == '\\':
                 nsfile = re.sub(r'^[\\]+', '', nsfile)
             dfile = os.path.join(dstdir,nsfile)
-            logging.info('sfile %s dfile %s'%(sfile, dfile))
+            #logging.info('sfile %s dfile %s'%(sfile, dfile))
             opthdl(sfile, dfile, args, params)
     return
 
