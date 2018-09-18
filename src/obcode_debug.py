@@ -1155,6 +1155,57 @@ def cob_handler(args,parser):
     sys.exit(0)
     return
 
+GL_MAKOB_FILE_VAR='MAKOB_FILE'
+
+def get_makeob_file(fname,makeobfile,args):
+    retf = ''
+    if os.path.exists(makeobfile):
+        s = read_file(makeobfile)
+        cdict = json.loads(s)
+        cdict = Utf8Encode(cdict).get_val()
+    else:
+        cdict = dict()
+    # now to get the code
+    fdict = dict()
+    if 'files' in cdict.keys():
+        fdict = cdict['files']
+    if fname in fdict.keys():
+        retf = fdict[fname]
+    else:
+        valid = False
+        while not valid :
+            valid = True
+            retf = os.path.join(os.path.dirname(fname),get_random_name(10))
+            fc, extf = os.path.splitext(fname)
+            retf += extf
+            for k in fdict.keys():
+                if fdict[k] == retf:
+                    valid = False
+        # now to write back
+        fdict[fname] = retf
+        cdict['files'] = fdict
+        write_file(json.dumps(cdict, indent=4), makeobfile)
+    # if exists fname and not exists retf just copy
+    if os.path.exists(fname) and not os.path.exists(retf):
+        shutil.copy2(fname, retf)
+    return retf
+
+def makob_handler(args,parser):
+    global GL_MAKOB_FILE_VAR
+    set_logging_level(args)
+    makeobfile = os.path.join(os.getcwd(),'makob.json')
+    if GL_MAKOB_FILE_VAR in os.environ.keys():
+        makeobfile = os.environ[GL_MAKOB_FILE_VAR]
+    rets = ''
+    for c in args.subnargs:
+        c = os.path.abspath(c)
+        retf = get_makeob_file(c,makeobfile,args)
+        if len(rets) > 0:
+            rets += ' '
+        rets += retf
+    sys.stdout.write('%s\n'%(rets))
+    sys.exit(0)
+    return
 
 def main():
     commandline_fmt='''
@@ -1167,6 +1218,9 @@ def main():
             "config" : null,
             "dump" : null,
             %s,
+            "$" : "+"
+        },
+        "makob<makob_handler>##srcfile to give the other code file ,this need environment variable MAKOB_FILE to get the ##" : {
             "$" : "+"
         }
     }
@@ -1305,11 +1359,14 @@ class _LoggerObject(object):
 
 class obcode_test(unittest.TestCase):
     def setUp(self):
+        global GL_MAKOB_FILE_VAR
         keyname = '_%s__logger'%(self.__class__.__name__)
         if getattr(self,keyname,None) is None:
             self.__logger = _LoggerObject('obcode')
         self.__tmp_files = []
         self.__tmp_descrs = []
+        if GL_MAKOB_FILE_VAR in os.environ.keys():
+            del os.environ[GL_MAKOB_FILE_VAR]
         return
 
     def info(self,msg,callstack=1):
