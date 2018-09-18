@@ -1405,7 +1405,7 @@ class obcode_test(unittest.TestCase):
                     cmds.append('-l%s'%(c))
             self.info('run cmds %s'%(cmds))
             subprocess.check_call(cmds)
-        elif sys.platform == 'linux':
+        elif sys.platform == 'linux' or sys.platform == 'linux2':
             objfile = outfile
             objfile += '.o'
             cmds = ['gcc', '-Wall','-Os']
@@ -1476,7 +1476,7 @@ class obcode_test(unittest.TestCase):
     def __compare_output_thread(self,content,obcmds=[],includedir=[],libs=[],appcmds=[],libdir=None):
         sfile,dfile = self.__trans_obcode(content,obcmds)
         threadlibs=[]
-        if sys.platform == 'linux' or sys.platform == 'cygwin':
+        if sys.platform == 'linux' or sys.platform == 'cygwin' or sys.platform == 'linux2':
             threadlibs.append('pthread')
         libs.extend(threadlibs)
         slines , soutfile = self.__get_write_file(sfile,None,includedir,libs,appcmds,libdir)

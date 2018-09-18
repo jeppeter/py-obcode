@@ -1,3 +1,4 @@
+#define  _GNU_SOURCE
 #include <obcode.h>
 #include <pthread.h>
 #include <stdio.h>
