@@ -8,6 +8,7 @@ import os
 import shutil
 import random
 import json
+import difflib
 
 
 def set_logging_level(args):
