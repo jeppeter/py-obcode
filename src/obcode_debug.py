@@ -591,10 +591,10 @@ class COBFile(object):
         self.__ob_code_spec_expr = re.compile('\s+OB_CODE_SPEC\s*\(([^)]+)\)')
         self.__ob_func_expr = re.compile('\s+OB_FUNC\s+([a-zA-Z0-9_]+)\s*\(')
         self.__ob_func_spec_expr = re.compile('\s+OB_FUNC_SPEC\s*\(([^)]+)\)\s+([a-zA-Z0-9_]+)\s*\(')
-        self.__ob_var_expr = re.compile('\s+OB_VAR\s*\(([a-zA-Z0-9_]+)\)')
-        self.__ob_var_spec_expr = re.compile('\s+OB_VAR_SPEC\s*\([^)]+\)')
-        self.__ob_decl_var_expr = re.compile('\s+OB_DECL_VAR\s*\(([^)]+)\)')
-        self.__ob_decl_var_spec_expr = re.compile('\s+OB_DECL_VAR_SPEC\s*\(([^)]+)\)')
+        self.__ob_var_expr = re.compile('[\\*\\(\\)\s]+OB_VAR\s*\(([a-zA-Z0-9_]+)\)')
+        self.__ob_var_spec_expr = re.compile('[\\*\\(\\)\s]+OB_VAR_SPEC\s*\([^)]+\)')
+        self.__ob_decl_var_expr = re.compile('[\\*\\(\\)\s]+OB_DECL_VAR\s*\(([^)]+)\)')
+        self.__ob_decl_var_spec_expr = re.compile('[\\*\\(\\)\s]+OB_DECL_VAR_SPEC\s*\(([^)]+)\)')
 
         self.__ob_config_expr = re.compile('^\W*OB_CONFIG\(([^)]+)\)')
 
@@ -1366,13 +1366,13 @@ class obcode_test(unittest.TestCase):
     def __compile_c_file(self,sfile,outfile=None,includedir=[],libs=[],libdir=None):
         cmds = []
         if outfile is None:
-            outfile = self.__write_temp_file('',description='out exe file',suffix_add='')
+            if sys.platform == 'win32' or sys.platform == 'cygwin':
+                outfile = self.__write_temp_file('',description='out exe for [%s]'%(sfile),suffix_add='.exe')
+            else:
+                outfile = self.__write_temp_file('',description='out exe for [%s]'%(sfile),suffix_add='')
         obdir = os.path.abspath(os.path.join( os.path.abspath(__file__),'..','..','include'))
         if sys.platform == 'win32':
-            objfile = outfile
-            objfile += '.obj'
-            outfile += '.exe'
-
+            objfile = self.__write_temp_file('',description='obj file for [%s]'%(sfile), suffix_add='.obj')
             cmds = ['cl.exe','/nologo','/Zi','/Os','/Wall','/wd','4668','/wd','4710', '/wd','5045']
 
             if len(includedir) > 0:
@@ -1386,9 +1386,7 @@ class obcode_test(unittest.TestCase):
             self.info('run cmds %s'%(cmds))
             subprocess.check_call(cmds)
         elif sys.platform == 'cygwin':
-            objfile = outfile
-            objfile += '.o'
-            outfile += '.exe'
+            objfile = self.__write_temp_file('',description='obj file for [%s]'%(sfile), suffix_add='.o')
             cmds = ['gcc', '-Wall','-Os']
             if len(includedir) > 0:
                 for c in includedir:
@@ -1406,8 +1404,7 @@ class obcode_test(unittest.TestCase):
             self.info('run cmds %s'%(cmds))
             subprocess.check_call(cmds)
         elif sys.platform == 'linux' or sys.platform == 'linux2':
-            objfile = outfile
-            objfile += '.o'
+            objfile = self.__write_temp_file('',description='obj file for [%s]'%(sfile), suffix_add='.o')
             cmds = ['gcc', '-Wall','-Os']
             if len(includedir) > 0:
                 for c in includedir:
@@ -1440,6 +1437,17 @@ class obcode_test(unittest.TestCase):
             l = l.rstrip('\r\n')
             rlines.append(l)
         return rlines,outfile
+
+    def __get_content(self,fname):
+        scon = read_file(fname)
+        if sys.platform == 'win32':
+            sarr = re.split('\n', scon)
+            scon = ''
+            for l in sarr:
+                l = l.rstrip('\r\n')
+                scon += '%s\n'%(l)
+        return scon
+
 
     def __trans_obcode(self,content,obcmds=[]):
         sfile = self.__write_temp_file(content,description='source file')
@@ -1520,17 +1528,17 @@ class obcode_test(unittest.TestCase):
         win_content=''
         if sys.platform == 'win32':
             winfile = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','example','thread','win.cpp'))
-            win_content = read_file(winfile)
-            sarr = re.split('\n', win_content)
-            win_content = ''
-            for l in sarr:
-                l = l.rstrip('\r\n')
-                win_content += '%s\n'%(l)
-            self.__compare_output_thread(win_content,appcmds=['10','100','199','391','51'])
+            content = self.__get_content(winfile)
         else:
             unixfile = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','example','thread','unix.cpp'))
-            unix_content = read_file(unixfile)
-            self.__compare_output_thread(unix_content,appcmds=['10','100','199','391','51'])
+            content = self.__get_content(unixfile)
+        self.__compare_output_thread(content,appcmds=['10','100','199','391','51'])
+        return
+
+    def test_A003(self):
+        fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','example','obv','obv.cpp'))
+        content = self.__get_content(fname)
+        self.__compare_output(content)
         return
 
 def debug_release():
