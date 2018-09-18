@@ -81,7 +81,7 @@ int main(int argc,char* argv[])
 		}
 	}
 
-	WaitForMultipleObjects(numthrs, pthreads,TRUE,INFINITE);
+	WaitForMultipleObjects((DWORD)numthrs, pthreads,TRUE,INFINITE);
 
 	ret = 0;
 out:

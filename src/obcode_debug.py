@@ -1373,7 +1373,7 @@ class obcode_test(unittest.TestCase):
             objfile += '.obj'
             outfile += '.exe'
 
-            cmds = ['cl.exe','/nologo','/Zi','/Od','/Wall','/wd','4668','/wd','4710']
+            cmds = ['cl.exe','/nologo','/Zi','/Os','/Wall','/wd','4668','/wd','4710', '/wd','5045']
 
             if len(includedir) > 0:
                 for c in includedir:
@@ -1389,7 +1389,7 @@ class obcode_test(unittest.TestCase):
             objfile = outfile
             objfile += '.o'
             outfile += '.exe'
-            cmds = ['gcc', '-Wall']
+            cmds = ['gcc', '-Wall','-Os']
             if len(includedir) > 0:
                 for c in includedir:
                     cmds.append('-I%s'%(c))
@@ -1408,7 +1408,7 @@ class obcode_test(unittest.TestCase):
         elif sys.platform == 'linux':
             objfile = outfile
             objfile += '.o'
-            cmds = ['gcc', '-Wall']
+            cmds = ['gcc', '-Wall','-Os']
             if len(includedir) > 0:
                 for c in includedir:
                     cmds.append('-I%s'%(c))
@@ -1473,6 +1473,21 @@ class obcode_test(unittest.TestCase):
             idx += 1
         return
 
+    def __compare_output_thread(self,content,obcmds=[],includedir=[],libs=[],appcmds=[],libdir=None):
+        sfile,dfile = self.__trans_obcode(content,obcmds)
+        threadlibs=[]
+        if sys.platform == 'linux' or sys.platform == 'cygwin':
+            threadlibs.append('pthread')
+        libs.extend(threadlibs)
+        slines , soutfile = self.__get_write_file(sfile,None,includedir,libs,appcmds,libdir)
+        dlines , doutfile = self.__get_write_file(dfile,None,includedir,libs,appcmds,libdir)
+        self.assertEqual(len(slines), len(dlines))
+        idx = 0
+        while idx < len(slines):
+            self.assertEqual(slines[idx], dlines[idx])
+            idx += 1
+        return
+
 
     def test_A001(self):
         writecontent='''
@@ -1498,6 +1513,24 @@ class obcode_test(unittest.TestCase):
         }
         '''
         self.__compare_output(writecontent)
+        return
+
+    def test_A002(self):
+        unix_content=''
+        win_content=''
+        if sys.platform == 'win32':
+            winfile = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','example','thread','win.cpp'))
+            win_content = read_file(winfile)
+            sarr = re.split('\n', win_content)
+            win_content = ''
+            for l in sarr:
+                l = l.rstrip('\r\n')
+                win_content += '%s\n'%(l)
+            self.__compare_output_thread(win_content,appcmds=['10','100','199','391','51'])
+        else:
+            unixfile = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','example','thread','unix.cpp'))
+            unix_content = read_file(unixfile)
+            self.__compare_output_thread(unix_content,appcmds=['10','100','199','391','51'])
         return
 
 def debug_release():
