@@ -3,9 +3,9 @@
 >  this project is to obfuscated for the c code
 
 ## release history
-> Sep 18th 2018 release 0.0.6 to use OB_INSERT with insert ok
-> Sep 14th 2018 release 0.0.4 to make ok on #line and README ok
-> Sep 13th 2018 release 0.0.2 to support for OB code
+* Sep 18th 2018 release 0.0.6 to use OB_INSERT with insert ok
+* Sep 14th 2018 release 0.0.4 to make ok on #line and README ok
+* Sep 13th 2018 release 0.0.2 to support for OB code
 
 ## howto 
 
