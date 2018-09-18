@@ -541,6 +541,8 @@ class COBFile(object):
                 if m is None or len(m) == 0:
                     raise Exception('[%d][%s] not valid OB_CONFIG'%(self.__cur_line,l))
                 self.__cfg = CompoundAttr(m[0])
+            if self.__get_filter_expr_not_defined(l, self.__ob_insert_expr):
+                self.__insert_line = self.__cur_line
             self.__cur_line += 1
         return
 
@@ -584,6 +586,7 @@ class COBFile(object):
         self.__srcfile = sfile
         self.__dstfile = dfile
         self.__cfg = COBAttr()
+        self.__insert_line = -1
         if cfg is not None:
             self.__cfg = cfg
 
@@ -595,6 +598,7 @@ class COBFile(object):
         self.__ob_var_spec_expr = re.compile('[\\*\\(\\)\s]+OB_VAR_SPEC\s*\([^)]+\)')
         self.__ob_decl_var_expr = re.compile('[\\*\\(\\)\s]+OB_DECL_VAR\s*\(([^)]+)\)')
         self.__ob_decl_var_spec_expr = re.compile('[\\*\\(\\)\s]+OB_DECL_VAR_SPEC\s*\(([^)]+)\)')
+        self.__ob_insert_expr = re.compile('^[\s]*OB_INSERT\s*\(\)')
 
         self.__ob_config_expr = re.compile('^\W*OB_CONFIG\(([^)]+)\)')
 
@@ -882,9 +886,10 @@ class COBFile(object):
 
     def out_str(self):
         rets = ''
-        startincluded = 0
         self.__cur_line = 0
         startinclude = 0
+        if self.__insert_line >= 0:
+            startinclude = 2
         for l in self.__in_lines:
             self.__cur_line += 1
             #logging.info('[%d][%s]'%(self.__cur_line, l))
@@ -903,6 +908,11 @@ class COBFile(object):
                 else:
                     rets += format_line('%s'%(l),0)
                     continue
+
+            if self.__insert_line >= 0 and self.__insert_line == self.__cur_line:
+                rets += self.__output_pre_functions(self.__cfg)
+                rets += format_line('%s'%(l), 0)
+                continue
 
             if self.__get_filter_expr_not_defined(l, self.__ob_code_expr):
                 logging.info('')
@@ -1537,6 +1547,12 @@ class obcode_test(unittest.TestCase):
 
     def test_A003(self):
         fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','example','obv','obv.cpp'))
+        content = self.__get_content(fname)
+        self.__compare_output(content)
+        return
+
+    def test_A004(self):
+        fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','example','obv','insert.cpp'))
         content = self.__get_content(fname)
         self.__compare_output(content)
         return

@@ -14,7 +14,12 @@ extern "C" {
 #define  OB_DECL_VAR(x)                     x
 #define  OB_DECL_VAR_SPEC(c,x)              x
 
+/*to make the configuration for this file*/
 #define  OB_CONFIG(x)
+
+/*to make the insert code notification*/
+#define  OB_INSERT()
+#define  OB_INSERT_SPEC(x)
 
 #if defined(_MSC_VER)
 #include <Windows.h>
