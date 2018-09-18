@@ -244,7 +244,7 @@ def format_xor_encode_function(nameprefix='prefix',namelen=10,tabs=0,debug=0):
     funcstr += format_line('',tabs)
     funcstr += format_line('for (i=0;i<size;i++){', tabs + 1)
     funcstr += format_line('curi = (i % xorsize);',tabs + 2)
-    funcstr += format_line('pbuf[i] = pbuf[i] ^ pxorcode[curi];', tabs + 2)
+    funcstr += format_line('pbuf[i] = (unsigned char)(pbuf[i] ^ pxorcode[curi]);', tabs + 2)
     funcstr += format_line('}', tabs + 1)
     funcstr += format_line('', tabs)
     funcstr += format_line('return size;',tabs + 1)
@@ -266,7 +266,7 @@ def format_xor_decode_function(nameprefix='prefix_',namelen=10, tabs=0, debug=0)
     funcstr += format_line('',tabs)
     funcstr += format_line('for (i=0;i<size;i++){', tabs + 1)
     funcstr += format_line('curi = (i % xorsize);',tabs + 2)
-    funcstr += format_line('pbuf[i] = pbuf[i] ^ pxorcode[curi];', tabs + 2)
+    funcstr += format_line('pbuf[i] = (unsigned char)(pbuf[i] ^ pxorcode[curi]);', tabs + 2)
     funcstr += format_line('}', tabs + 1)
     funcstr += format_line('', tabs)
     funcstr += format_line('return size;',tabs + 1)
@@ -314,7 +314,7 @@ def format_key_ctr_function(xorcode,nameprefix='prefix', namelen=10, numturns=30
         funcstr += format_line('if (%d < size && %d < size){'%(curi,curj), tabs + 1)
         funcstr += format_debug_line('%d = %d ^ %d'%((presentxor[curi] ^ presentxor[curj]) & 0xff, presentxor[curi],presentxor[curj]), tabs + 2,debug)
         presentxor[curi] = (presentxor[curi] ^ presentxor[curj]) & 0xff
-        funcstr += format_line('pbuf[%d] = pbuf[%d] ^ pbuf[%d];'%(curi, curi, curj),tabs + 2)
+        funcstr += format_line('pbuf[%d] = (unsigned char)(pbuf[%d] ^ pbuf[%d]);'%(curi, curi, curj),tabs + 2)
         funcstr += format_line('}', tabs + 1)
 
     for i in range(len(xorcode)):
@@ -329,8 +329,8 @@ def format_key_ctr_function(xorcode,nameprefix='prefix', namelen=10, numturns=30
         funcstr += format_debug_line('%d = %d ^ %d'%((presentxor[i] ^ curv) & 0xff, presentxor[curi],curv), tabs + 2,debug)
         presentxor[i] = (presentxor[i] ^ curv) & 0xff
         assert(presentxor[i] == xorcode[i])
-        funcstr += format_line('pbuf[%d] = pbuf[%d] ^ pbuf[%d];'%(i ,i,curi), tabs+2)
-        funcstr += format_line('pbuf[%d] = pbuf[%d] ^ %d;'%(i,i,curv), tabs+2)
+        funcstr += format_line('pbuf[%d] = (unsigned char)(pbuf[%d] ^ pbuf[%d]);'%(i ,i,curi), tabs+2)
+        funcstr += format_line('pbuf[%d] = (unsigned char)(pbuf[%d] ^ %d);'%(i,i,curv), tabs+2)
         funcstr += format_line('}', tabs + 1)
 
     funcstr += format_line('',tabs)
@@ -355,7 +355,7 @@ def format_key_dtr_function(xorcode,nameprefix='prefix', namelen=10, numturns=30
         curj = random.randint(0, len(xorcode)-1)
         funcstr += format_line('if (%d < size && %d < size){'%(curi,curj), tabs+1)
         funcstr += format_debug_line('%d = %d ^ %d'%((storecode[curi] ^ storecode[curj]),storecode[curi],storecode[curj]), tabs + 2, debug)
-        funcstr += format_line('pbuf[%d] = pbuf[%d] ^ pbuf[%d];'%(curi, curi, curj),tabs + 2)
+        funcstr += format_line('pbuf[%d] = (unsigned char)(pbuf[%d] ^ pbuf[%d]);'%(curi, curi, curj),tabs + 2)
         funcstr += format_line('}',tabs + 1)
 
 
@@ -1295,9 +1295,11 @@ class _LoggerObject(object):
 
 class obcode_test(unittest.TestCase):
     def setUp(self):
-        if self.__logger is None:
+        keyname = '_%s__logger'%(self.__class__.__name__)
+        if getattr(self,keyname,None) is None:
             self.__logger = _LoggerObject('obcode')
         self.__tmp_files = []
+        self.__tmp_descrs = []
         return
 
     def info(self,msg,callstack=1):
@@ -1327,9 +1329,15 @@ class obcode_test(unittest.TestCase):
 
     def tearDown(self):
         if len(self.__tmp_files) > 0:
-            for c in self.__tmp_files:
-                self.__remove_file_ok(c)
+            idx = 0
+            assert(len(self.__tmp_descrs) == len(self.__tmp_files))
+            while idx < len(self.__tmp_files):
+                c = self.__tmp_files[idx]
+                d = self.__tmp_descrs[idx]
+                self.__remove_file_ok(c,d)
+                idx += 1                
         self.__tmp_files = []
+        self.__tmp_descrs = []
         return
 
     @classmethod
@@ -1340,35 +1348,41 @@ class obcode_test(unittest.TestCase):
     def tearDownClass(cls):
         return
 
-    def __write_temp_file(self,content,suffix_add=None):
+    def __write_temp_file(self,content,description='',suffix_add=None):
         if suffix_add is None:
-            suffix_add = '.c'
+            if sys.platform == 'win32':
+                suffix_add = '.cpp'
+            else:
+                suffix_add = '.c'
         fd , tempf = tempfile.mkstemp(suffix=suffix_add,prefix='parse',dir=None,text=True)
         os.close(fd)
         with open(tempf,'w') as f:
             f.write('%s'%(content))
         self.info('tempf %s'%(tempf))
+        self.__tmp_files.append(tempf)
+        self.__tmp_descrs.append(description)
         return tempf
 
     def __compile_c_file(self,sfile,outfile=None,includedir=[],libs=[],libdir=None):
         cmds = []
-        if outfile = None:
-            outfile = self.__write_temp_file('',None)
-        obdir = os.path.abspath(os.path.join( os.path.abspath(__file__),'..','include'))
+        if outfile is None:
+            outfile = self.__write_temp_file('',description='out exe file',suffix_add='')
+        obdir = os.path.abspath(os.path.join( os.path.abspath(__file__),'..','..','include'))
         if sys.platform == 'win32':
             objfile = outfile
             objfile += '.obj'
             outfile += '.exe'
 
-            cmds = ['cl.exe','/Zi','/Od']
+            cmds = ['cl.exe','/nologo','/Zi','/Od','/Wall','/wd','4668','/wd','4710']
+
             if len(includedir) > 0:
                 for c in includedir:
                     cmds.extend(['/I',c])
             cmds.extend(['/I',obdir])
-            cmds.append('-F%s'%(objfile),sfile)
+            cmds.extend(['-c','-Fo%s'%(objfile),sfile])
             self.info('run cmds %s'%(cmds))
             subprocess.check_call(cmds)
-            cmds = ['link.exe','-out:%s'%(outfile), objfile]
+            cmds = ['link.exe','/nologo','-out:%s'%(outfile), objfile]
             self.info('run cmds %s'%(cmds))
             subprocess.check_call(cmds)
         elif sys.platform == 'cygwin':
@@ -1421,16 +1435,46 @@ class obcode_test(unittest.TestCase):
         outfile = self.__compile_c_file(sfile,outfile,includedir,libs,libdir)
         cmds = [outfile]
         cmds.extend(appcmds)
-        rlines = self.__get_output(cmds)
+        rlines = []
+        for l in self.__get_output(cmds):
+            l = l.rstrip('\r\n')
+            rlines.append(l)
         return rlines,outfile
 
     def __trans_obcode(self,content):
-        sfile = self.__write_temp_file(content)
-        dfile = self.__write_temp_file('')
+        sfile = self.__write_temp_file(content,description='source file')
+        dfile = self.__write_temp_file('',description='dst file')
+        vbose = None
+        cmds = [sys.executable,__file__,'cob']
+        if 'OBCODE_LOGLEVEL' in os.environ.keys():
+            vint = 0
+            try:
+                vint = int(os.environ['OBCODE_LOGLEVEL'])
+            except:
+                pass
+            if vint > 0:
+                vbose = '-'
+                for c in range(vint):
+                    vbose += 'v'
+                cmds.append(vbose)
+        cmds.extend(['--cob-noline','1'])
+        cmds.extend([sfile,dfile])
+        subprocess.check_call(cmds)
+        return sfile,dfile
+
+    def __compare_output(self,content,includedir=[],libs=[],appcmds=[],libdir=None):
+        sfile,dfile = self.__trans_obcode(content)
+        slines , soutfile = self.__get_write_file(sfile,None,includedir,libs,appcmds,libdir)
+        dlines , doutfile = self.__get_write_file(dfile,None,includedir,libs,appcmds,libdir)
+        self.assertEqual(len(slines), len(dlines))
+        idx = 0
+        while idx < len(slines):
+            self.assertEqual(slines[idx], dlines[idx])
+            idx += 1
+        return
 
 
-
-    def test_001(self):
+    def test_A001(self):
         writecontent='''
         #include <obcode.h>
         #include <stdio.h>
@@ -1441,9 +1485,10 @@ class obcode_test(unittest.TestCase):
             int a=1,b=2,c=3;
 
             OB_CODE(a,b,c);
-            printf("a=%d;b=%d;c=%d;\n",a,b,c);
+            printf("a=%d;b=%d;c=%d;\\n",a,b,c);
             OB_CODE(a,b,c);
-            printf("again a=%d;b=%d;c=%d;\n",a,b,c);
+            printf("again a=%d;b=%d;c=%d;\\n",a,b,c);
+            return 0;
         }
 
         int main()
@@ -1452,6 +1497,7 @@ class obcode_test(unittest.TestCase):
             return 0;
         }
         '''
+        self.__compare_output(writecontent)
         return
 
 def debug_release():
