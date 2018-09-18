@@ -3,6 +3,7 @@
 >  this project is to obfuscated for the c code
 
 ## release history
+> Sep 18th 2018 release 0.0.6 to use OB_INSERT with insert ok
 > Sep 14th 2018 release 0.0.4 to make ok on #line and README ok
 > Sep 13th 2018 release 0.0.2 to support for OB code
 
@@ -450,6 +451,7 @@ OB_FUNC_SPEC | to give function obfuscated with config | int OB_FUNC_SPEC("namem
 OB_CODE | to insert non-sense code  with current used variable| OB_CODE(x,b,c) |
 OB_CODE_SPEC | to insert non-sense code  with current used variable with config | OB_CODE_SPEC("funcmin=10,funcmax=20",x,b,c) |
 OB_CONFIG | to give the configuration for current c file | OB_CONFIG("namemin=30,namemax=90") |
+OB_INSERT | give the insert line in the file ,if no this ,will insert after #include appearing first empty line | OB_INSERT() |
 
 
 ## config specification
