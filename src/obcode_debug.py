@@ -1176,6 +1176,283 @@ def main():
 
 ##importdebugstart
 import disttools
+import unittest
+import tempfile
+import subprocess
+import cmdpack
+
+class _LoggerObject(object):
+    def __init__(self,cmdname='extargsparse'):
+        self.__logger = logging.getLogger(cmdname)
+        if len(self.__logger.handlers) == 0:
+            loglvl = logging.WARN
+            lvlname = '%s_LOGLEVEL'%(cmdname)
+            lvlname = lvlname.upper()
+            if lvlname in os.environ.keys():
+                v = os.environ[lvlname]
+                vint = 0
+                try:
+                    vint = int(v)
+                except:
+                    vint = 0
+                if vint >= 4:
+                    loglvl = logging.DEBUG
+                elif vint >= 3:
+                    loglvl = logging.INFO
+            handler = logging.StreamHandler()
+            fmt = "%(levelname)-8s %(message)s"
+            fmtname = '%s_LOGFMT'%(cmdname)
+            fmtname = fmtname.upper()
+            if fmtname in os.environ.keys():
+                v = os.environ[fmtname]
+                if v is not None and len(v) > 0:
+                    fmt = v
+            formatter = logging.Formatter(fmt)
+            handler.setFormatter(formatter)
+            self.__logger.addHandler(handler)
+            self.__logger.setLevel(loglvl)
+            # we do not want any more output debug
+            self.__logger.propagate = False
+
+    def format_string(self,arr):
+        s = ''
+        if isinstance(arr,list):
+            i = 0
+            for c in arr:
+                s += '[%d]%s\n'%(i,c)
+                i += 1
+        elif isinstance(arr,dict):
+            for c in arr.keys():
+                s += '%s=%s\n'%(c,arr[c])
+        else:
+            s += '%s'%(arr)
+        return s
+
+    def format_call_msg(self,msg,callstack):
+        inmsg = ''  
+        if callstack is not None:
+            try:
+                frame = sys._getframe(callstack)
+                inmsg += '[%-10s:%-20s:%-5s] '%(frame.f_code.co_filename,frame.f_code.co_name,frame.f_lineno)
+            except:
+                inmsg = ''
+        inmsg += msg
+        return inmsg
+
+    def info(self,msg,callstack=1):
+        inmsg = msg
+        if callstack is not None:
+            inmsg = self.format_call_msg(msg,(callstack + 1))
+        return self.__logger.info('%s'%(inmsg))
+
+    def error(self,msg,callstack=1):
+        inmsg = msg
+        if callstack is not None:
+            inmsg = self.format_call_msg(msg,(callstack + 1))
+        return self.__logger.error('%s'%(inmsg))
+
+    def warn(self,msg,callstack=1):
+        inmsg = msg
+        if callstack is not None:
+            inmsg = self.format_call_msg(msg,(callstack + 1))
+        return self.__logger.warn('%s'%(inmsg))
+
+    def debug(self,msg,callstack=1):
+        inmsg = msg
+        if callstack is not None:
+            inmsg = self.format_call_msg(msg,(callstack + 1))
+        return self.__logger.debug('%s'%(inmsg))
+
+    def fatal(self,msg,callstack=1):
+        inmsg = msg
+        if callstack is not None:
+            inmsg = self.format_call_msg(msg,(callstack + 1))
+        return self.__logger.fatal('%s'%(inmsg))
+
+    def call_func(self,funcname,*args,**kwargs):
+        mname = '__main__'
+        fname = funcname
+        try:
+            if '.' not in funcname:
+                m = importlib.import_module(mname)
+            else:
+                sarr = re.split('\.',funcname)
+                mname = '.'.join(sarr[:-1])
+                fname = sarr[-1]
+                m = importlib.import_module(mname)
+        except ImportError as e:
+            self.error('can not load %s'%(mname))
+            return None
+
+        for d in dir(m):
+            if d == fname:
+                val = getattr(m,d)
+                if hasattr(val,'__call__'):
+                    return val(*args,**kwargs)
+        self.error('can not call %s'%(funcname))
+        return None
+
+
+class obcode_test(unittest.TestCase):
+    def setUp(self):
+        if self.__logger is None:
+            self.__logger = _LoggerObject('obcode')
+        self.__tmp_files = []
+        return
+
+    def info(self,msg,callstack=1):
+        return self.__logger.info(msg,(callstack + 1))
+
+    def error(self,msg,callstack=1):
+        return self.__logger.error(msg,(callstack + 1))
+
+    def warn(self,msg,callstack=1):
+        return self.__logger.warn(msg,(callstack + 1))
+
+    def debug(self,msg,callstack=1):
+        return self.__logger.debug(msg,(callstack + 1))
+
+    def fatal(self,msg,callstack=1):
+        return self.__logger.fatal(msg,(callstack + 1))
+
+    def __remove_file_ok(self,filename,description=''):
+        ok = True
+        if 'OBCODE_TEST_RESERVED' in os.environ.keys():
+            ok = False
+        if filename is not None and ok:
+            os.remove(filename)
+        elif filename is not None:
+            self.error('%s %s'%(description,filename))
+        return
+
+    def tearDown(self):
+        if len(self.__tmp_files) > 0:
+            for c in self.__tmp_files:
+                self.__remove_file_ok(c)
+        self.__tmp_files = []
+        return
+
+    @classmethod
+    def setUpClass(cls):
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        return
+
+    def __write_temp_file(self,content,suffix_add=None):
+        if suffix_add is None:
+            suffix_add = '.c'
+        fd , tempf = tempfile.mkstemp(suffix=suffix_add,prefix='parse',dir=None,text=True)
+        os.close(fd)
+        with open(tempf,'w') as f:
+            f.write('%s'%(content))
+        self.info('tempf %s'%(tempf))
+        return tempf
+
+    def __compile_c_file(self,sfile,outfile=None,includedir=[],libs=[],libdir=None):
+        cmds = []
+        if outfile = None:
+            outfile = self.__write_temp_file('',None)
+        obdir = os.path.abspath(os.path.join( os.path.abspath(__file__),'..','include'))
+        if sys.platform == 'win32':
+            objfile = outfile
+            objfile += '.obj'
+            outfile += '.exe'
+
+            cmds = ['cl.exe','/Zi','/Od']
+            if len(includedir) > 0:
+                for c in includedir:
+                    cmds.extend(['/I',c])
+            cmds.extend(['/I',obdir])
+            cmds.append('-F%s'%(objfile),sfile)
+            self.info('run cmds %s'%(cmds))
+            subprocess.check_call(cmds)
+            cmds = ['link.exe','-out:%s'%(outfile), objfile]
+            self.info('run cmds %s'%(cmds))
+            subprocess.check_call(cmds)
+        elif sys.platform == 'cygwin':
+            objfile = outfile
+            objfile += '.o'
+            outfile += '.exe'
+            cmds = ['gcc', '-Wall']
+            if len(includedir) > 0:
+                for c in includedir:
+                    cmds.append('-I%s'%(c))
+            cmds.append('-I%s'%(obdir))
+            cmds.extend(['-c',sfile, '-o', objfile])
+            self.info('run cmds %s'%(cmds))
+            subprocess.check_call(cmds)
+            cmds = ['gcc', '-Wall','-o',outfile,objfile]
+            if libdir is not None:
+                cmds.append('-L%s'%(libdir))
+            if len(libs) > 0:
+                for c in libs:
+                    cmds.append('-l%s'%(c))
+            self.info('run cmds %s'%(cmds))
+            subprocess.check_call(cmds)
+        elif sys.platform == 'linux':
+            objfile = outfile
+            objfile += '.o'
+            cmds = ['gcc', '-Wall']
+            if len(includedir) > 0:
+                for c in includedir:
+                    cmds.append('-I%s'%(c))
+            cmds.append('-I%s'%(obdir))
+            cmds.extend(['-c',sfile, '-o', objfile])
+            self.info('run cmds %s'%(cmds))
+            subprocess.check_call(cmds)
+            cmds = ['gcc', '-Wall','-o',outfile,objfile]
+            if libdir is not None:
+                cmds.append('-L%s'%(libdir))
+            if len(libs) > 0:
+                for c in libs:
+                    cmds.append('-l%s'%(c))
+            self.info('run cmds %s'%(cmds))
+            subprocess.check_call(cmds)
+        else:
+            raise Exception('not supported platform [%s]'%(sys.platform))
+        return outfile
+
+    def __get_output(self,cmds):
+        return cmdpack.run_cmd_output(cmds)
+
+    def __get_write_file(self,sfile,outfile=None,includedir=[],libs=[],appcmds=[],libdir=None):
+        outfile = self.__compile_c_file(sfile,outfile,includedir,libs,libdir)
+        cmds = [outfile]
+        cmds.extend(appcmds)
+        rlines = self.__get_output(cmds)
+        return rlines,outfile
+
+    def __trans_obcode(self,content):
+        sfile = self.__write_temp_file(content)
+        dfile = self.__write_temp_file('')
+
+
+
+    def test_001(self):
+        writecontent='''
+        #include <obcode.h>
+        #include <stdio.h>
+
+        int OB_VAR(ccn) = 2;
+        int OB_FUNC PrintFunc()
+        {
+            int a=1,b=2,c=3;
+
+            OB_CODE(a,b,c);
+            printf("a=%d;b=%d;c=%d;\n",a,b,c);
+            OB_CODE(a,b,c);
+            printf("again a=%d;b=%d;c=%d;\n",a,b,c);
+        }
+
+        int main()
+        {
+            PrintFunc();
+            return 0;
+        }
+        '''
+        return
 
 def debug_release():
     if '-v' in sys.argv[1:]:
@@ -1208,9 +1485,17 @@ def debug_release():
     disttools.release_file('__main__',tofile,[],[[r'##importdebugstart.*',r'##importdebugend.*']],[],repls)
     return
 
+def test_main():
+    sys.argv[1:] = sys.argv[2:]
+    unittest.main()
+    return
+
 def debug_main():
     if '--release' in sys.argv[1:]:
         debug_release()
+        return
+    if len(sys.argv) > 1 and 'test' == sys.argv[1]:
+        test_main()
         return
     main()
     return
