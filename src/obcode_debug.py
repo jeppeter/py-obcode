@@ -1441,7 +1441,7 @@ class obcode_test(unittest.TestCase):
             rlines.append(l)
         return rlines,outfile
 
-    def __trans_obcode(self,content):
+    def __trans_obcode(self,content,obcmds=[]):
         sfile = self.__write_temp_file(content,description='source file')
         dfile = self.__write_temp_file('',description='dst file')
         vbose = None
@@ -1457,13 +1457,13 @@ class obcode_test(unittest.TestCase):
                 for c in range(vint):
                     vbose += 'v'
                 cmds.append(vbose)
-        cmds.extend(['--cob-noline','1'])
+        cmds.extend(obcmds)
         cmds.extend([sfile,dfile])
         subprocess.check_call(cmds)
         return sfile,dfile
 
-    def __compare_output(self,content,includedir=[],libs=[],appcmds=[],libdir=None):
-        sfile,dfile = self.__trans_obcode(content)
+    def __compare_output(self,content,obcmds=[],includedir=[],libs=[],appcmds=[],libdir=None):
+        sfile,dfile = self.__trans_obcode(content,obcmds)
         slines , soutfile = self.__get_write_file(sfile,None,includedir,libs,appcmds,libdir)
         dlines , doutfile = self.__get_write_file(dfile,None,includedir,libs,appcmds,libdir)
         self.assertEqual(len(slines), len(dlines))
