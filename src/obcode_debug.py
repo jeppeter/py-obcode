@@ -1160,12 +1160,14 @@ GL_MAKOB_FILE_VAR='MAKOB_FILE'
 
 def get_makeob_file(fname,makeobfile,args):
     retf = ''
+    cdict = dict()
     if os.path.exists(makeobfile):
         s = read_file(makeobfile)
-        cdict = json.loads(s)
-        cdict = Utf8Encode(cdict).get_val()
-    else:
-        cdict = dict()
+        try:
+            cdict = json.loads(s)
+            cdict = Utf8Encode(cdict).get_val()
+        except:
+            cdict = dict()
     # now to get the code
     fdict = dict()
     if 'files' in cdict.keys():
@@ -1208,6 +1210,40 @@ def makob_handler(args,parser):
     sys.exit(0)
     return
 
+def trans_file_inner(fname,args):
+    cdict = dict()
+    if os.path.exists(fname):
+        s = read_file(fname)
+        try:
+            cdict = json.loads(s)
+            cdict = Utf8Encode(cdict).get_val()
+        except:
+            cdict = dict()
+    # now to get the code
+    if 'files' in cdict.keys():
+        fdict = cdict['files']
+        sortkeys = sorted(fdict.keys())
+        idx = 0
+        while idx < len(sortkeys):
+            ok = sortkeys[idx]
+            ov = fdict[ok]
+            k = re.sub(args.trans_srcdir, args.trans_dstdir, ok)
+            v = re.sub(args.trans_srcdir, args.trans_dstdir, ov)
+            fdict[k] = v
+            del fdict[ok]
+            idx += 1
+        # now rewrite back to files
+        cdict['files'] = fdict
+        write_file(json.dumps(cdict,indent=4), fname)
+    return
+
+def trans_handler(args,parser):
+    set_logging_level(args)
+    for c in args.subnargs:
+        trans_file_inner(c, args)
+    sys.exit(0)
+    return
+
 def main():
     commandline_fmt='''
     {
@@ -1222,6 +1258,11 @@ def main():
             "$" : "+"
         },
         "makob<makob_handler>##srcfile to give the other code file ,this need environment variable MAKOB_FILE to get the ##" : {
+            "$" : "+"
+        },
+        "trans<trans_handler>##translate the srcdir to dstdir in makob file##" : {
+            "srcdir" : "",
+            "dstdir" : "",
             "$" : "+"
         }
     }
