@@ -1229,6 +1229,8 @@ def trans_file_inner(fname,args):
             ov = fdict[ok]
             k = re.sub(args.trans_srcdir, args.trans_dstdir, ok)
             v = re.sub(args.trans_srcdir, args.trans_dstdir, ov)
+            k = os.path.abspath(k)
+            v = os.path.abspath(v)
             fdict[k] = v
             del fdict[ok]
             idx += 1
