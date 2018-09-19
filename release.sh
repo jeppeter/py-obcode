@@ -49,3 +49,4 @@ rm -f $script_dir/obcode.py
 
 $PYTHON $script_dir/src/obcode_debug.py --release
 wait_file_until "$script_dir/obcode.py.touched"
+$PYTHON -m insertcode -p '%PYTHON_OBCODE_STR%' -i $script_dir/src/obcode.mak.tmpl -o $script_dir/obcode.mak makepython $script_dir/obcode.py

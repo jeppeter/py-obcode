@@ -16,7 +16,11 @@ rmdir /Q /S %script_dir%__pycache__ 2>NUL
 %PYTHON% %script_dir%src\obcode_debug.py --release
 call :check_file %script_dir%obcode.py.touched
 
-
+%PYTHON% -m insertcode -p %%PYTHON_OBCODE_STR%% -i %script_dir%src\obcode.mak.tmpl -o %script_dir%obcode.mak makepython %script_dir%obcode.py
+if not errorlevel 0 (
+	echo "can not insert code" >&2
+	goto :fail
+)
 
 goto :end
 
@@ -55,6 +59,8 @@ goto :check_file_again
 :check_file_end
 exit /b 0
 
+:fail
+goto :end
 
 :end
 
