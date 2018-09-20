@@ -20,6 +20,8 @@ $(patsubst %.cpp,%.o, $(call OB_MAK_FILE,d.cpp)):$(call OB_MAK_FILE,d.cpp)
 
 %.o:%.cpp
 	gcc -Wall -c $< -o $@
+	echo $(call UNOB_MAK_FILE,$<)
+	echo $(call UNOB_MAK_FILE_SHORT,$<)
 
 
 clean:

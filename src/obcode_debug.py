@@ -1246,6 +1246,61 @@ def trans_handler(args,parser):
     sys.exit(0)
     return
 
+def get_unmakob_file(fname,makeobfile,args):
+    retf = fname
+    cdict = dict()
+    if os.path.exists(makeobfile):
+        s = read_file(makeobfile)
+        try:
+            cdict = json.loads(s)
+            cdict = Utf8Encode(cdict).get_val()
+        except:
+            cdict = dict()
+    # now to get the code
+    fdict = dict()
+    if 'files' in cdict.keys():
+        fdict = cdict['files']
+    if fname in fdict.values():
+        for k in fdict.keys():
+            if fdict[k] == fname:
+                retf = k
+                break
+    if args.unmakob_short:
+        retf = os.path.basename(retf)
+    return retf
+
+
+def unmakob_handler(args,parser):
+    global GL_MAKOB_FILE_VAR
+    set_logging_level(args)
+    makeobfile = os.path.join(os.getcwd(),'makob.json')
+    if GL_MAKOB_FILE_VAR in os.environ.keys():
+        makeobfile = os.environ[GL_MAKOB_FILE_VAR]
+    s = ''
+    for c in args.subnargs:
+        c = os.path.abspath(c)
+        rets = get_unmakob_file(c,makeobfile,args)
+        if len(s) > 0:
+            s += ' '
+        s += rets
+    sys.stdout.write('%s\n'%(s))
+    sys.exit(0)
+    return
+
+def basename_handler(args,parser):
+    set_logging_level(args)
+    s = ''
+    for c in args.subnargs:
+        c = os.path.abspath(c)
+        rets = os.path.basename(c)
+        if len(s) > 0:
+            s += ' '
+        s += rets
+    sys.stdout.write('%s\n'%(s))
+    sys.exit(0)
+    return
+
+
 def main():
     commandline_fmt='''
     {
@@ -1259,7 +1314,14 @@ def main():
             %s,
             "$" : "+"
         },
-        "makob<makob_handler>##srcfile to give the other code file ,this need environment variable MAKOB_FILE to get the ##" : {
+        "makob<makob_handler>##srcfile to give the other code file ,this need environment variable MAKOB_FILE to get the default (makob.json)##" : {
+            "$" : "+"
+        },
+        "unmakob<unmakob_handler>##dstfile to give the origin ,this need environment variable MAKOB_FILE to get the default (makob.json)##" : {
+            "short" : false,
+            "$" : "+"
+        },
+        "basename<basename_handler>##to make basename##" : {
             "$" : "+"
         },
         "trans<trans_handler>##translate the srcdir to dstdir in makob file##" : {

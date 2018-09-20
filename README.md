@@ -3,6 +3,7 @@
 >  this project is to obfuscated for the c code
 
 ## release history
+* Sep 20th 2018 release 0.1.0 to make UNOB_MAK_FILE with file reversemap
 * Sep 20th 2018 release 0.0.8 to make OB_MAK_FILE with file handle
 * Sep 18th 2018 release 0.0.6 to use OB_INSERT with insert ok
 * Sep 14th 2018 release 0.0.4 to make ok on #line and README ok
@@ -479,6 +480,7 @@ noline | 0 | 1 for not let #line into the file |
 
 ### example
 ```make
+
 TOPDIR=$(shell readlink -f ../.. )
 CURDIR=$(shell readlink -f .)
 PYTHON=python
@@ -494,16 +496,20 @@ all:command
 command:${OBJECTS}
     gcc -Wall -o $@ ${OBJECTS}
 
+$(patsubst %.cpp,%.o, $(call OB_MAK_FILE,c.cpp)):$(call OB_MAK_FILE,c.cpp)
 
-${CURDIR}/%.o:${CURDIR}/%.cpp
-    gcc -Wall -c $< -o $@
+$(patsubst %.cpp,%.o, $(call OB_MAK_FILE,d.cpp)):$(call OB_MAK_FILE,d.cpp)
 
 %.o:%.cpp
     gcc -Wall -c $< -o $@
+    echo $(call UNOB_MAK_FILE,$<)
+    echo $(call UNOB_MAK_FILE_SHORT,$<)
+
 
 clean:
     rm -f ${OBJECTS}
     rm -f command
+
 ```
 
 > run shell
@@ -517,7 +523,15 @@ make all
 rm -f c.o d.o
 rm -f command
 gcc -Wall -c c.cpp -o c.o
+echo c.cpp
+c.cpp
+echo c.cpp
+c.cpp
 gcc -Wall -c d.cpp -o d.o
+echo d.cpp
+d.cpp
+echo d.cpp
+d.cpp
 gcc -Wall -o command c.o d.o
 ```
 
@@ -525,11 +539,19 @@ gcc -Wall -o command c.o d.o
 ```shell
 make O=1 clean && make O=1 all
 
-rm -f /home/bt/sources/py-obcode/example/maklib/WGszGqbmoj.o /home/bt/sources/py-obcode/example/maklib/9JyzvY0bsR.o
+rm -f /home/bt/sources/py-obcode/example/maklib/k4rFRfIHbT.o /home/bt/sources/py-obcode/example/maklib/5tfIVcEWgU.o
 rm -f command
-gcc -Wall -c /home/bt/sources/py-obcode/example/maklib/WGszGqbmoj.cpp -o /home/bt/sources/py-obcode/example/maklib/WGszGqbmoj.o
-gcc -Wall -c /home/bt/sources/py-obcode/example/maklib/9JyzvY0bsR.cpp -o /home/bt/sources/py-obcode/example/maklib/9JyzvY0bsR.o
-gcc -Wall -o command /home/bt/sources/py-obcode/example/maklib/WGszGqbmoj.o /home/bt/sources/py-obcode/example/maklib/9JyzvY0bsR.o
+gcc -Wall -c /home/bt/sources/py-obcode/example/maklib/k4rFRfIHbT.cpp -o /home/bt/sources/py-obcode/example/maklib/k4rFRfIHbT.o
+echo /home/bt/sources/py-obcode/example/maklib/c.cpp
+/home/bt/sources/py-obcode/example/maklib/c.cpp
+echo c.cpp
+c.cpp
+gcc -Wall -c /home/bt/sources/py-obcode/example/maklib/5tfIVcEWgU.cpp -o /home/bt/sources/py-obcode/example/maklib/5tfIVcEWgU.o
+echo /home/bt/sources/py-obcode/example/maklib/d.cpp
+/home/bt/sources/py-obcode/example/maklib/d.cpp
+echo d.cpp
+d.cpp
+gcc -Wall -o command /home/bt/sources/py-obcode/example/maklib/k4rFRfIHbT.o /home/bt/sources/py-obcode/example/maklib/5tfIVcEWgU.o
 ```
 
-> the output filename is random, so please
+> the output filename is random, so when you really run a little different
