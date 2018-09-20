@@ -3,11 +3,12 @@
 >  this project is to obfuscated for the c code
 
 ## release history
+* Sep 20th 2018 release 0.0.8 to make OB_MAK_FILE with file handle
 * Sep 18th 2018 release 0.0.6 to use OB_INSERT with insert ok
 * Sep 14th 2018 release 0.0.4 to make ok on #line and README ok
 * Sep 13th 2018 release 0.0.2 to support for OB code
 
-## howto 
+## howto cob
 
 > first you should include the file obcode.h in the direcotry of include
 > then you changed the file or function
@@ -471,3 +472,64 @@ maxround  | 32 | to form xor bytes times call |
 debug | 0 | debug more information to c file  >= 3 will enable |
 noline | 0 | 1 for not let #line into the file |
 
+## howto makob
+> this file will to run ./release.sh and include obcode.mak
+> it will set PYTHON environment variable and depends on MAKOB_FILE 
+> 
+
+### example
+```make
+TOPDIR=$(shell readlink -f ../.. )
+CURDIR=$(shell readlink -f .)
+PYTHON=python
+
+include ${TOPDIR}/obcode.mak
+#include ${CURDIR}/v.mak
+
+FILES=$(call OB_MAK_FILE,c.cpp d.cpp)
+OBJECTS=$(patsubst %.cpp,%.o, ${FILES})
+
+all:command
+
+command:${OBJECTS}
+    gcc -Wall -o $@ ${OBJECTS}
+
+
+${CURDIR}/%.o:${CURDIR}/%.cpp
+    gcc -Wall -c $< -o $@
+
+%.o:%.cpp
+    gcc -Wall -c $< -o $@
+
+clean:
+    rm -f ${OBJECTS}
+    rm -f command
+```
+
+> run shell
+```shell
+make clean
+make all
+```
+
+> get the result 
+```shell
+rm -f c.o d.o
+rm -f command
+gcc -Wall -c c.cpp -o c.o
+gcc -Wall -c d.cpp -o d.o
+gcc -Wall -o command c.o d.o
+```
+
+> if run shell with OBCODE
+```shell
+make O=1 clean && make O=1 all
+
+rm -f /home/bt/sources/py-obcode/example/maklib/WGszGqbmoj.o /home/bt/sources/py-obcode/example/maklib/9JyzvY0bsR.o
+rm -f command
+gcc -Wall -c /home/bt/sources/py-obcode/example/maklib/WGszGqbmoj.cpp -o /home/bt/sources/py-obcode/example/maklib/WGszGqbmoj.o
+gcc -Wall -c /home/bt/sources/py-obcode/example/maklib/9JyzvY0bsR.cpp -o /home/bt/sources/py-obcode/example/maklib/9JyzvY0bsR.o
+gcc -Wall -o command /home/bt/sources/py-obcode/example/maklib/WGszGqbmoj.o /home/bt/sources/py-obcode/example/maklib/9JyzvY0bsR.o
+```
+
+> the output filename is random, so please
