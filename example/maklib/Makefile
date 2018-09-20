@@ -2,7 +2,7 @@
 TOPDIR=$(shell readlink -f ../.. )
 CURDIR=$(shell readlink -f .)
 
-include ${CURDIR}/v.mak
+include ${TOPDIR}/obcode.mak
 
 FILES=$(call OB_MAK_FILE, c.cpp d.cpp)
 OBJECTS=$(patsubst %.cpp,%.o, ${FILES})

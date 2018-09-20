@@ -22,7 +22,7 @@ if not errorlevel 0 (
 	goto :fail
 )
 
-goto :end
+goto :run_test
 
 :check_file
 
@@ -62,6 +62,13 @@ exit /b 0
 :fail
 goto :end
 
-:end
+:run_test
 
+%PYTHON% %script_dir%test\unit\test.py -f
+if not errorlevel 0 (
+	echo "not run test ok" >&2
+	goto :end
+)
+
+:end
 echo on

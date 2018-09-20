@@ -50,3 +50,16 @@ rm -f $script_dir/obcode.py
 $PYTHON $script_dir/src/obcode_debug.py --release
 wait_file_until "$script_dir/obcode.py.touched"
 $PYTHON -m insertcode -p '%PYTHON_OBCODE_STR%' -i $script_dir/src/obcode.mak.tmpl -o $script_dir/obcode.mak makepython $script_dir/obcode.py
+
+if [ $? -ne 0 ]
+	then
+	echo "not insert code error" >&2
+	exit 4
+fi
+
+$PYTHON $script_dir/test/unit/test.py -f
+if [ $? -ne 0 ]
+	then
+	echo "not test ok" >&2
+	exit 4
+fi
