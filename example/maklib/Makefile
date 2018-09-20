@@ -14,12 +14,13 @@ all:command
 command:${OBJECTS}
 	gcc -Wall -o $@ ${OBJECTS}
 
+$(patsubst %.cpp,%.o, $(call OB_MAK_FILE,c.cpp)):$(call OB_MAK_FILE,c.cpp)
 
-${CURDIR}/%.o:${CURDIR}/%.cpp
-	gcc -Wall -c $< -o $@
+$(patsubst %.cpp,%.o, $(call OB_MAK_FILE,d.cpp)):$(call OB_MAK_FILE,d.cpp)
 
 %.o:%.cpp
 	gcc -Wall -c $< -o $@
+
 
 clean:
 	rm -f ${OBJECTS}
