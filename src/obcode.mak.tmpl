@@ -14,13 +14,16 @@ else
 
 
 define OB_MAK_FILE
-$(shell ${PYTHON} -c "import sys;c='%PYTHON_OBCODE_STR%';exec(c);"  makob "$(1)" )
+$(shell ${PYTHON} -c "import sys;c='%PYTHON_OBCODE_STR%';exec(c);"  makob $(1))
 endef
 
 define OB_TRANS_PATH
 $(shell ${PYTHON} -c "import sys;c='%PYTHON_OBCODE_STR%';exec(c);"  trans --trans-srcdir "$(1)" --trans-dstdir "$(2)" "$(3)")
 endef
 
+define OB_OUT_STR
+$(shell ${PYTHON} -c "import sys;c='%REPLACE_PATTERN%';print('%s'%(c));")
+endef
 
 endif
 

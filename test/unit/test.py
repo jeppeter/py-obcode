@@ -9,6 +9,7 @@ import subprocess
 import cmdpack
 import unittest
 import re
+import json
 
 def read_file(infile=None):
     fin = sys.stdin
@@ -416,13 +417,31 @@ class obcode_test(unittest.TestCase):
     		return
     	# now we should compare
     	topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'))
-    	exampledir = os.path.join(topdir,'example','makelib')
+    	exampledir = os.path.join(topdir,'example','maklib')
     	makejson = os.path.join(exampledir,'makob.json')
-    	os.remove(makejson)
+    	if os.path.exists(makejson):
+    		os.remove(makejson)
     	cmds = ['make','-C',exampledir,'O=1','clean']
-    	subprocess.check_call(cmds)
+    	stdnull = open(os.devnull,'w')
+    	subprocess.check_call(cmds,stdout=stdnull)
     	cmds = ['make','-C',exampledir,'O=1','all']
-    	subprocess.check_call(cmds)
+    	subprocess.check_call(cmds,stdout=stdnull)
+    	stdnull.close()
+    	stdnull = None
+    	cmdbin = os.path.join(exampledir,'command')
+    	jsonfile = os.path.join(exampledir,'makob.json')
+    	cdict = dict()
+    	with open(jsonfile) as f:
+    		cdict = json.load(f)
+    	# this will give the coding 
+    	for l in cmdpack.run_cmd_output([cmdbin]):
+    		l = l.rstrip('\r\n')
+    		valid = False
+    		for k in cdict['files'].keys():
+    			v = cdict['files'][k]
+    			if v == l:
+    				valid = True
+    		self.assertEqual(valid, True)
     	return
 
 

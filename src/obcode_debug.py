@@ -8,7 +8,6 @@ import os
 import shutil
 import random
 import json
-import difflib
 
 
 def set_logging_level(args):
@@ -591,17 +590,18 @@ class COBFile(object):
         if cfg is not None:
             self.__cfg = cfg
 
-        self.__ob_code_expr = re.compile('\s+OB_CODE\s*\(([^)]*)\)')
-        self.__ob_code_spec_expr = re.compile('\s+OB_CODE_SPEC\s*\(([^)]+)\)')
-        self.__ob_func_expr = re.compile('\s+OB_FUNC\s+([a-zA-Z0-9_]+)\s*\(')
-        self.__ob_func_spec_expr = re.compile('\s+OB_FUNC_SPEC\s*\(([^)]+)\)\s+([a-zA-Z0-9_]+)\s*\(')
-        self.__ob_var_expr = re.compile('[\\*\\(\\)\s]+OB_VAR\s*\(([a-zA-Z0-9_]+)\)')
-        self.__ob_var_spec_expr = re.compile('[\\*\\(\\)\s]+OB_VAR_SPEC\s*\([^)]+\)')
-        self.__ob_decl_var_expr = re.compile('[\\*\\(\\)\s]+OB_DECL_VAR\s*\(([^)]+)\)')
-        self.__ob_decl_var_spec_expr = re.compile('[\\*\\(\\)\s]+OB_DECL_VAR_SPEC\s*\(([^)]+)\)')
-        self.__ob_insert_expr = re.compile('^[\s]*OB_INSERT\s*\(\)')
+        # we change the ( to \x28 ) \x29 for it will give error on shell in make file
+        self.__ob_code_expr = re.compile('\s+OB_CODE\s*\\\x28([^\x29]*)\\\x29')
+        self.__ob_code_spec_expr = re.compile('\s+OB_CODE_SPEC\s*\\\x28([^\x29]+)\\\x29')
+        self.__ob_func_expr = re.compile('\s+OB_FUNC\s+([a-zA-Z0-9_]+)\s*\\\x28')
+        self.__ob_func_spec_expr = re.compile('\s+OB_FUNC_SPEC\s*\\\x28([^\x29]+)\\\x29\s+([a-zA-Z0-9_]+)\s*\\\x28')
+        self.__ob_var_expr = re.compile('[\\*\\\x28\\\x29\s]+OB_VAR\s*\\\x28([a-zA-Z0-9_]+)\\\x29')
+        self.__ob_var_spec_expr = re.compile('[\\*\\\x28\\\x29\s]+OB_VAR_SPEC\s*\\\x28([^\x29]+)\\\x29')
+        self.__ob_decl_var_expr = re.compile('[\\*\\\x28\\\x29\s]+OB_DECL_VAR\s*\\\x28([^\x29]+)\\\x29')
+        self.__ob_decl_var_spec_expr = re.compile('[\\*\\\x28\\\x29\s]+OB_DECL_VAR_SPEC\s*\\\x28([^\x29]+)\\\x29')
+        self.__ob_insert_expr = re.compile('^[\s]*OB_INSERT\s*\\\x28\\\x29')
 
-        self.__ob_config_expr = re.compile('^\W*OB_CONFIG\(([^)]+)\)')
+        self.__ob_config_expr = re.compile('^\W*OB_CONFIG\\\x28([^\x29]+)\\\x29')
 
 
         self.__quote_expr = re.compile('"([^"]*)"')
@@ -769,7 +769,7 @@ class COBFile(object):
 
     def __format_ob_func_spec(self,l):
         s = ''
-        m = self.__ob_func_spec_expr.find(l)
+        m = self.__ob_func_spec_expr.findall(l)
         assert(len(m) > 0 and len(m[0]) == 2)
         cfgstr = m[0][0]
         funcname = m[0][1]
@@ -803,7 +803,7 @@ class COBFile(object):
         s = ''
         cfg, leftvars = self.__get_spec_config_variables(l, self.__ob_var_spec_expr)
         tabs = count_tabs(l)
-        s += self.__output_ob_header_comment(l, tabs)
+        s += self.__output_ob_header_comment(l, cfg, tabs)
         s += self.__format_ob_var_inner(l,cfg,leftvars,True,tabs)
         return s
 
