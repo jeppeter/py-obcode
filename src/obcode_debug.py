@@ -1300,6 +1300,35 @@ def basename_handler(args,parser):
     sys.exit(0)
     return
 
+def get_ob_list(fname,args,parser):
+    rets = ''
+    cdict = dict()
+    with open(fname) as fin:
+        try:
+            cdict = json.load(fin)
+        except:
+            cdict = dict()
+    if 'files' in cdict.keys():
+        fdict = cdict['files']
+        for k in fdict.keys():
+            rets += '%s\n'%(fdict[k])
+    return rets
+
+def oblist_handler(args,parser):
+    global GL_MAKOB_FILE_VAR
+    set_logging_level(args)
+    if len(args.subnargs) == 0:
+        makobfile = os.path.join(os.getcwd(),'makob.json')
+        if GL_MAKOB_FILE_VAR in os.environ.keys():
+            makobfile = os.environ[GL_MAKOB_FILE_VAR]
+        rets = get_ob_list(makobfile, args, parser)
+        sys.stdout.write('%s'%(rets))
+    else:
+        for c in args.subnargs:
+            rets = get_ob_list(c, args, parser)
+            sys.stdout.write('%s'%(rets))
+    sys.exit(0)
+    return
 
 def main():
     commandline_fmt='''
@@ -1328,6 +1357,9 @@ def main():
             "srcdir" : "",
             "dstdir" : "",
             "$" : "+"
+        },
+        "oblist<oblist_handler>##to list files ob files##" : {
+            "$" : "*"
         }
     }
     '''
