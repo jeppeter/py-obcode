@@ -19,7 +19,7 @@ $(patsubst %.cpp,%.o, $(call OB_MAK_FILE,c.cpp)):$(call OB_MAK_FILE,c.cpp)
 $(patsubst %.cpp,%.o, $(call OB_MAK_FILE,d.cpp)):$(call OB_MAK_FILE,d.cpp)
 
 %.o:%.cpp
-	gcc -Wall -c $< -o $@
+	@gcc -Wall -c $< -o $@
 	echo $(call UNOB_MAK_FILE,$<)
 	echo $(call UNOB_MAK_FILE_SHORT,$<)
 

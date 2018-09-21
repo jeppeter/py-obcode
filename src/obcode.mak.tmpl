@@ -27,7 +27,7 @@ $(shell ${PYTHON} -c "import sys;c='%PYTHON_OBCODE_STR%';exec(c);"  makob $(1))
 endef
 
 define OB_TRANS_PATH
-$(shell ${PYTHON} -c "import sys;c='%PYTHON_OBCODE_STR%';exec(c);"  trans --trans-srcdir "$(1)" --trans-dstdir "$(2)" "$(3)")
+$(shell ${PYTHON} -c "import sys;c='%PYTHON_OBCODE_STR%';exec(c);"  obtrans --obtrans-srcdir "$(1)" --obtrans-dstdir "$(2)" "$(3)")
 endef
 
 define UNOB_MAK_FILE

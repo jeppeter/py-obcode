@@ -417,6 +417,7 @@ class obcode_test(unittest.TestCase):
     		return
     	# now we should compare
     	topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'))
+        obcodepy = os.path.join(topdir,'obcode.py')
     	exampledir = os.path.join(topdir,'example','maklib')
     	makejson = os.path.join(exampledir,'makob.json')
     	if os.path.exists(makejson):
@@ -426,8 +427,6 @@ class obcode_test(unittest.TestCase):
     	subprocess.check_call(cmds,stdout=stdnull)
     	cmds = ['make','-C',exampledir,'O=1','all']
     	subprocess.check_call(cmds,stdout=stdnull)
-    	stdnull.close()
-    	stdnull = None
     	cmdbin = os.path.join(exampledir,'command')
     	jsonfile = os.path.join(exampledir,'makob.json')
     	cdict = dict()
@@ -442,6 +441,11 @@ class obcode_test(unittest.TestCase):
     			if v == l:
     				valid = True
     		self.assertEqual(valid, True)
+        # now we should get the trans
+        cmds = [sys.executable,obcodepy,'obtrans','--obtrans-srcdir',exampledir, makejson]
+        subprocess.check_call(cmds,stdout=stdnull)
+        stdnull.close()
+        stdnull = None
     	return
 
 

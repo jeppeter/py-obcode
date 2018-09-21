@@ -3,6 +3,7 @@
 >  this project is to obfuscated for the c code
 
 ## release history
+* Sep 21st 2018 release 0.1.4 to make trans handler to obtrans handler
 * Sep 21st 2018 release 0.1.2 to make oblist handler in obcode.py
 * Sep 20th 2018 release 0.1.0 to make UNOB_MAK_FILE with file reversemap
 * Sep 20th 2018 release 0.0.8 to make OB_MAK_FILE with file handle

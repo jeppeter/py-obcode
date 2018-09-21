@@ -1210,7 +1210,7 @@ def makob_handler(args,parser):
     sys.exit(0)
     return
 
-def trans_file_inner(fname,args):
+def obtrans_file_inner(fname,args):
     cdict = dict()
     if os.path.exists(fname):
         s = read_file(fname)
@@ -1227,8 +1227,8 @@ def trans_file_inner(fname,args):
         while idx < len(sortkeys):
             ok = sortkeys[idx]
             ov = fdict[ok]
-            k = re.sub(args.trans_srcdir, args.trans_dstdir, ok)
-            v = re.sub(args.trans_srcdir, args.trans_dstdir, ov)
+            k = re.sub(args.obtrans_srcdir, args.obtrans_dstdir, ok)
+            v = re.sub(args.obtrans_srcdir, args.obtrans_dstdir, ov)
             k = os.path.abspath(k)
             v = os.path.abspath(v)
             fdict[k] = v
@@ -1239,10 +1239,10 @@ def trans_file_inner(fname,args):
         write_file(json.dumps(cdict,indent=4), fname)
     return
 
-def trans_handler(args,parser):
+def obtrans_handler(args,parser):
     set_logging_level(args)
     for c in args.subnargs:
-        trans_file_inner(c, args)
+        obtrans_file_inner(c, args)
     sys.exit(0)
     return
 
@@ -1355,7 +1355,7 @@ def main():
         "basename<basename_handler>##to make basename##" : {
             "$" : "+"
         },
-        "trans<trans_handler>##translate the srcdir to dstdir in makob file##" : {
+        "obtrans<obtrans_handler>##translate the srcdir to dstdir in makob file##" : {
             "srcdir" : "",
             "dstdir" : "",
             "$" : "+"
