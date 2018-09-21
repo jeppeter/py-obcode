@@ -1178,7 +1178,7 @@ def get_makeob_file(fname,makeobfile,args):
         valid = False
         while not valid :
             valid = True
-            retf = os.path.join(os.path.dirname(fname),get_random_name(10))
+            retf = os.path.join(os.path.dirname(fname),get_random_name(random.randint(args.makob_namemin,args.makob_namemax)))
             fc, extf = os.path.splitext(fname)
             retf += extf
             for k in fdict.keys():
@@ -1344,6 +1344,8 @@ def main():
             "$" : "+"
         },
         "makob<makob_handler>##srcfile to give the other code file ,this need environment variable MAKOB_FILE to get the default (makob.json)##" : {
+            "namemin" : 5,
+            "namemax" : 20,
             "$" : "+"
         },
         "unmakob<unmakob_handler>##dstfile to give the origin ,this need environment variable MAKOB_FILE to get the default (makob.json)##" : {
