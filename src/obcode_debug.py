@@ -25,7 +25,7 @@ def set_logging_level(args):
 def read_file(infile=None):
     fin = sys.stdin
     if infile is not None:
-        fin = open(infile,'r+b')
+        fin = open(infile,'rb')
     rets = ''
     for l in fin:
         s = l
@@ -1330,6 +1330,56 @@ def oblist_handler(args,parser):
     sys.exit(0)
     return
 
+def obuntrans_inner(fname,makobfile,args):
+    rets= ''
+    ins = read_file(fname)
+    sarr = re.split('\n', ins)
+    cdict = dict()
+    with open(makobfile) as fin:
+        try:
+            cdict = json.load(fin)
+            cdict = Utf8Encode(cdict).get_val()
+        except:
+            cdict = dict()
+    fdict = dict()
+    if 'files' in cdict.keys():
+        fdict = cdict['files']
+
+    for l in sarr:
+        l = l.rstrip('\r\n')
+        for k in fdict.keys():
+            v = fdict[k]
+            ck = os.path.basename(k)
+            cv = os.path.basename(v)
+            logging.info('ck [%s] cv [%s]'%(ck,cv))
+            l = re.sub(cv, ck, l)
+            s1 = re.split('\.', ck)
+            ok = s1[0]
+            s2 = re.split('\.', cv)
+            ov = s2[0]
+            l = re.sub(ov, ok, l)
+        rets += '%s\n'%(l)
+
+    return rets
+
+def obuntrans_handler(args,parser):
+    global GL_MAKOB_FILE_VAR
+    set_logging_level(args)
+    if len(args.subnargs) < 1:
+        raise Exception('need at least one put file')
+
+    fname = args.subnargs[0]
+    outfile = None
+    if len(args.subnargs) > 1:
+        outfile = args.subnargs[1]
+    makobfile = os.path.join(os.getcwd(),'makob.json')
+    if GL_MAKOB_FILE_VAR in os.environ.keys():
+        makobfile = os.environ[GL_MAKOB_FILE_VAR]
+    rets = obuntrans_inner(fname, makobfile, args)
+    write_file(rets,outfile)
+    sys.exit(0)
+    return
+
 def main():
     commandline_fmt='''
     {
@@ -1362,6 +1412,9 @@ def main():
         },
         "oblist<oblist_handler>##to list files ob files##" : {
             "$" : "*"
+        },
+        "obuntrans<obuntrans_handler>##inputfile [outputfile] to trans file from MAKOB_FILE##" : {
+            "$" : "+"
         }
     }
     '''
