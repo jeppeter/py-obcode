@@ -206,24 +206,24 @@ def is_space_char(c):
     return False
 
 def parse_lbrace(sbyte):
-    if sbyte[0] != ord('('):
-        raise Exception('[%s] not startwith [(]'%(ints_to_string(sbyte)))
+    if sbyte[0] != ord('\x28'):
+        raise Exception('[%s] not startwith [\x28]'%(ints_to_string(sbyte)))
     idx = 1
     rbyte = []
     lbyte = []
     while idx < len(sbyte):
         cbyte = sbyte[idx]
-        if cbyte == ord(')'):
+        if cbyte == ord('\x29'):
             idx += 1
             lbyte = []
             if idx < len(sbyte):
                 lbyte = sbyte[idx:]
             return rbyte,lbyte
-        elif cbyte == ord('('):
+        elif cbyte == ord('\x28'):
             crbyte , lbyte= parse_lbrace(sbyte[idx:])
-            rbyte.append(ord('('))
+            rbyte.append(ord('\x28'))
             rbyte.extend(crbyte)
-            rbyte.append(ord(')'))
+            rbyte.append(ord('\x29'))
             idx = (len(sbyte) - len(lbyte))
         elif cbyte == ord('{'):
             crbyte, lbyte = parse_bracket(sbyte[idx:])
@@ -269,7 +269,7 @@ def parse_lbrace(sbyte):
 
 def parse_bracket(sbyte):
     if sbyte[0] != ord('{'):
-        raise Exception('[%s] not startwith [(]'%(ints_to_string(sbyte)))
+        raise Exception('[%s] not startwith [{]'%(ints_to_string(sbyte)))
     idx = 1
     rbyte = []
     lbyte = []
@@ -281,11 +281,11 @@ def parse_bracket(sbyte):
             if idx < len(sbyte):
                 lbyte = sbyte[idx:]
             return rbyte,lbyte
-        elif cbyte == ord('('):
+        elif cbyte == ord('\x28'):
             crbyte , lbyte= parse_lbrace(sbyte[idx:])
-            rbyte.append(ord('('))
+            rbyte.append(ord('\x28'))
             rbyte.extend(crbyte)
-            rbyte.append(ord(')'))
+            rbyte.append(ord('\x28'))
             idx = (len(sbyte) - len(lbyte))
         elif cbyte == ord('{'):
             crbyte, lbyte = parse_bracket(sbyte[idx:])
@@ -332,19 +332,19 @@ def parse_bracket(sbyte):
 def parse_param(sbyte):
     idx = 0
     lbyte = sbyte
-    if sbyte[0] != ord('('):
-        raise Exception('param [%s] not [(] started '%(ints_to_string(sbyte)))
+    if sbyte[0] != ord('\x28'):
+        raise Exception('param [%s] not [\x28] started '%(ints_to_string(sbyte)))
     params = []
     idx = 1
     curparam = []
     curname = []
     while idx < len(sbyte):
         cbyte = sbyte[idx]
-        if cbyte == ord('('):
+        if cbyte == ord('\x28'):
             rbyte, lbyte = parse_lbrace(sbyte[idx:])
-            curname.append(ord('('))
+            curname.append(ord('\x28'))
             curname.extend(rbyte)
-            curname.append(ord(')'))
+            curname.append(ord('\x29'))
             idx = (len(sbyte) - len(lbyte))
         elif cbyte == ord('{'):
             rbyte, lbyte = parse_bracket(sbyte[idx:])
@@ -352,7 +352,7 @@ def parse_param(sbyte):
             curname.extend(rbyte)
             curname.append(ord('}'))
             idx = (len(sbyte) - len(lbyte))
-        elif cbyte == ord(')'):
+        elif cbyte == ord('\x29'):
             if len(curname) > 0:
                 params.append(ints_to_string(curname))
                 curname = []
