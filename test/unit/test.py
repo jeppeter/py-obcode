@@ -413,46 +413,46 @@ class obcode_test(unittest.TestCase):
         return
 
     def test_A005(self):
-    	if sys.platform == 'win32':
-    		return
-    	# now we should compare
-    	topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'))
+        if sys.platform == 'win32':
+            return
+        # now we should compare
+        topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'))
         obcodepy = os.path.join(topdir,'obcode.py')
-    	exampledir = os.path.join(topdir,'example','maklib')
-    	makejson = os.path.join(exampledir,'makob.json')
-    	if os.path.exists(makejson):
-    		os.remove(makejson)
-    	cmds = ['make','-C',exampledir,'O=1','clean']
-    	stdnull = open(os.devnull,'w')
-    	subprocess.check_call(cmds,stdout=stdnull)
-    	cmds = ['make','-C',exampledir,'O=1','all']
-    	subprocess.check_call(cmds,stdout=stdnull)
-    	cmdbin = os.path.join(exampledir,'command')
-    	jsonfile = os.path.join(exampledir,'makob.json')
-    	cdict = dict()
-    	with open(jsonfile) as f:
-    		cdict = json.load(f)
-    	# this will give the coding 
-    	for l in cmdpack.run_cmd_output([cmdbin]):
-    		l = l.rstrip('\r\n')
-    		valid = False
-    		for k in cdict['files'].keys():
-    			v = cdict['files'][k]
-    			if v == l:
-    				valid = True
-    		self.assertEqual(valid, True)
+        exampledir = os.path.join(topdir,'example','maklib')
+        makejson = os.path.join(exampledir,'makob.json')
+        if os.path.exists(makejson):
+            os.remove(makejson)
+        cmds = ['make','-C',exampledir,'O=1','clean']
+        stdnull = open(os.devnull,'w')
+        subprocess.check_call(cmds,stdout=stdnull)
+        cmds = ['make','-C',exampledir,'O=1','all']
+        subprocess.check_call(cmds,stdout=stdnull)
+        cmdbin = os.path.join(exampledir,'command')
+        jsonfile = os.path.join(exampledir,'makob.json')
+        cdict = dict()
+        with open(jsonfile) as f:
+            cdict = json.load(f)
+        # this will give the coding 
+        for l in cmdpack.run_cmd_output([cmdbin]):
+            l = l.rstrip('\r\n')
+            valid = False
+            for k in cdict['files'].keys():
+                v = cdict['files'][k]
+                if v == l:
+                    valid = True
+            self.assertEqual(valid, True)
         # now we should get the trans
         cmds = [sys.executable,obcodepy,'obtrans','--obtrans-srcdir',exampledir, makejson]
         subprocess.check_call(cmds,stdout=stdnull)
         stdnull.close()
         stdnull = None
-    	return
+        return
 
 
 
 def main():
-	unittest.main()
-	return
+    unittest.main()
+    return
 
 if __name__ == '__main__':
-	main()
+    main()
