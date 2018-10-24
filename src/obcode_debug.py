@@ -47,6 +47,22 @@ def ints_to_string(sbyte):
             cb += chr(sbyte[i])
         return str(cb)
 
+def is_normal_char(cbyte):
+    if cbyte >= ord('0') and cbyte <= ord('9'):
+        return True
+    if cbyte >= ord('a') and cbyte <= ord('z'):
+        return True
+    if cbyte >= ord('A') and cbyte <= ord('Z'):
+        return True
+    if cbyte >= ord('_'):
+        return True
+
+    return False
+
+def is_decimal_char(cbyte):
+    if cbyte >= ord('0') and cbyte <= ord('9'):
+        return True
+    return False
 
 
 def parse_string(sbyte):
@@ -1156,7 +1172,7 @@ class COBFile(object):
         assert(len(m) == 1)
         sbyte = string_to_ints(m[0])
         params , lbyte = parse_param(sbyte)
-        if len(params) != 0:
+        if len(params) != 1:
             raise Exception('[%d][%s] not valid OB_FUNC_SPEC'%(self.__cur_line,l))
         cfgstr = params[0]
         # now to get the left
@@ -1182,7 +1198,7 @@ class COBFile(object):
                     funcbyte.append(cbyte)
                 else:
                     break
-        funcnname = ints_to_string(funcbyte)
+        funcname = ints_to_string(funcbyte)
         sbyte = string_to_ints(cfgstr)
         cfgbyte , lbyte = parse_raw_string(sbyte)
         cfgstr = ints_to_string(cfgbyte)

@@ -42,6 +42,23 @@ def ints_to_string(sbyte):
 		return str(cb)
 
 
+def is_normal_char(cbyte):
+	if cbyte >= ord('0') and cbyte <= ord('9'):
+		return True
+	if cbyte >= ord('a') and cbyte <= ord('z'):
+		return True
+	if cbyte >= ord('A') and cbyte <= ord('Z'):
+		return True
+	if cbyte >= ord('_'):
+		return True
+
+	return False
+
+
+def is_decimal_char(cbyte):
+	if cbyte >= ord('0') and cbyte <= ord('9'):
+		return True
+	return False
 
 def parse_string(sbyte):
 	retbyte=[]

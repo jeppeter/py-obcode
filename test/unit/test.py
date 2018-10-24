@@ -448,6 +448,11 @@ class obcode_test(unittest.TestCase):
         stdnull = None
         return
 
+    def test_A006(self):
+        fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..','example','srcdir','d.c'))
+        content = self.__get_content(fname)
+        self.__compare_output(content)
+        return
 
 
 def main():

@@ -50,6 +50,8 @@ int OB_FUNC_SPEC("namemin=20,namemax=30") PrintFunc2()
 int main(int argc,char* argv[])
 {
 	newvar = 0;
+	argc = argc;
+	argv = argv;
 	PrintFunc();
 	return 0;
 }
