@@ -150,10 +150,68 @@ def __parse_raw_string(sbyte):
 	return retbyte,leftbyte
 
 def __parse_single_quote(sbyte):
-	return
+	if sbyte[0] != ord('\''):
+		raise Exception('[%s] not startswith [\']'%(ints_to_string(sbyte)))
+	idx = 1
+	retbyte= []
+	lbyte = []
+	while idx < len(sbyte):
+		cbyte = sbyte[idx]
+		if cbyte == ord('\''):
+			idx += 1
+			if idx < len(sbyte):
+				lbyte = sbyte[idx:]
+			return retbyte,lbyte
+		elif cbyte == '\\':
+			idx += 1
+			if idx >= len(sbyte):
+				break
+			nbyte = sbyte[idx]
+			if nbyte == ord('b'):
+				retbyte.append(ord('\b'))
+			elif nbyte == ord('t'):
+				retbyte.append(ord('\t'))
+			elif nbyte == ord('n'):
+				retbyte.append(ord('\n'))
+			elif nbyte == ord('r'):
+				retbyte.append(ord('\r'))
+			elif nbyte == ord('"'):
+				retbyte.append(ord('"'))
+			elif nbyte == ord('\''):
+				retbyte.append(ord('\''))
+			else:
+				retbyte.append(nbyte)
+		else:
+			retbyte.append(cbyte)
+		idx += 1
+	raise Exception('not closed single quote [%s]'%(ints_to_string(sbyte)))
+	return retbyte,[]
 
 def __parse_raw_single_quote(sbyte):
-	return
+	if sbyte[0] != ord('\''):
+		raise Exception('[%s] not startswith [\']'%(ints_to_string(sbyte)))
+	idx = 1
+	retbyte= []
+	lbyte = []
+	while idx < len(sbyte):
+		cbyte = sbyte[idx]
+		if cbyte == ord('\''):
+			idx += 1
+			if idx < len(sbyte):
+				lbyte = sbyte[idx:]
+			return retbyte,lbyte
+		elif cbyte == '\\':
+			idx += 1
+			if idx >= len(sbyte):
+				break
+			nbyte = sbyte[idx]
+			retbyte.append(cbyte)
+			retbyte.append(nbyte)
+		else:
+			retbyte.append(cbyte)
+		idx += 1
+	raise Exception('not closed single quote [%s]'%(ints_to_string(sbyte)))
+	return retbyte,[]
 
 def __is_common_char(c):
 	if c >= ord('a') and c <= ord('z'):
@@ -171,6 +229,10 @@ def __is_common_char(c):
 		return True
 	if c == ord('?') or c == ord(':') or c == ord(';'):
 		return True
+	if c == ord('|') or c == ord('&') or c == ord('^') or \
+		c == ord('%') or c == ord('!') or c == ord('~') or \
+		c == ord('.') or c == ord('[') or c == ord(']') :
+		return True
 	return False
 
 def __is_space_char(c):
@@ -179,11 +241,11 @@ def __is_space_char(c):
 	return False
 
 def __parse_lbrace(sbyte):
-	rbyte = []
 	if sbyte[0] != ord('('):
 		raise Exception('[%s] not startwith [(]'%(ints_to_string(sbyte)))
 	idx = 1
 	rbyte = []
+	lbyte = []
 	while idx < len(sbyte):
 		cbyte = sbyte[idx]
 		if cbyte == ord(')'):
@@ -209,6 +271,13 @@ def __parse_lbrace(sbyte):
 			rbyte.append(ord('"'))
 			rbyte.extend(crbyte)
 			rbyte.append(ord('"'))
+			idx = (len(sbyte) - len(lbyte))
+		elif cbyte == ord('\''):
+			crbyte , lbyte = __parse_raw_single_quote(sbyte[idx:])
+			rbyte.append(ord('\''))
+			rbyte.extend(crbyte)
+			rbyte.append(ord('\''))
+			idx = (len(sbyte) - len(lbyte))
 		elif (idx + 1) < len(sbyte):
 			nbyte = sbyte[(idx + 1)]
 			if cbyte == ord('/') and nbyte == ord('/'):
@@ -216,15 +285,16 @@ def __parse_lbrace(sbyte):
 			elif cbyte == ord('/') and nbyte == ord('*'):
 				crbyte, lbyte = __parse_comment(sbyte[idx:])
 				idx = (len(sbyte) - len(lbyte))
-			elif __is_common_char(cbyte):
+			elif __is_common_char(cbyte) or __is_space_char(cbyte) or cbyte == ord(','):
 				rbyte.append(cbyte)
 				idx += 1
 			else:
 				raise Exception('[%s] not accept [%d]'%(ints_to_string(sbyte), idx))
-		elif __is_common_char(cbyte):
+		elif __is_common_char(cbyte) or cbyte == ord(','):
 			rbyte.append(cbyte)
 			idx += 1
 		elif __is_space_char(cbyte):
+			rbyte.append(cbyte)
 			idx += 1
 		else:
 			raise Exception('[%s] not accept [%d]'%(ints_to_string(sbyte),idx))
@@ -233,11 +303,11 @@ def __parse_lbrace(sbyte):
 
 
 def __parse_bracket(sbyte):
-	rbyte = []
-	if sbyte[0] != ord('('):
+	if sbyte[0] != ord('{'):
 		raise Exception('[%s] not startwith [(]'%(ints_to_string(sbyte)))
 	idx = 1
 	rbyte = []
+	lbyte = []
 	while idx < len(sbyte):
 		cbyte = sbyte[idx]
 		if cbyte == ord('}'):
@@ -263,6 +333,13 @@ def __parse_bracket(sbyte):
 			rbyte.append(ord('"'))
 			rbyte.extend(crbyte)
 			rbyte.append(ord('"'))
+			idx = (len(sbyte) - len(lbyte))
+		elif cbyte == ord('\''):
+			crbyte , lbyte = __parse_raw_single_quote(sbyte[idx:])
+			rbyte.append(ord('\''))
+			rbyte.extend(crbyte)
+			rbyte.append(ord('\''))
+			idx = (len(sbyte) - len(lbyte))
 		elif (idx + 1) < len(sbyte):
 			nbyte = sbyte[(idx + 1)]
 			if cbyte == ord('/') and nbyte == ord('/'):
@@ -270,15 +347,16 @@ def __parse_bracket(sbyte):
 			elif cbyte == ord('/') and nbyte == ord('*'):
 				crbyte, lbyte = __parse_comment(sbyte[idx:])
 				idx = (len(sbyte) - len(lbyte))
-			elif __is_common_char(cbyte):
+			elif __is_common_char(cbyte) or __is_space_char(cbyte) or cbyte == ord(','):
 				rbyte.append(cbyte)
 				idx += 1
 			else:
 				raise Exception('[%s] not accept [%d]'%(ints_to_string(sbyte), idx))
-		elif __is_common_char(cbyte):
+		elif __is_common_char(cbyte) or cbyte == ord(','):
 			rbyte.append(cbyte)
 			idx += 1
 		elif __is_space_char(cbyte):
+			rbyte.append(crbyte)
 			idx += 1
 		else:
 			raise Exception('[%s] not accept [%d]'%(ints_to_string(sbyte),idx))
@@ -304,7 +382,7 @@ def __parse_param(sbyte):
 			curname.append(ord(')'))
 			idx = (len(sbyte) - len(lbyte))
 		elif cbyte == ord('{'):
-			rbyte, lbyte = __parse_bracke(sbyte[idx:])
+			rbyte, lbyte = __parse_bracket(sbyte[idx:])
 			curname.append(ord('{'))
 			curname.extend(rbyte)
 			curname.append(ord('}'))
@@ -319,19 +397,18 @@ def __parse_param(sbyte):
 				lbytes = sbyte[idx:]
 			return params,lbytes
 		elif cbyte == ord('"'):
-			rbyte, lbyte = __parse_string(sbyte[idx:])
+			rbyte, lbyte = __parse_raw_string(sbyte[idx:])
 			curname.append(ord('"'))
 			curname.extend(rbyte)
 			curname.append(ord('"'))
 			idx = (len(sbyte) - len(lbyte))
 		elif cbyte == ord(','):
 			if len(curname) == 0:
-				raise Exception('[%s] has empty param'%(ints_to_string(sbyte)))
+				raise Exception('[%s] has empty param [%s]'%(ints_to_string(sbyte), ints_to_string(sbyte[idx:])))
 			params.append(ints_to_string(curname))
 			curname = []
 			idx += 1
-		elif cbyte == ord(' ') or \
-			cbyte == ord('\t'):
+		elif __is_space_char(cbyte):
 			idx += 1
 		elif (idx + 1) < len(sbyte) :
 			nbyte = sbyte[(idx + 1)]
@@ -342,6 +419,8 @@ def __parse_param(sbyte):
 				idx = (len(sbyte) - len(lbyte))
 			elif __is_common_char(cbyte):
 				curname.append(cbyte)
+				idx += 1
+			elif __is_space_char(cbyte):
 				idx += 1
 			else:
 				raise Exception('[%s] on the [%d] not support [%s]'%())
@@ -369,12 +448,29 @@ def string_handler(args,parser):
 
 def param_handler(args,parser):
 	set_logging_level(args)
+	idx = 0
 	for s in args.subnargs:
 		sbyte = string_to_ints(s)
-		params, lbyte = __parse_param(sbyte)
+		startidx=0
+		while startidx < len(sbyte):
+			if sbyte[startidx] == ord('('):				
+				break
+			startidx += 1
+		params, lbyte = __parse_param(sbyte[startidx:])
 		ls = ints_to_string(lbyte)
-		sys.stdout.write('params [%s] lbyte[%s]\n'%(params,ls))
-
+		cs = ''
+		cs += '[%s][%s]'%(idx,s)
+		cs += ' params('
+		i = 0
+		for c in params:
+			if i> 0:
+				cs += ','
+			cs += '%s'%(c)
+			i += 1
+		cs += ')'
+		cs += 'left [%s]'%(ls)
+		sys.stdout.write('%s\n'%(cs))
+		idx += 1
 	sys.exit(0)
 	return
 
