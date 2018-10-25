@@ -930,7 +930,9 @@ class COBFile(object):
             self.__cur_line += 1
             if self.__get_filter_expr_not_defined(l, self.__ob_config_expr):
                 m = self.__ob_config_expr.findall(l)
-                sbyte = string_to_ints(m[0])
+                assert(len(m) == 1)
+                assert(len(m[0]) > 1)
+                sbyte = string_to_ints(m[0][1])
                 params , lbyte = parse_param(sbyte)
                 if len(params) != 1 :
                     raise Exception('[%d][%s]no params in OB_CONFIG'%(self.__cur_line, l))
@@ -987,26 +989,26 @@ class COBFile(object):
 
         # we change the ( to \x28 ) \x29 for it will give error on shell in make file
         #self.__ob_code_expr = re.compile('\s+OB_CODE\s*\\\x28([^\x29]*)\\\x29')
-        self.__ob_code_expr = re.compile('\s+OB_CODE\s*(\\\x28.*)$')
+        self.__ob_code_expr = re.compile('\s+(OB_CODE\s*(\\\x28.*))$')
         #self.__ob_code_spec_expr = re.compile('\s+OB_CODE_SPEC\s*\\\x28([^\x29]+)\\\x29')
-        self.__ob_code_spec_expr = re.compile('\s+OB_CODE_SPEC\s*(\\\x28.*)$')
+        self.__ob_code_spec_expr = re.compile('\s+(OB_CODE_SPEC\s*(\\\x28.*))$')
         #self.__ob_func_expr = re.compile('\s+OB_FUNC\s+([a-zA-Z0-9_]+)\s*\\\x28')
         self.__ob_func_expr = re.compile('\s+OB_FUNC\s+([a-zA-Z0-9_]+)\s*\\\x28')
         #self.__ob_func_spec_expr = re.compile('\s+OB_FUNC_SPEC\s*\\\x28([^\x29]+)\\\x29\s+([a-zA-Z0-9_]+)\s*\\\x28')
-        self.__ob_func_spec_expr = re.compile('\s+OB_FUNC_SPEC\s*(\\\x28.*)$')
+        self.__ob_func_spec_expr = re.compile('\s+(OB_FUNC_SPEC\s*(\\\x28.*)).*$')
         #self.__ob_var_expr = re.compile('[\\*\\\x28\\\x29\s]+OB_VAR\s*\\\x28([a-zA-Z0-9_]+)\\\x29')
-        self.__ob_var_expr = re.compile('[\\*\\\x28\\\x29\s]+OB_VAR\s*(\\\x28.*)$')
+        self.__ob_var_expr = re.compile('[\\*\\\x28\\\x29\s]+(OB_VAR\s*(\\\x28.*))$')
         #self.__ob_var_spec_expr = re.compile('[\\*\\\x28\\\x29\s]+OB_VAR_SPEC\s*\\\x28([^\x29]+)\\\x29')
-        self.__ob_var_spec_expr = re.compile('[\\*\\\x28\\\x29\s]+OB_VAR_SPEC\s*(\\\x28.*)$')
+        self.__ob_var_spec_expr = re.compile('[\\*\\\x28\\\x29\s]+(OB_VAR_SPEC\s*(\\\x28.*))$')
         #self.__ob_decl_var_expr = re.compile('[\\*\\\x28\\\x29\s]+OB_DECL_VAR\s*\\\x28([^\x29]+)\\\x29')
-        self.__ob_decl_var_expr = re.compile('[\\*\\\x28\\\x29\s]+OB_DECL_VAR\s*(\\\x28.*)$')
+        self.__ob_decl_var_expr = re.compile('[\\*\\\x28\\\x29\s]+(OB_DECL_VAR\s*(\\\x28.*))$')
         #self.__ob_decl_var_spec_expr = re.compile('[\\*\\\x28\\\x29\s]+OB_DECL_VAR_SPEC\s*\\\x28([^\x29]+)\\\x29')
-        self.__ob_decl_var_spec_expr = re.compile('[\\*\\\x28\\\x29\s]+OB_DECL_VAR_SPEC\s*(\\\x28.*)$')
+        self.__ob_decl_var_spec_expr = re.compile('[\\*\\\x28\\\x29\s]+(OB_DECL_VAR_SPEC\s*(\\\x28.*))$')
         #self.__ob_insert_expr = re.compile('^[\s]*OB_INSERT\s*\\\x28\\\x29')
-        self.__ob_insert_expr = re.compile('^[\s]*OB_INSERT\s*\\\x28\\\x29')
+        self.__ob_insert_expr = re.compile('^[\s]*(OB_INSERT\s*\\\x28\\\x29)')
 
         #self.__ob_config_expr = re.compile('^\W*OB_CONFIG\\\x28([^\x29]+)\\\x29')
-        self.__ob_config_expr = re.compile('^\W*OB_CONFIG(\\\x28.*)$')
+        self.__ob_config_expr = re.compile('^\W*(OB_CONFIG(\\\x28.*))$')
 
 
         self.__quote_expr = re.compile('"([^"]*)"')
@@ -1028,16 +1030,21 @@ class COBFile(object):
     def __get_variables(self,l,expr1):
         variables = expr1.findall(l)
         # we do this on the increment
+        assert(len(variables) == 1)
+        assert(len(variables[0]) > 1)
         cfgattr = self.__cfg
-        sbyte = string_to_ints(variables[0])
+        sbyte = string_to_ints(variables[0][1])
         params, lbyte = parse_param(sbyte)
-        return cfgattr,params
+        before = l.replace(variables[0][0],'',1)
+        return cfgattr,params,before,ints_to_string(lbyte)
 
     def __get_spec_config_variables(self,l,expr1):
         leftvars = []
         cfgattr = None
         variables = expr1.findall(l)
-        sbyte = string_to_ints(variables[0])
+        assert(len(variables) == 1)
+        assert(len(variables[0]) > 1)
+        sbyte = string_to_ints(variables[0][1])
         params,lbyte = parse_param(sbyte)
         if len(params) < 1:
             raise Exception('at [%d] line [%s] not valid for specific'%(self.__cur_line,l))
@@ -1048,7 +1055,9 @@ class COBFile(object):
         retparams = []
         if len(params) > 1:
             retparams = params[1:]
-        return cfgattr,retparams
+        before = l.replace(variables[0][0],'',1)
+        after = ints_to_string(lbyte)
+        return cfgattr,retparams, before,after
 
 
     def __format_ob_code_inner(self,varsarr,cfg,tabs=0):
@@ -1128,7 +1137,7 @@ class COBFile(object):
 
     def __format_ob_code_spec(self,l):
         s = ''
-        curcfg, cvars = self.__get_spec_config_variables(l,self.__ob_code_spec_expr)
+        curcfg, cvars, before, after = self.__get_spec_config_variables(l,self.__ob_code_spec_expr)
         if len(cvars) == 0:
             raise Exception('[%d][%s] not valid code'%(self.__cur_line,l))
         tabs = count_tabs(l)
@@ -1139,7 +1148,7 @@ class COBFile(object):
 
     def __format_ob_code(self,l):
         s = ''
-        cfg , varsarr = self.__get_variables(l, self.__ob_code_expr)
+        cfg , varsarr, before,after = self.__get_variables(l, self.__ob_code_expr)
         tabs = count_tabs(l)
         s += format_line('',tabs)
         s += self.__output_ob_header_comment(l, cfg, tabs)
@@ -1170,7 +1179,8 @@ class COBFile(object):
         m = self.__ob_func_spec_expr.findall(l)
         assert(m is not None)
         assert(len(m) == 1)
-        sbyte = string_to_ints(m[0])
+        assert(len(m[0]) > 1)
+        sbyte = string_to_ints(m[0][1])
         params , lbyte = parse_param(sbyte)
         if len(params) != 1:
             raise Exception('[%d][%s] not valid OB_FUNC_SPEC'%(self.__cur_line,l))
@@ -1228,7 +1238,7 @@ class COBFile(object):
 
     def __format_ob_var_spec(self,l):
         s = ''
-        cfg, leftvars = self.__get_spec_config_variables(l, self.__ob_var_spec_expr)
+        cfg, leftvars, before,after = self.__get_spec_config_variables(l, self.__ob_var_spec_expr)
         tabs = count_tabs(l)
         s += self.__output_ob_header_comment(l, cfg, tabs)
         s += self.__format_ob_var_inner(l,cfg,leftvars,True,tabs)
@@ -1236,7 +1246,7 @@ class COBFile(object):
 
     def __format_ob_var(self,l):
         s = ''
-        cfg ,leftvars = self.__get_variables(l, self.__ob_var_expr)
+        cfg ,leftvars, before, after = self.__get_variables(l, self.__ob_var_expr)
         tabs = count_tabs(l)
         s += self.__output_ob_header_comment(l, cfg, tabs)
         s += self.__format_ob_var_inner(l,cfg,leftvars,False,tabs)
@@ -1263,7 +1273,7 @@ class COBFile(object):
 
     def __format_ob_decl_var(self,l):
         s = ''
-        cfg, leftvars = self.__get_variables(l, self.__ob_decl_var_expr)
+        cfg, leftvars, before, after = self.__get_variables(l, self.__ob_decl_var_expr)
         tabs = count_tabs(l)
         s += self.__output_ob_header_comment(l, cfg, tabs)
         s += self.__format_ob_decl_var_inner(l,cfg,leftvars,False,tabs)
@@ -1271,7 +1281,7 @@ class COBFile(object):
 
     def __format_ob_decl_var_spec(self,l):
         s = ''
-        cfg, leftvars = self.__get_spec_config_variables(l, self.__ob_decl_var_spec_expr)
+        cfg, leftvars, before ,after = self.__get_spec_config_variables(l, self.__ob_decl_var_spec_expr)
         tabs = count_tabs(l)
         s += self.__output_ob_header_comment(l, cfg, tabs)
         s += self.__format_ob_decl_var_inner(l,cfg,leftvars,True,tabs)
