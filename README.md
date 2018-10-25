@@ -3,6 +3,7 @@
 >  this project is to obfuscated for the c code
 
 ## release history
+* Oct 25th 2018 release 0.1.8 to make OB_CONSTANT_STR OB_CONSTANT_STR_SPEC OB_CONSTANT_WSTR OB_CONSTANT_WSTR_SPEC
 * Oct 24th 2018 release 0.1.6 to make new parse for parameter with parse_param function
 * Sep 21st 2018 release 0.1.4 to make trans handler to obtrans handler
 * Sep 21st 2018 release 0.1.2 to make oblist handler in obcode.py
@@ -457,6 +458,10 @@ OB_CODE | to insert non-sense code  with current used variable| OB_CODE(x,b,c) |
 OB_CODE_SPEC | to insert non-sense code  with current used variable with config | OB_CODE_SPEC("funcmin=10,funcmax=20",x,b,c) |
 OB_CONFIG | to give the configuration for current c file | OB_CONFIG("namemin=30,namemax=90") |
 OB_INSERT | give the insert line in the file ,if no this ,will insert after #include appearing first empty line | OB_INSERT() |
+OB_CONSTANT_STR | give the constant replace for the original format  | OB_CONSTANT_STR("hello world %s\n", "good"); |
+OB_CONSTANT_STR_SPEC | give the constant replace for the original format  with specified config | OB_CONSTANT_STR_SPEC("funcname=10","hello world %s\n", "good"); |
+OB_CONSTANT_WSTR | give the constant replace for the original format of wide string  | OB_CONSTANT_WSTR(L"hello world %hs\n", "good"); |
+OB_CONSTANT_WSTR_SPEC | give the constant replace for the original format of wide string with specified config | OB_CONSTANT_WSTR_SPEC("funcname=10",L"hello world %hs\n", "good"); |
 
 
 ## config specification
