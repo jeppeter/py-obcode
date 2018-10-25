@@ -346,6 +346,22 @@ class obcode_test(unittest.TestCase):
             idx += 1
         return
 
+    def __compare_not_same_output(self,content,obcmds=[],includedir=[],libs=[],appcmds=[],libdir=None):
+        sfile,dfile = self.__trans_obcode(content,obcmds)
+        slines , soutfile = self.__get_write_file(sfile,None,includedir,libs,appcmds,libdir)
+        dlines , doutfile = self.__get_write_file(dfile,None,includedir,libs,appcmds,libdir)
+        samed = True
+        if len(slines) != len(dlines):
+            samed = False
+        idx = 0
+        while  samed and (idx < len(slines)):
+            if slines[idx] != dlines[idx]:
+                samed = False
+            idx += 1
+        self.assertEqual(samed, False)
+        return
+
+
     def __compare_output_thread(self,content,obcmds=[],includedir=[],libs=[],appcmds=[],libdir=None):
         sfile,dfile = self.__trans_obcode(content,obcmds)
         threadlibs=[]
@@ -452,6 +468,12 @@ class obcode_test(unittest.TestCase):
         fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..','example','srcdir','d.c'))
         content = self.__get_content(fname)
         self.__compare_output(content)
+        return
+
+    def test_A007(self):
+        fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..','example','srcdir','const.c'))
+        content = self.__get_content(fname)
+        self.__compare_not_same_output(content)
         return
 
 

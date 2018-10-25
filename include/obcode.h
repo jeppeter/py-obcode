@@ -21,6 +21,13 @@ extern "C" {
 #define  OB_INSERT()
 #define  OB_INSERT_SPEC(x)
 
+#define  OB_CONSTANT_STR(...)           __VA_ARGS__
+#define  OB_CONSTANT_WSTR(...)          __VA_ARGS__
+
+#define  OB_CONSTANT_STR_SPEC(x,...)    __VA_ARGS__
+#define  OB_CONSTANT_WSTR_SPEC(x,...)   __VA_ARGS__
+
+
 #if defined(_MSC_VER)
 #include <Windows.h>
 #define  OB_TYPEOF(x)                       decltype(x)

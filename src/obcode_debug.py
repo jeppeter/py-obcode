@@ -810,7 +810,7 @@ class COBAttr(object):
 
         if len(self.prefix) == 0:
             raise Exception('prefix [] empty')
-
+        logging.info('funcmin [%s] funcmax [%s]'%(self.funcmin,self.funcmax))
         if self.funcmin > self.funcmax or self.funcmin < 0 or self.funcmax <= 0:
             raise Exception('funcmin [%d] or funcmax [%d] not valid'%(self.funcmin, self.funcmax))
         return
@@ -988,26 +988,20 @@ class COBFile(object):
             self.__cfg = cfg
 
         # we change the ( to \x28 ) \x29 for it will give error on shell in make file
-        #self.__ob_code_expr = re.compile('\s+OB_CODE\s*\\\x28([^\x29]*)\\\x29')
         self.__ob_code_expr = re.compile('\s+(OB_CODE\s*(\\\x28.*))$')
-        #self.__ob_code_spec_expr = re.compile('\s+OB_CODE_SPEC\s*\\\x28([^\x29]+)\\\x29')
         self.__ob_code_spec_expr = re.compile('\s+(OB_CODE_SPEC\s*(\\\x28.*))$')
-        #self.__ob_func_expr = re.compile('\s+OB_FUNC\s+([a-zA-Z0-9_]+)\s*\\\x28')
         self.__ob_func_expr = re.compile('\s+OB_FUNC\s+([a-zA-Z0-9_]+)\s*\\\x28')
-        #self.__ob_func_spec_expr = re.compile('\s+OB_FUNC_SPEC\s*\\\x28([^\x29]+)\\\x29\s+([a-zA-Z0-9_]+)\s*\\\x28')
         self.__ob_func_spec_expr = re.compile('\s+(OB_FUNC_SPEC\s*(\\\x28.*)).*$')
-        #self.__ob_var_expr = re.compile('[\\*\\\x28\\\x29\s]+OB_VAR\s*\\\x28([a-zA-Z0-9_]+)\\\x29')
         self.__ob_var_expr = re.compile('[\\*\\\x28\\\x29\s]+(OB_VAR\s*(\\\x28.*))$')
-        #self.__ob_var_spec_expr = re.compile('[\\*\\\x28\\\x29\s]+OB_VAR_SPEC\s*\\\x28([^\x29]+)\\\x29')
         self.__ob_var_spec_expr = re.compile('[\\*\\\x28\\\x29\s]+(OB_VAR_SPEC\s*(\\\x28.*))$')
-        #self.__ob_decl_var_expr = re.compile('[\\*\\\x28\\\x29\s]+OB_DECL_VAR\s*\\\x28([^\x29]+)\\\x29')
         self.__ob_decl_var_expr = re.compile('[\\*\\\x28\\\x29\s]+(OB_DECL_VAR\s*(\\\x28.*))$')
-        #self.__ob_decl_var_spec_expr = re.compile('[\\*\\\x28\\\x29\s]+OB_DECL_VAR_SPEC\s*\\\x28([^\x29]+)\\\x29')
         self.__ob_decl_var_spec_expr = re.compile('[\\*\\\x28\\\x29\s]+(OB_DECL_VAR_SPEC\s*(\\\x28.*))$')
-        #self.__ob_insert_expr = re.compile('^[\s]*OB_INSERT\s*\\\x28\\\x29')
         self.__ob_insert_expr = re.compile('^[\s]*(OB_INSERT\s*\\\x28\\\x29)')
+        self.__ob_constant_str_expr = re.compile('.*(OB_CONSTANT_STR\s*(\\\x28.*))$')
+        self.__ob_constant_wstr_expr = re.compile('.*(OB_CONSTANT_WSTR\s*(\\\x28.*))$')
+        self.__ob_constant_str_spec_expr = re.compile('.*(OB_CONSTANT_STR_SPEC\s*(\\\x28.*))$')
+        self.__ob_constant_wstr_spec_expr = re.compile('.*(OB_CONSTANT_WSTR_SPEC\s*(\\\x28.*))$')
 
-        #self.__ob_config_expr = re.compile('^\W*OB_CONFIG\\\x28([^\x29]+)\\\x29')
         self.__ob_config_expr = re.compile('^\W*(OB_CONFIG(\\\x28.*))$')
 
 
@@ -1048,6 +1042,7 @@ class COBFile(object):
         params,lbyte = parse_param(sbyte)
         if len(params) < 1:
             raise Exception('at [%d] line [%s] not valid for specific'%(self.__cur_line,l))
+        after = ints_to_string(lbyte)
         cfgstr,lbyte = parse_raw_string(string_to_ints(params[0]))
         cfgstr = ints_to_string(cfgstr)
         logging.info('cfgstr [%s]'%(cfgstr))
@@ -1056,7 +1051,6 @@ class COBFile(object):
         if len(params) > 1:
             retparams = params[1:]
         before = l.replace(variables[0][0],'',1)
-        after = ints_to_string(lbyte)
         return cfgattr,retparams, before,after
 
 
@@ -1287,6 +1281,52 @@ class COBFile(object):
         s += self.__format_ob_decl_var_inner(l,cfg,leftvars,True,tabs)
         return s
 
+    def __format_ob_constant_str_inner(self,l,cfg,before,after,tabs):
+        s = ''
+        s += format_line('/*[%s]*/'%(format_comment_line(l)),tabs)
+        if cfg.noline == 0:
+            s += format_line('#line %d "%s"'%(self.__cur_line,quote_string(self.__srcfile)),0)        
+        s += '%s"[%%s:%%d]\\n",__FILE__,__LINE__%s\n'%(before,after)
+        return s
+
+    def __format_ob_constant_str(self,l):
+        s = ''
+        cfg , leftvars, before , after = self.__get_variables(l, self.__ob_constant_str_expr)
+        tabs = count_tabs(l)
+        s += self.__format_ob_constant_str_inner(l,cfg,before,after,tabs)
+        return s
+
+    def __format_ob_constant_str_spec(self,l):
+        s = ''
+        cfg , leftvars, before , after = self.__get_spec_config_variables(l, self.__ob_constant_str_spec_expr)
+        tabs = count_tabs(l)
+        s += self.__format_ob_constant_str_inner(l,cfg,before,after,tabs)
+        return s
+
+
+    def __format_ob_constant_wstr_inner(self,l,cfg,before,after,tabs):
+        s = ''
+        s += format_line('/*[%s]*/'%(format_comment_line(l)),tabs)
+        if cfg.noline == 0:
+            s += format_line('#line %d "%s"'%(self.__cur_line,quote_string(self.__srcfile)),0)        
+        s += '%sL"[%%hs:%%d]\\n",__FILE__,__LINE__%s\n'%(before,after)
+        return s
+
+
+    def __format_ob_constant_wstr(self,l):
+        s = ''
+        cfg , leftvars , before , after = self.__get_variables(l, self.__ob_constant_wstr_expr)
+        tabs = count_tabs(l)
+        s += self.__format_ob_constant_wstr_inner(l,cfg,before,after,tabs)
+        return s
+
+    def __format_ob_constant_wstr_spec(self,l):
+        s = ''
+        cfg , leftvars , before , after = self.__get_spec_config_variables(l, self.__ob_constant_wstr_spec_expr)
+        tabs = count_tabs(l)
+        s += self.__format_ob_constant_wstr_inner(l,cfg,before,after,tabs)
+        return s
+
 
     def __output_pre_functions(self,cfg):
         rets = ''
@@ -1376,6 +1416,18 @@ class COBFile(object):
             elif self.__get_filter_expr_not_defined(l, self.__ob_decl_var_spec_expr):
                 logging.info('')
                 rets += self.__format_ob_decl_var_spec(l)
+            elif self.__get_filter_expr_not_defined(l, self.__ob_constant_str_expr):
+                logging.info('')
+                rets += self.__format_ob_constant_str(l)
+            elif self.__get_filter_expr_not_defined(l, self.__ob_constant_wstr_expr):
+                logging.info('l [%s]'%(l))
+                rets += self.__format_ob_constant_wstr(l)
+            elif self.__get_filter_expr_not_defined(l, self.__ob_constant_str_spec_expr):
+                logging.info('')
+                rets += self.__format_ob_constant_str_spec(l)
+            elif self.__get_filter_expr_not_defined(l, self.__ob_constant_wstr_spec_expr):
+                logging.info('l [%s]'%(l))
+                rets += self.__format_ob_constant_wstr_spec(l)
             else:
                 rets += format_line('%s'%(l),0)
         return rets
