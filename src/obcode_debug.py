@@ -481,6 +481,74 @@ def uniints_to_string(sbyte):
         cb += chr(nbyte[i])
     return cb.decode('utf-16')
 
+def get_bits(num):
+    bits = 0
+    fnum = num
+    while fnum > 0:
+        if fnum & 1:
+            bits += 1
+        fnum >>= 1
+    return bits
+
+def clear_bit(num,nbit):
+    num = num & 0xff
+    bits = get_bits(num)
+    if bits == 0:
+        return 0
+    needbit = (nbit % bits)
+    needbit += 1
+    cnum = 1
+    fnum = num
+    curbit = 0
+    while curbit < needbit:
+        if fnum & cnum:
+            curbit += 1
+            if curbit == needbit:
+                fnum = fnum & (~cnum)
+                return fnum
+        cnum <<= 1
+    return fnum
+
+def get_bit(num, nbit):
+    num = num & 0xff
+    bits = get_bits(num)
+    if bits == 0:
+        return 0
+    needbit = (nbit % bits)
+    needbit += 1
+    cnum = 1
+    fnum = num
+    curbit = 0
+    while curbit < needbit:
+        if fnum & cnum:
+            curbit += 1
+            if curbit == needbit:
+                return cnum
+        cnum <<= 1
+    return fnum
+
+def expand_bit(num,nbit):
+    num = num & 0xff
+    bits = get_bits(num)
+    maxbits = (8 - bits)
+    # if all is expand bit ,so we just return 0xff
+    if maxbits == 0:
+        return 0xff
+    needbit = (nbit % maxbits)
+    needbit += 1
+    curbit = 0
+    cnum = 1
+    fnum = num
+    while curbit < needbit:
+        if (fnum & cnum)== 0:
+            # this is the not set ,so just set for it
+            curbit += 1
+            if curbit == needbit:
+                fnum = fnum | cnum
+                return fnum
+        cnum <<= 1
+    return fnum
+
 
 def read_file(infile=None):
     fin = sys.stdin
@@ -823,6 +891,243 @@ def format_key_dtr_function(xorcode,nameprefix='prefix', namelen=10, numturns=30
     funcstr += format_line('return;',tabs + 1)
     funcstr += format_line('}',tabs)
     return funcstr,funcname
+
+def format_bytes_set_function(sbyte,nameprefix='prefix', namelen=10, numturns=30, tabs=0,debug=0):
+    funcname = '%s_%s'%(nameprefix,get_random_name(namelen))
+    funcstr = ''
+    funcstr += format_line('int %s(unsigned char* pbuf, int size)'%(funcname),tabs)
+    funcstr += format_line('{', tabs)
+    funcstr += format_debug_line('variable:nameprefix %s variable:namelen %d variable:numturns %d'%(nameprefix,namelen,numturns), tabs + 1, debug)
+    ss = ''
+    for c in sbyte:
+        if len(ss) > 0:
+            ss += ',0x%02x'%(c)
+        else:
+            ss += 'sbyte [0x%02x'%(c)
+    ss += ']'
+    funcstr += format_debug_line('%s'%(ss), tabs + 1, debug)
+    clbits = []
+    for i in range(len(sbyte)):
+        clbits.append(random.randint(0,255))
+
+    for i in range(len(sbyte)):
+        curnum = clear_bit(sbyte[i], clbits[i])
+        funcstr += format_line('',tabs+1)
+        funcstr += format_debug_line('0x%x = 0x%x & 0x%x'%(sbyte[i],curnum), tabs + 1, debug)
+        funcstr += format_line('if (size > %d){'%(i), tabs + 1)
+        funcstr += format_line('pbuf[%d] = pbuf[%d] & 0x%x;'%(i,i,curnum), tabs + 2)
+        funcstr += format_line('}',tabs + 1)
+
+    # we need not to set the number directly ,but just used
+    for i in range(numturns):
+        cidx = random.randint(0, len(sbyte) - 1)
+        cbit = random.randint(0, 255)
+        if random.randint(0,1) == 1:
+            cnum = clear_bit(sbyte[cidx], cbit)
+            funcstr += format_line('', tabs + 1)
+            funcstr += format_line('if ( size > %d){'%(cidx), tabs + 1)
+            funcstr += format_line('pbuf[%d] = pbuf[%d] | 0x%x;'%(cidx,cidx, cnum), tabs + 2)
+            funcstr += format_line('}', tabs + 1)
+        else:
+            cnum = expand_bit(sbyte[cidx], cbit)
+            funcstr += format_line('', tabs + 1)
+            funcstr += format_line('if ( size > %d){'%(cidx), tabs + 1)
+            funcstr += format_line('pbuf[%d] = pbuf[%d] & 0x%x;'%(cidx,cidx, cnum), tabs + 2)
+            funcstr += format_line('}', tabs + 1)
+
+    # now we should filled the number
+    for i in range(len(sbyte)):
+        cnum = get_bit(sbyte[i], clbits[i])
+        funcstr += format_line('',tabs+1)
+        funcstr += format_debug_line('0x%x = 0x%x & 0x%x'%(sbyte[i],curnum), tabs + 1, debug)
+        funcstr += format_line('if (size > %d){'%(i), tabs + 1)
+        funcstr += format_line('pbuf[%d] = pbuf[%d] | 0x%x;'%(i,i,cnum), tabs + 2)
+        funcstr += format_line('}',tabs + 1)
+
+    funcstr += format_line('', tabs + 1)
+    funcstr += format_line('return size;', tabs + 1)
+    funcstr += format_line('}', tabs)
+    return funcstr,funcname
+
+
+def format_bytes_xor_function(sbyte,abyte,abytefunc,bbyte,bbytefunc,nameprefix='prefix', namelen=10, numturns=30, tabs=0,debug=0):
+    assert(len(sbyte) == len(abyte))
+    assert(len(abyte) == len(bbyte))
+    funcname = '%s_%s'%(nameprefix,get_random_name(namelen))
+    bname = '%s_%s'%(nameprefix, get_random_name(namelen))
+    retname = '%s_%s'%(nameprefix, get_random_name(namelen))
+    funcstr = ''
+    funcstr += format_line('int %s(unsigned char* pbuf, int size)'%(funcname),tabs)
+    funcstr += format_line('{', tabs)
+    funcstr += format_debug_line('variable:nameprefix %s variable:namelen %d variable:numturns %d'%(nameprefix,namelen,numturns), tabs + 1, debug)
+    if len(sbyte) >= 2 and sbyte[-1] == 0 and sbyte[-2] == 0:
+        funcstr += format_debug_line('var string:%s'%(uniints_to_string(sbyte)), tabs + 1, debug)
+    else:
+        funcstr += format_debug_line('var string:%s'%(ints_to_string(sbyte)), tabs + 1, debug)
+    funcstr += format_line('unsigned char %s[%d];'%(bname, len(sbyte)), tabs + 1)
+    funcstr += format_line('int ret;', tabs + 1)
+
+    funcstr += format_line('', tabs + 1)
+    funcstr += format_line('ret = %s(pbuf,size);'%(abytefunc), tabs + 1)
+    funcstr += format_line('if ( ret < 0) {' , tabs + 1)
+    funcstr += format_line('return ret;', tabs + 2)
+    funcstr += format_line('}', tabs + 1)
+
+    funcstr += format_line('', tabs + 1)
+    funcstr += format_line('ret = %s(%s,%d);'%(bbytefunc, bname, len(sbyte)), tabs + 1)
+    funcstr += format_line('if ( ret < 0) {' , tabs + 1)
+    funcstr += format_line('return ret;', tabs + 2)
+    funcstr += format_line('}', tabs + 1)
+
+    # now to give the value
+    for in in range(numturns):
+        cidx = random.randint(0, len(sbyte) - 1)
+        didx = random.randint(0, len(sbyte) - 1)
+        hdl = random.randint(0, 5)
+        funcstr += format_line('', tabs + 1)
+        if hdl == 0:
+            # to make abyte[cidx] = abyte[cidx] & bbyte[didx]
+            funcstr += format_debug_line('abyte[%d] = abyte[%d] & bbyte[%d]'%(cidx,cidx,didx), tabs + 1, debug)
+            funcstr += format_debug_line('0x%x & 0x%x = 0x%0x'%(abyte[cidx],bbyte[didx], (abyte[cidx] & bbyte[didx])), tabs + 1, debug)
+            funcstr += format_line('if ( %d < size && %d < size ) {'%(cidx, didx), tabs + 1 )
+            funcstr += format_line('pbuf[%d] = pbuf[%d] & %s[%d];'%(cidx, cidx, bname, didx), tabs + 2)
+            funcstr += format_line('}', tabs + 1)
+            abyte[cidx] = abyte[cidx] & bbyte[didx]
+        elif hdl == 1:
+            # to make abyte[cidx] = abyte[cidx] | bbyte[didx]
+            funcstr += format_debug_line('abyte[%d] = abyte[%d] | bbyte[%d]'%(cidx,cidx,didx), tabs + 1, debug)
+            funcstr += format_debug_line('0x%x | 0x%x = 0x%0x'%(abyte[cidx],bbyte[didx], (abyte[cidx] | bbyte[didx])), tabs + 1, debug)
+            funcstr += format_line('if ( %d < size && %d < size ) {'%(cidx, didx), tabs + 1 )
+            funcstr += format_line('pbuf[%d] = pbuf[%d] | %s[%d];'%(cidx, cidx, bname, didx), tabs + 2)
+            funcstr += format_line('}', tabs + 1)
+            abyte[cidx] = abyte[cidx] | bbyte[didx]
+        elif hdl == 2:
+            # to make bbyte[didx] = abyte[cidx] & bbyte[didx]
+            funcstr += format_debug_line('bbyte[%d] = abyte[%d] & bbyte[%d]'%(didx,cidx,didx), tabs + 1, debug)
+            funcstr += format_debug_line('0x%x & 0x%x = 0x%0x'%(abyte[cidx],bbyte[didx], (abyte[cidx] & bbyte[didx])), tabs + 1, debug)
+            funcstr += format_line('if ( %d < size && %d < size ) {'%(cidx, didx), tabs + 1 )
+            funcstr += format_line('%s[%d] = pbuf[%d] & %s[%d];'%(bname,didx, cidx, bname, didx), tabs + 2)
+            funcstr += format_line('}', tabs + 1)
+            bbyte[didx] = abyte[cidx] & bbyte[didx]
+        elif hdl == 3:
+            # to make bbyte[didx] = abyte[cidx] | bbyte[didx]
+            funcstr += format_debug_line('bbyte[%d] = abyte[%d] | bbyte[%d]'%(didx,cidx,didx), tabs + 1, debug)
+            funcstr += format_debug_line('0x%x & 0x%x = 0x%0x'%(abyte[cidx],bbyte[didx], (abyte[cidx] | bbyte[didx])), tabs + 1, debug)
+            funcstr += format_line('if ( %d < size && %d < size ) {'%(cidx, didx), tabs + 1 )
+            funcstr += format_line('%s[%d] = pbuf[%d] | %s[%d];'%(bname,didx, cidx, bname, didx), tabs + 2)
+            funcstr += format_line('}', tabs + 1)
+            bbyte[didx] = abyte[cidx] | bbyte[didx]
+        elif hdl == 4:
+            # to make abyte[cidx] = abyte[cidx] ^ bbyte[didx]
+            funcstr += format_debug_line('abyte[%d] = abyte[%d] ^ bbyte[%d]'%(cidx,cidx,didx), tabs + 1, debug)
+            funcstr += format_debug_line('0x%x ^ 0x%x = 0x%0x'%(abyte[cidx],bbyte[didx], (abyte[cidx] ^ bbyte[didx])), tabs + 1, debug)
+            funcstr += format_line('if ( %d < size && %d < size ) {'%(cidx, didx), tabs + 1 )
+            funcstr += format_line('pbuf[%d] = pbuf[%d] ^ %s[%d];'%(cidx, cidx, bname, didx), tabs + 2)
+            funcstr += format_line('}', tabs + 1)
+            abyte[cidx] = abyte[cidx] ^ bbyte[didx]
+        elif hdl == 5:
+            # to make bbyte[didx] = abyte[cidx] ^ bbyte[didx]
+            funcstr += format_debug_line('bbyte[%d] = abyte[%d] ^ bbyte[%d]'%(didx,cidx,didx), tabs + 1, debug)
+            funcstr += format_debug_line('0x%x ^ 0x%x = 0x%0x'%(abyte[cidx],bbyte[didx], (abyte[cidx] ^ bbyte[didx])), tabs + 1, debug)
+            funcstr += format_line('if ( %d < size && %d < size ) {'%(cidx, didx), tabs + 1 )
+            funcstr += format_line('%s[%d] = pbuf[%d] ^ %s[%d];'%(bname,didx, cidx, bname, didx), tabs + 2)
+            funcstr += format_line('}', tabs + 1)
+            bbyte[didx] = abyte[cidx] ^ bbyte[didx]
+        else:
+            raise Exception('unexpected random valud [%d]'%(hdl))
+
+    for i in range(len(sbyte)):
+        hdl = random.randint(0, 1)
+        funcstr += format_line('',tabs + 1)
+        if hdl == 0:
+            cnum = sbyte[i] ^ abyte[i]
+            funcstr += format_debug_line('pbuf[%d] = (abyte[%d])0x%x ^ 0x%x'%(i,i,abyte[i], cnum),tabs + 1, debug)
+            funcstr += format_line('if (%d < size){'%(i), tabs + 1)
+            funcstr += format_line('pbuf[%d] = pbuf[%d] ^ 0x%x;'%(i,i,cnum),tabs + 2)
+            funcstr += format_line('',tabs + 1)
+        elif hdl == 1:
+            cnum = sbyte[i] ^ bbyte[i]
+            funcstr += format_debug_line('pbuf[%d] = (bbyte[%d])0x%x ^ 0x%x'%(i,i,bbyte[i], cnum),tabs + 1, debug)
+            funcstr += format_line('if (%d < size){'%(i), tabs + 1)
+            funcstr += format_line('pbuf[%d] = %s[%d] ^ 0x%x;'%(i,bname,i,cnum),tabs + 2)
+            funcstr += format_line('',tabs + 1)
+        else:
+            raise Exception('unexpected random valud [%d]'%(hdl))
+
+    funcstr += format_line('',tabs + 1)
+    funcstr += format_line('return size;', tabs + 1)
+    funcstr += format_line('}',tabs)
+    return funcstr, funcname
+
+
+
+
+class MixedString(object):
+
+    def __get_bytes(self,size):
+        rb = []
+        for i in range(size):
+            rb.append(random.randint(0,255))
+        return rb
+
+    def __get_func(self,sbyte):
+        return format_bytes_set_function(sbyte,self.__cfg.prefix, \
+                random.randint(self.__cfg.namemin,self.__cfg.namemax), \
+                random.randint(self.__cfg.funcmin,self.__cfg.funcmax), \
+                0,self.__cfg.debug)
+
+    def __init__(self,sbyte,cfg):
+        self.__sbyte = sbyte
+        self.__iswide = False
+        self.__cfg = cfg
+        if len(sbyte) >= 2 and sbyte[-1] == 0 and sbyte[-2] == 0:
+            self.__iswide = True
+        self.__abyte = self.__get_bytes(len(sbyte))
+        self.__bbyte = self.__get_bytes(len(sbyte))
+        self.__afuncstr ,self.__afuncname = self.__get_func(self.__abyte)
+        self.__bfuncstr , self.__bfuncname = self.__get_func(self.__bbyte)
+        self.__sfuncstr , self.__sfuncname = format_bytes_xor_function(sbyte, \
+                self.__abyte, self.__afuncname, \
+                self.__bbyte, self.__bfuncname, \
+                self.__cfg.prefix, \
+                random.randint(self.__cfg.namemin,self.__cfg.namemax), \
+                random.randint(self.__cfg.funcmin,self.__cfg.funcmax), \
+                0,self.__cfg.debug)
+        return
+
+    def __get_hash(self,sbyte):
+        cval = 0
+        for s in sbyte:
+            cval += s
+            # 113 is the prime number
+            cval *= 113
+            # 104729 is the prime number
+            cval = cval % 104729
+        return cval
+
+    def __getattr__(self,keyname):
+        if keyname == 'sbyte':
+            return self.__sbyte
+        elif keyname == 'iswide':
+            return self.__iswide
+        elif keyname == 'afunc':
+            return self.__afuncstr
+        elif keyname == 'bfunc':
+            return self.__bfuncstr
+        elif keyname == 'func':
+            return self.__sfuncstr
+        elif keyname == 'funcname':
+            return self.__sfuncname
+        elif keyname == 'hash':
+            return self.__get_hash(self.__sbyte)
+        else:
+            if keyname in self.__dict__.keys():
+                return self.__dict__[keyname]
+            else:
+                raise Exception('not support [%s]'%(keyname))
+
+    def hash_number(self,sbyte):
+        return self.__get_hash(sbyte)
 
 
 GL_INIT_ATTR={
