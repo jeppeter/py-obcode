@@ -74,18 +74,15 @@ def uniints_to_string(sbyte):
     if len(sbyte) >= 2 and sbyte[-1] == 0 and sbyte[-2] == 0:
         sbyte = sbyte[:-2]
     nbyte = []
+    nbyte.append(255)
+    nbyte.append(254)
+    nbyte.extend(sbyte)
     if sys.version[0] == '3':
-        nbyte.append(255)
-        nbyte.append(254)
-        nbyte.extend(sbyte)
         cb = b''
         for i in range(len(nbyte)):
             cb += nbyte[i].to_bytes(1,'little')
         return cb.decode('utf-16-le')
     else:
-        nbyte.append(255)
-        nbyte.append(254)
-        nbyte.extend(sbyte)
         cb = b''
         for i in range(len(nbyte)):
             cb += chr(nbyte[i])

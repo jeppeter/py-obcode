@@ -52,27 +52,24 @@ def string_to_uniints(s):
 	return ri
 
 def uniints_to_string(sbyte):
-	s = ''	
-	if len(sbyte) >= 2 and sbyte[-1] == 0 and sbyte[-2] == 0:
-		sbyte = sbyte[:-2]
-	nbyte = []
-	if sys.version[0] == '3':
-		nbyte.append(255)
-		nbyte.append(254)
-		nbyte.extend(sbyte)
-		cb = b''
-		for i in range(len(nbyte)):
-			cb += nbyte[i].to_bytes(1,'little')
-		return cb.decode('utf-16-le')
-	else:
-		nbyte.append(255)
-		nbyte.append(254)
-		nbyte.extend(sbyte)
-		cb = b''
-		for i in range(len(nbyte)):
-			cb += chr(nbyte[i])
-		cs = cb.decode('utf-16-le')
-		return cs.encode('utf8')
+    s = ''  
+    if len(sbyte) >= 2 and sbyte[-1] == 0 and sbyte[-2] == 0:
+        sbyte = sbyte[:-2]
+    nbyte = []
+    nbyte.append(255)
+    nbyte.append(254)
+    nbyte.extend(sbyte)
+    if sys.version[0] == '3':
+        cb = b''
+        for i in range(len(nbyte)):
+            cb += nbyte[i].to_bytes(1,'little')
+        return cb.decode('utf-16-le')
+    else:
+        cb = b''
+        for i in range(len(nbyte)):
+            cb += chr(nbyte[i])
+        cs = cb.decode('utf-16-le')
+        return cs.encode('utf8')
 
 def is_normal_char(cbyte):
 	if cbyte >= ord('0') and cbyte <= ord('9'):
