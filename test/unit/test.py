@@ -444,10 +444,11 @@ class obcode_test(unittest.TestCase):
         cmds = ['make','-C',exampledir,'O=1','all']
         subprocess.check_call(cmds,stdout=stdnull)
         cmdbin = os.path.join(exampledir,'command')
-        jsonfile = os.path.join(exampledir,'makob.json')
+        jsonfile = os.path.join(exampledir,'makob.json')        
         cdict = dict()
         with open(jsonfile) as f:
             cdict = json.load(f)
+        s = read_file(jsonfile)
         # this will give the coding 
         for l in cmdpack.run_cmd_output([cmdbin]):
             l = l.rstrip('\r\n')
@@ -459,6 +460,11 @@ class obcode_test(unittest.TestCase):
             self.assertEqual(valid, True)
         # now we should get the trans
         cmds = [sys.executable,obcodepy,'obtrans','--obtrans-srcdir',exampledir, makejson]
+        subprocess.check_call(cmds,stdout=stdnull)
+        # now to copy the file
+        # write again
+        write_file(s, makejson)
+        cmds = ['make','-C',exampledir,'O=1','distclean']
         subprocess.check_call(cmds,stdout=stdnull)
         stdnull.close()
         stdnull = None

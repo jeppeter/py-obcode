@@ -28,3 +28,9 @@ clean:
 	rm -f ${OBJECTS}
 	rm -f command
 
+
+distclean:clean
+ifneq (${O},)
+	rm -f $(call OB_MAK_FILE,c.cpp d.cpp)
+	rm -f makob.json
+endif

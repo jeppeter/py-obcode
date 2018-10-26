@@ -413,6 +413,31 @@ def parse_param(sbyte):
     raise Exception('not handled [%s]'%(ints_to_string(sbyte)))
     return params,[]
 
+def string_to_uniints(s):
+    c = []
+    uni = s.encode('utf-16')
+    for i in range(len(uni)):
+        if i > 1:
+            if sys.version[0] == '3':
+                c.append(int(uni[i]))
+            else:
+                c.append(ord(uni[i]))
+    return c
+
+def uniints_to_string(sbyte):
+    nbyte = [255,254]
+    s = ''
+    nbyte.extend(sbyte)
+    cb = b''
+    if sys.version[0] == '3':
+        for i in range(len(nbyte)):
+            cb += nbyte[i].to_bytes(1,'little')
+        return cb.decode('utf-16')
+
+    for i in range(len(nbyte)):
+        cb += chr(nbyte[i])
+    return cb.decode('utf-16')
+
 
 def read_file(infile=None):
     fin = sys.stdin
@@ -943,8 +968,68 @@ class COBFile(object):
                 self.__insert_line = self.__cur_line
         return
 
+    def __prepare_mixed_str_funcs_inner(self,l,cfg,before,after,sbyte):
+        return
+
+    def __prepare_mixed_str_funcs(self,l):
+        cfg , params, before, after = self.__get_variables(l, self.__ob_mixed_str_expr)
+        assert(len(params) == 1)
+        sbyte = parse_raw_string(params[0])
+        self.__prepare_mixed_str_funcs_inner(l, cfg, before, after, sbyte)
+        return
+
+    def __prepare_mixed_str_spec_funcs(self,l):
+        cfg ,params, before , after = self.__get_spec_config_variables(l, self.__ob_mixed_str_spec_expr)
+        assert(len(params) == 1)
+        sbyte = parse_raw_string(params[0])
+        self.__prepare_mixed_str_funcs_inner(l, cfg, before, after, sbyte)
+        return
+
+    def __prepare_mixed_wstr_funcs_inner(self,l,cfg,before,after,sbyte):
+        return
+
+    def __prepare_mixed_wstr_funcs(self,l):
+        cfg , params, before , after = self.__get_variables(l, self.__ob_mixed_wstr_expr)
+        assert(len(params) == 1)
+        cbyte = string_to_ints(params[0])
+        assert(len(cbyte) >= 3)
+        assert(cbyte[0] == ord('L'))
+        cs = ints_to_string(cbyte[1:])
+        rs = parse_raw_string(cs)
+        sbyte = string_to_uniints(rs)
+        self.__prepare_mixed_wstr_funcs_inner(l, cfg, before, after, sbyte)
+        return
+
+    def __prepare_mixed_wstr_spec_funcs(self,l):
+        cfg ,params , before , after = self.__get_spec_config_variables(l, self.__ob_mixed_wstr_spec_expr)
+        assert(len(params) == 1)
+        cbyte = string_to_ints(params[0])
+        assert(len(cbyte) >= 3)
+        assert(cbyte[0] == ord('L'))
+        cs = ints_to_string(cbyte[1:])
+        rs = parse_raw_string(cs)
+        sbyte = string_to_uniints(rs)
+        self.__prepare_mixed_wstr_funcs_inner(l, cfg, before, after, sbyte)
+        return
+
+    def __prepare_mixstr(self):
+        self.__cur_line = 0
+        for l in self.__in_lines:
+            self.__cur_line += 1
+            if self.__get_filter_expr_not_defined(l, self.__ob_mixed_str_expr):
+                self.__prepare_mixed_str_funcs(l)
+            elif self.__get_filter_expr_not_defined(l, self.__ob_mixed_str_spec_expr):
+                self.__prepare_mixed_str_spec_funcs(l)
+            elif self.__get_filter_expr_not_defined(l, self.__ob_mixed_wstr_expr):
+                self.__prepare_mixed_wstr_funcs(l)
+            elif self.__get_filter_expr_not_defined(l, self.__ob_mixed_wstr_spec_expr):
+                self.__prepare_mixed_wstr_spec_funcs(l)
+
+        return
+
     def __prepare(self):
         self.__prepare_config()
+        self.__prepare_mixstr()
         if self.__should_expand_ob_code():
             funcstr, funcname = format_xor_encode_function(self.__cfg.prefix,random.randint(self.__cfg.namemin,self.__cfg.namemax),0, self.__cfg.debug)
             self.__xor_enc_functions[funcname] = funcstr
@@ -1001,6 +1086,10 @@ class COBFile(object):
         self.__ob_constant_wstr_expr = re.compile('.*(OB_CONSTANT_WSTR\s*(\\\x28.*))$')
         self.__ob_constant_str_spec_expr = re.compile('.*(OB_CONSTANT_STR_SPEC\s*(\\\x28.*))$')
         self.__ob_constant_wstr_spec_expr = re.compile('.*(OB_CONSTANT_WSTR_SPEC\s*(\\\x28.*))$')
+        self.__ob_mixed_str_expr = re.compile('.*(OB_MIXED_STR\s*(\\\x28.*))$')
+        self.__ob_mixed_str_spec_expr = re.compile('.*(OB_MIXED_STR_SPEC\s*(\\\x28.*))$')
+        self.__ob_mixed_wstr_expr = re.compile('.*(OB_MIXED_WSTR\s*(\\\x28.*))$')
+        self.__ob_mixed_wstr_spec_expr = re.compile('.*(OB_MIXED_WSTR_SPEC\s*(\\\x28.*))$')
 
         self.__ob_config_expr = re.compile('^\W*(OB_CONFIG(\\\x28.*))$')
 
