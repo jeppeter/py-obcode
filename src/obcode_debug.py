@@ -111,7 +111,6 @@ def is_decimal_char(cbyte):
 def parse_string(sbyte):
     retbyte=[]
     leftbyte=[]
-    logging.info('[0]=[%s]'%(sbyte[0]))
     if sbyte[0] != ord('"'):
         raise Exception('can not accept byte [%s]'%(sbyte[0]))
     idx = 1
@@ -456,30 +455,6 @@ def parse_param(sbyte):
     raise Exception('not handled [%s]'%(ints_to_string(sbyte)))
     return params,[]
 
-def string_to_uniints(s):
-    c = []
-    uni = s.encode('utf-16')
-    for i in range(len(uni)):
-        if i > 1:
-            if sys.version[0] == '3':
-                c.append(int(uni[i]))
-            else:
-                c.append(ord(uni[i]))
-    return c
-
-def uniints_to_string(sbyte):
-    nbyte = [255,254]
-    s = ''
-    nbyte.extend(sbyte)
-    cb = b''
-    if sys.version[0] == '3':
-        for i in range(len(nbyte)):
-            cb += nbyte[i].to_bytes(1,'little')
-        return cb.decode('utf-16')
-
-    for i in range(len(nbyte)):
-        cb += chr(nbyte[i])
-    return cb.decode('utf-16')
 
 def get_bits(num):
     bits = 0
@@ -747,9 +722,18 @@ def quote_string(l):
                 rets += '\\\\'
             elif c == '"':
                 rets += '\\"'
+            elif c == '\r':
+                rets += '\\r'
+            elif c == '\n':
+                rets += '\\n'
+            elif c == '\t':
+                rets += '\\t'
+            elif c == '\b':
+                rets += '\\b'
             else:
                 rets += c
     return rets
+
 
 def format_debug_line(l,tab=0,debug=0):
     rets = ''
@@ -892,12 +876,19 @@ def format_key_dtr_function(xorcode,nameprefix='prefix', namelen=10, numturns=30
     funcstr += format_line('}',tabs)
     return funcstr,funcname
 
-def format_bytes_set_function(sbyte,nameprefix='prefix', namelen=10, numturns=30, tabs=0,debug=0):
+def format_printf_func(l,tabs):
+    #return format_line(l,tabs)
+    return ''
+    
+def format_bytes_set_function(sbyte,nameprefix='prefix', namelen=10, numturns=30, tabs=0,debug=0,line=None):
     funcname = '%s_%s'%(nameprefix,get_random_name(namelen))
     funcstr = ''
     funcstr += format_line('int %s(unsigned char* pbuf, int size)'%(funcname),tabs)
     funcstr += format_line('{', tabs)
-    funcstr += format_debug_line('variable:nameprefix %s variable:namelen %d variable:numturns %d'%(nameprefix,namelen,numturns), tabs + 1, debug)
+    funcstr += format_printf_func('int i;', tabs + 1)
+    if line is not None:
+        funcstr += format_debug_line('first at line [%d]'%(line), tabs + 1 , debug)
+    funcstr += format_debug_line('variable:nameprefix %s variable:namelen %d variable:numturns %d length(%d)'%(nameprefix,namelen,numturns,len(sbyte)), tabs + 1, debug)
     ss = ''
     for c in sbyte:
         if len(ss) > 0:
@@ -906,15 +897,31 @@ def format_bytes_set_function(sbyte,nameprefix='prefix', namelen=10, numturns=30
             ss += 'sbyte [0x%02x'%(c)
     ss += ']'
     funcstr += format_debug_line('%s'%(ss), tabs + 1, debug)
+    funcstr += format_printf_func('for (i=0;i<size;i++){', tabs + 1)
+    funcstr += format_printf_func('printf("[%d]=[%d:0x%x]\\n",i,pbuf[i],pbuf[i]);', tabs + 2)
+    funcstr += format_printf_func('}', tabs + 1)
+
     clbits = []
+    leastmask = []
     for i in range(len(sbyte)):
         clbits.append(random.randint(0,255))
+        leastmask.append(0)
+
+    ss = ''
+    for c in clbits:
+        if len(ss) > 0:
+            ss += ',0x%x:%d'%(c,c)
+        else:
+            ss += 'clbits [0x%x:%d'%(c,c)
+    ss += ']'
+    funcstr += format_printf_func('/* %s */'%(ss), tabs+1)
 
     for i in range(len(sbyte)):
         curnum = clear_bit(sbyte[i], clbits[i])
         funcstr += format_line('',tabs+1)
-        funcstr += format_debug_line('0x%x = 0x%x & 0x%x'%(sbyte[i],curnum), tabs + 1, debug)
+        funcstr += format_debug_line('pbuf[%d] & 0x%x ?=> 0x%x'%(i,curnum,sbyte[i]), tabs + 1, debug)
         funcstr += format_line('if (size > %d){'%(i), tabs + 1)
+        funcstr += format_printf_func('printf("[%d][%%d:0x%%x] & [%%d:0x%%x] = [%%d:0x%%x] [target:0x%x:%d]\\n",pbuf[%d], pbuf[%d], %d,%d, (pbuf[%d] & %d), (pbuf[%d] & %d));'%(i,sbyte[i],sbyte[i],i,i,curnum,curnum,i,curnum,i,curnum), tabs+2)
         funcstr += format_line('pbuf[%d] = pbuf[%d] & 0x%x;'%(i,i,curnum), tabs + 2)
         funcstr += format_line('}',tabs + 1)
 
@@ -924,25 +931,30 @@ def format_bytes_set_function(sbyte,nameprefix='prefix', namelen=10, numturns=30
         cbit = random.randint(0, 255)
         if random.randint(0,1) == 1:
             cnum = clear_bit(sbyte[cidx], cbit)
+            leastmask[cidx] = leastmask[cidx] | cnum
             funcstr += format_line('', tabs + 1)
             funcstr += format_line('if ( size > %d){'%(cidx), tabs + 1)
+            funcstr += format_printf_func('printf("||[%d][%%d:0x%%x] | [%%d:0x%%x] = [%%d:0x%%x] [target:0x%x:%d]\\n",pbuf[%d],pbuf[%d],%d,%d,(pbuf[%d] | %d), (pbuf[%d] | %d));'%(cidx,sbyte[cidx],sbyte[cidx],cidx,cidx,cnum,cnum,cidx,cnum,cidx,cnum), tabs + 2)
             funcstr += format_line('pbuf[%d] = pbuf[%d] | 0x%x;'%(cidx,cidx, cnum), tabs + 2)
             funcstr += format_line('}', tabs + 1)
         else:
             cnum = expand_bit(sbyte[cidx], cbit)
             funcstr += format_line('', tabs + 1)
             funcstr += format_line('if ( size > %d){'%(cidx), tabs + 1)
+            funcstr += format_printf_func('printf("&&[%d][%%d:0x%%x] & [%%d:0x%%x] = [%%d:0x%%x] [target:0x%x:%d]\\n",pbuf[%d],pbuf[%d],%d,%d,(pbuf[%d] & %d), (pbuf[%d] & %d));'%(cidx,sbyte[cidx],sbyte[cidx],cidx,cidx,cnum,cnum,cidx,cnum,cidx,cnum), tabs + 2)
             funcstr += format_line('pbuf[%d] = pbuf[%d] & 0x%x;'%(cidx,cidx, cnum), tabs + 2)
             funcstr += format_line('}', tabs + 1)
 
     # now we should filled the number
     for i in range(len(sbyte)):
-        cnum = get_bit(sbyte[i], clbits[i])
-        funcstr += format_line('',tabs+1)
-        funcstr += format_debug_line('0x%x = 0x%x & 0x%x'%(sbyte[i],curnum), tabs + 1, debug)
-        funcstr += format_line('if (size > %d){'%(i), tabs + 1)
-        funcstr += format_line('pbuf[%d] = pbuf[%d] | 0x%x;'%(i,i,cnum), tabs + 2)
-        funcstr += format_line('}',tabs + 1)
+        cnum = sbyte[i] & (~leastmask[i])
+        if cnum > 0:
+            funcstr += format_line('',tabs+1)
+            funcstr += format_debug_line('pbuf[%d] | 0x%x ?=> 0x%x'%(i,cnum, sbyte[i]), tabs + 1, debug)
+            funcstr += format_line('if (size > %d){'%(i), tabs + 1)
+            funcstr += format_printf_func('printf("[%d] [%%d:0x%%x] | [%%d:0x%%x] = [%%d:0x%%x] [target:0x%x:%d]\\n", pbuf[%d], pbuf[%d], %d ,%d , (pbuf[%d] | %d), (pbuf[%d] | %d));'%(i,sbyte[i],sbyte[i],i,i,cnum,cnum,i,cnum,i,cnum), tabs + 2)
+            funcstr += format_line('pbuf[%d] = pbuf[%d] | 0x%x;'%(i,i,cnum), tabs + 2)
+            funcstr += format_line('}',tabs + 1)
 
     funcstr += format_line('', tabs + 1)
     funcstr += format_line('return size;', tabs + 1)
@@ -950,7 +962,7 @@ def format_bytes_set_function(sbyte,nameprefix='prefix', namelen=10, numturns=30
     return funcstr,funcname
 
 
-def format_bytes_xor_function(sbyte,abyte,abytefunc,bbyte,bbytefunc,nameprefix='prefix', namelen=10, numturns=30, tabs=0,debug=0):
+def format_bytes_xor_function(sbyte,abyte,abytefunc,bbyte,bbytefunc,nameprefix='prefix', namelen=10, numturns=30, tabs=0,debug=0, line=None):
     assert(len(sbyte) == len(abyte))
     assert(len(abyte) == len(bbyte))
     funcname = '%s_%s'%(nameprefix,get_random_name(namelen))
@@ -959,11 +971,22 @@ def format_bytes_xor_function(sbyte,abyte,abytefunc,bbyte,bbytefunc,nameprefix='
     funcstr = ''
     funcstr += format_line('int %s(unsigned char* pbuf, int size)'%(funcname),tabs)
     funcstr += format_line('{', tabs)
-    funcstr += format_debug_line('variable:nameprefix %s variable:namelen %d variable:numturns %d'%(nameprefix,namelen,numturns), tabs + 1, debug)
+    if line is not None:
+        funcstr += format_debug_line('first at line [%d]'%(line),tabs + 1, debug)    
+    funcstr += format_debug_line('variable:nameprefix %s variable:namelen %d variable:numturns %d length(%d)'%(nameprefix,namelen,numturns,len(sbyte)), tabs + 1, debug)
+    ss = ''
+    for c in sbyte:
+        if len(ss) > 0:
+            ss += ',0x%x'%(c)
+        else:
+            ss += 'sbyte [0x%x'%(c)
+    if len(ss) > 0:
+        ss += ']'
+    funcstr += format_debug_line('%s'%(ss), tabs + 1, debug)
     if len(sbyte) >= 2 and sbyte[-1] == 0 and sbyte[-2] == 0:
-        funcstr += format_debug_line('var string:%s'%(uniints_to_string(sbyte)), tabs + 1, debug)
+        funcstr += format_debug_line('var wstring:[%s]'%(quote_string(uniints_to_string(sbyte))), tabs + 1, debug)
     else:
-        funcstr += format_debug_line('var string:%s'%(ints_to_string(sbyte)), tabs + 1, debug)
+        funcstr += format_debug_line('var string:[%s]'%(quote_string(ints_to_string(sbyte))), tabs + 1, debug)
     funcstr += format_line('unsigned char %s[%d];'%(bname, len(sbyte)), tabs + 1)
     funcstr += format_line('int ret;', tabs + 1)
 
@@ -980,7 +1003,7 @@ def format_bytes_xor_function(sbyte,abyte,abytefunc,bbyte,bbytefunc,nameprefix='
     funcstr += format_line('}', tabs + 1)
 
     # now to give the value
-    for in in range(numturns):
+    for i in range(numturns):
         cidx = random.randint(0, len(sbyte) - 1)
         didx = random.randint(0, len(sbyte) - 1)
         hdl = random.randint(0, 5)
@@ -1044,13 +1067,13 @@ def format_bytes_xor_function(sbyte,abyte,abytefunc,bbyte,bbytefunc,nameprefix='
             funcstr += format_debug_line('pbuf[%d] = (abyte[%d])0x%x ^ 0x%x'%(i,i,abyte[i], cnum),tabs + 1, debug)
             funcstr += format_line('if (%d < size){'%(i), tabs + 1)
             funcstr += format_line('pbuf[%d] = pbuf[%d] ^ 0x%x;'%(i,i,cnum),tabs + 2)
-            funcstr += format_line('',tabs + 1)
+            funcstr += format_line('}',tabs + 1)
         elif hdl == 1:
             cnum = sbyte[i] ^ bbyte[i]
             funcstr += format_debug_line('pbuf[%d] = (bbyte[%d])0x%x ^ 0x%x'%(i,i,bbyte[i], cnum),tabs + 1, debug)
             funcstr += format_line('if (%d < size){'%(i), tabs + 1)
             funcstr += format_line('pbuf[%d] = %s[%d] ^ 0x%x;'%(i,bname,i,cnum),tabs + 2)
-            funcstr += format_line('',tabs + 1)
+            funcstr += format_line('}',tabs + 1)
         else:
             raise Exception('unexpected random valud [%d]'%(hdl))
 
@@ -1073,13 +1096,14 @@ class MixedString(object):
     def __get_func(self,sbyte):
         return format_bytes_set_function(sbyte,self.__cfg.prefix, \
                 random.randint(self.__cfg.namemin,self.__cfg.namemax), \
-                random.randint(self.__cfg.funcmin,self.__cfg.funcmax), \
-                0,self.__cfg.debug)
+                random.randint(len(sbyte),len(sbyte)*2), \
+                0,self.__cfg.debug,self.__line)
 
-    def __init__(self,sbyte,cfg):
+    def __init__(self,sbyte,cfg,line=None):
         self.__sbyte = sbyte
         self.__iswide = False
         self.__cfg = cfg
+        self.__line = line
         if len(sbyte) >= 2 and sbyte[-1] == 0 and sbyte[-2] == 0:
             self.__iswide = True
         self.__abyte = self.__get_bytes(len(sbyte))
@@ -1091,8 +1115,10 @@ class MixedString(object):
                 self.__bbyte, self.__bfuncname, \
                 self.__cfg.prefix, \
                 random.randint(self.__cfg.namemin,self.__cfg.namemax), \
-                random.randint(self.__cfg.funcmin,self.__cfg.funcmax), \
-                0,self.__cfg.debug)
+                random.randint(len(sbyte),len(sbyte)*2), \
+                0,self.__cfg.debug, self.__line)
+        logging.info('afunc [%s] bfunc [%s] name [%s] hash [%s]'%(self.__afuncname, \
+            self.__bfuncname, self.__sfuncname, self.__get_hash(self.__sbyte)))
         return
 
     def __get_hash(self,sbyte):
@@ -1128,6 +1154,14 @@ class MixedString(object):
 
     def hash_number(self,sbyte):
         return self.__get_hash(sbyte)
+
+    def equal_byte(self,sbyte):
+        if len(sbyte) != len(self.__sbyte):
+            return False
+        for i in range(len(sbyte)):
+            if sbyte[i] != self.__sbyte[i]:
+                return False
+        return True
 
 
 GL_INIT_ATTR={
@@ -1316,37 +1350,65 @@ class COBFile(object):
                 self.__insert_line = self.__cur_line
         return
 
-    def __prepare_mixed_str_funcs_inner(self,l,cfg,before,after,sbyte):
+
+    def __prepare_mix_sbyte(self,sbyte,cfg):
+        cb = MixedString(sbyte, cfg,self.__cur_line)
+        k = '%s'%(cb.hash)
+        if k in self.__ob_mixed_str_dicts.keys():
+            for curb in self.__ob_mixed_str_dicts[k]:
+                if curb.hash == cb.hash and curb.equal_byte(sbyte):
+                    if len(sbyte) >= 2 and sbyte[-1] == 0 and sbyte[-2] == 0:
+                        logging.info('at [%d] %s [%s] already inserted'%(self.__cur_line, sbyte, uniints_to_string(sbyte)))
+                    else:
+                        logging.info('at [%d] %s [%s] already inserted'%(self.__cur_line, sbyte, ints_to_string(sbyte)))
+                    return
+        else:
+            self.__ob_mixed_str_dicts[k] = []
+        if len(sbyte) >= 2 and sbyte[-1] == 0 and sbyte[-2] == 0:
+            logging.info('%s [%s] into %s'%(sbyte, uniints_to_string(sbyte),cb.funcname))
+        else:
+            logging.info('%s [%s] into %s'%(sbyte, ints_to_string(sbyte),cb.funcname))
+        self.__ob_mixed_str_dicts[k].append(cb)
         return
 
-    def __prepare_mixed_str_funcs(self,l):
+
+    def __prepared_mixed_str_funcs(self,l):
         cfg , params, before, after = self.__get_variables(l, self.__ob_mixed_str_expr)
         assert(len(params) == 1)
-        sbyte = parse_raw_string(params[0])
-        self.__prepare_mixed_str_funcs_inner(l, cfg, before, after, sbyte)
-        return
+        cbyte = string_to_ints(params[0])
+        logging.info('params[%s]'%(params[0]))
+        cbyte = string_to_ints(params[0])
+        sbyte,lbyte = parse_string(cbyte)
+        cs = ints_to_string(sbyte)
+        sbyte = string_to_ints(cs)
+        self.__prepare_mix_sbyte(sbyte, cfg)
+        newl = '%sinbyte%s'%(before,after)
+        return newl
 
     def __prepare_mixed_str_spec_funcs(self,l):
         cfg ,params, before , after = self.__get_spec_config_variables(l, self.__ob_mixed_str_spec_expr)
         assert(len(params) == 1)
-        sbyte = parse_raw_string(params[0])
-        self.__prepare_mixed_str_funcs_inner(l, cfg, before, after, sbyte)
-        return
-
-    def __prepare_mixed_wstr_funcs_inner(self,l,cfg,before,after,sbyte):
-        return
+        logging.info('params [%s]'%(params[0]))        
+        cbyte = string_to_ints(params[0])
+        sbyte,lbyte = parse_string(cbyte)
+        cs = ints_to_string(sbyte)
+        sbyte = string_to_ints(cs)
+        self.__prepare_mix_sbyte(sbyte, cfg)
+        newl = '%sinbyte%s'%(before,after)
+        return newl
 
     def __prepare_mixed_wstr_funcs(self,l):
-        cfg , params, before , after = self.__get_variables(l, self.__ob_mixed_wstr_expr)
+        cfg , params, before, after = self.__get_variables(l, self.__ob_mixed_wstr_expr)
         assert(len(params) == 1)
         cbyte = string_to_ints(params[0])
         assert(len(cbyte) >= 3)
         assert(cbyte[0] == ord('L'))
-        cs = ints_to_string(cbyte[1:])
-        rs = parse_raw_string(cs)
+        nbyte,lbyte = parse_string(cbyte[1:])
+        rs = ints_to_string(nbyte)
         sbyte = string_to_uniints(rs)
-        self.__prepare_mixed_wstr_funcs_inner(l, cfg, before, after, sbyte)
-        return
+        self.__prepare_mix_sbyte(sbyte, cfg)
+        newl = '%sinbyte%s'%(before,after)
+        return newl
 
     def __prepare_mixed_wstr_spec_funcs(self,l):
         cfg ,params , before , after = self.__get_spec_config_variables(l, self.__ob_mixed_wstr_spec_expr)
@@ -1354,25 +1416,42 @@ class COBFile(object):
         cbyte = string_to_ints(params[0])
         assert(len(cbyte) >= 3)
         assert(cbyte[0] == ord('L'))
-        cs = ints_to_string(cbyte[1:])
-        rs = parse_raw_string(cs)
+        nbyte,lbyte = parse_string(cbyte[1:])
+        rs = ints_to_string(nbyte)
         sbyte = string_to_uniints(rs)
-        self.__prepare_mixed_wstr_funcs_inner(l, cfg, before, after, sbyte)
+        self.__prepare_mix_sbyte(sbyte, cfg)
+        newl = '%sinbyte%s'%(before,after)
+        return newl
+
+    def __preare_mixstr_function(self,l):
+        curl = l
+        while True:
+            if self.__get_filter_expr_not_defined(curl, self.__ob_mixed_str_expr):
+                logging.info('at [%d] [%s]'%(self.__cur_line, l))
+                curl = self.__prepared_mixed_str_funcs(curl)
+            elif self.__get_filter_expr_not_defined(curl, self.__ob_mixed_str_spec_expr):
+                logging.info('at [%d] [%s]'%(self.__cur_line, l))
+                curl = self.__prepare_mixed_str_spec_funcs(curl)
+            elif self.__get_filter_expr_not_defined(curl, self.__ob_mixed_wstr_expr):
+                logging.info('at [%d] [%s]'%(self.__cur_line, l))
+                curl = self.__prepare_mixed_wstr_funcs(curl)
+            elif self.__get_filter_expr_not_defined(curl, self.__ob_mixed_wstr_spec_expr):
+                logging.info('at [%d] [%s]'%(self.__cur_line, l))
+                curl = self.__prepare_mixed_wstr_spec_funcs(curl)
+            else:
+                break
         return
 
     def __prepare_mixstr(self):
         self.__cur_line = 0
         for l in self.__in_lines:
             self.__cur_line += 1
-            if self.__get_filter_expr_not_defined(l, self.__ob_mixed_str_expr):
-                self.__prepare_mixed_str_funcs(l)
-            elif self.__get_filter_expr_not_defined(l, self.__ob_mixed_str_spec_expr):
-                self.__prepare_mixed_str_spec_funcs(l)
-            elif self.__get_filter_expr_not_defined(l, self.__ob_mixed_wstr_expr):
-                self.__prepare_mixed_wstr_funcs(l)
-            elif self.__get_filter_expr_not_defined(l, self.__ob_mixed_wstr_spec_expr):
-                self.__prepare_mixed_wstr_spec_funcs(l)
-
+            logging.info('[%d][%s]'%(self.__cur_line, l))
+            if self.__get_filter_expr_not_defined(l, self.__ob_mixed_str_expr) or \
+                self.__get_filter_expr_not_defined(l, self.__ob_mixed_str_spec_expr) or \
+                self.__get_filter_expr_not_defined(l, self.__ob_mixed_wstr_expr) or \
+                self.__get_filter_expr_not_defined(l, self.__ob_mixed_wstr_spec_expr):
+                self.__preare_mixstr_function(l)
         return
 
     def __prepare(self):
@@ -1439,6 +1518,8 @@ class COBFile(object):
         self.__ob_mixed_wstr_expr = re.compile('.*(OB_MIXED_WSTR\s*(\\\x28.*))$')
         self.__ob_mixed_wstr_spec_expr = re.compile('.*(OB_MIXED_WSTR_SPEC\s*(\\\x28.*))$')
 
+        self.__ob_mixed_str_dicts = dict()
+
         self.__ob_config_expr = re.compile('^\W*(OB_CONFIG(\\\x28.*))$')
 
 
@@ -1461,9 +1542,11 @@ class COBFile(object):
     def __get_variables(self,l,expr1):
         variables = expr1.findall(l)
         # we do this on the increment
+        logging.info('[%d][%s] variables[%d]'%(self.__cur_line,l, len(variables)))
         assert(len(variables) == 1)
         assert(len(variables[0]) > 1)
         cfgattr = self.__cfg
+        logging.info('v [%s]'%(variables[0][1]))
         sbyte = string_to_ints(variables[0][1])
         params, lbyte = parse_param(sbyte)
         before = l.replace(variables[0][0],'',1)
@@ -1767,16 +1850,34 @@ class COBFile(object):
 
     def __output_pre_functions(self,cfg):
         rets = ''
+        hasidx = 0
+        # to insert mixed strings
+        for k in self.__ob_mixed_str_dicts.keys():
+            curbs = self.__ob_mixed_str_dicts[k]
+            for cb in curbs:
+                rets += format_line('',0)
+                rets += format_line('',0)
+                rets += cb.afunc
+                rets += format_line('',0)
+                rets += format_line('',0)
+                rets += cb.bfunc
+                rets += format_line('',0)
+                rets += format_line('',0)
+                rets += cb.func
+                hasidx += 1
+
         # now to put the get include function
         for k in self.__xor_enc_functions.keys():
             rets += format_line('',0)
             rets += format_line('',0)
             rets += self.__xor_enc_functions[k]
+            hasidx += 1
 
         for k in self.__xor_dec_functions.keys():
             rets += format_line('',0)
             rets += format_line('',0)
             rets += self.__xor_dec_functions[k]
+            hasidx += 1
 
         # now we should give the include
         idx = 0
@@ -1789,13 +1890,18 @@ class COBFile(object):
             rets += format_line('',0)
             rets += curdict['dtr']
             idx = idx + 1
+            hasidx += 1
 
-        if idx > 0:
+        if hasidx > 0:
             rets += format_line('',0)
             rets += format_line('',0)
         if len(rets) > 0 and cfg.noline == 0:
             rets += format_line('#line %d "%s"'%(self.__cur_line,quote_string(self.__srcfile)),0)
 
+        return rets
+
+    def __format_ob_mixed(self,l):
+        rets = ''
         return rets
 
 
@@ -1865,6 +1971,12 @@ class COBFile(object):
             elif self.__get_filter_expr_not_defined(l, self.__ob_constant_wstr_spec_expr):
                 logging.info('l [%s]'%(l))
                 rets += self.__format_ob_constant_wstr_spec(l)
+            elif self.__get_filter_expr_not_defined(l, self.__ob_mixed_str_expr) or \
+                self.__get_filter_expr_not_defined(l, self.__ob_mixed_wstr_expr) or \
+                self.__get_filter_expr_not_defined(l, self.__ob_mixed_str_spec_expr) or \
+                self.__get_filter_expr_not_defined(l, self.__ob_mixed_wstr_spec_expr):
+                logging.info('l [%s]'%(l))
+                rets += self.__format_ob_mixed(l)
             else:
                 rets += format_line('%s'%(l),0)
         return rets

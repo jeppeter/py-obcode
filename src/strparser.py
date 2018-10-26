@@ -92,7 +92,6 @@ def is_decimal_char(cbyte):
 def parse_string(sbyte):
     retbyte=[]
     leftbyte=[]
-    logging.info('[0]=[%s]'%(sbyte[0]))
     if sbyte[0] != ord('"'):
         raise Exception('can not accept byte [%s]'%(sbyte[0]))
     idx = 1
