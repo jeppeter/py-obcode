@@ -32,10 +32,14 @@ def string_to_ints(s):
         rb = bytes(s)
         for i in range(len(rb)):
             ri.append(ord(rb[i]))
+    # this is the end of the file
+    ri.append(0)
     return ri
 
 
 def ints_to_string(sbyte):
+    if len(sbyte) >= 1 and sbyte[-1] == 0:
+        sbyte = sbyte[:-1]
     if sys.version[0] == '3':
         cb = b''
         for i in range(len(sbyte)):
@@ -46,6 +50,48 @@ def ints_to_string(sbyte):
         for i in range(len(sbyte)):
             cb += chr(sbyte[i])
         return str(cb)
+
+def string_to_uniints(s):
+    sbyte = []
+    ri = []
+    if sys.version[0] == '3':
+        rb = s.encode('utf-16-le')
+    else:       
+        rc = s.decode('utf8')   
+        rb = rc.encode('utf-16-le')
+    for i in range(len(rb)):
+        if sys.version[0] == '3':
+            ri.append(int(rb[i]))
+        else:
+            ri.append(ord(rb[i]))
+    # to add null for unicode
+    ri.append(0)
+    ri.append(0)
+    return ri
+
+def uniints_to_string(sbyte):
+    s = ''  
+    if len(sbyte) >= 2 and sbyte[-1] == 0 and sbyte[-2] == 0:
+        sbyte = sbyte[:-2]
+    nbyte = []
+    if sys.version[0] == '3':
+        nbyte.append(255)
+        nbyte.append(254)
+        nbyte.extend(sbyte)
+        cb = b''
+        for i in range(len(nbyte)):
+            cb += nbyte[i].to_bytes(1,'little')
+        return cb.decode('utf-16-le')
+    else:
+        nbyte.append(255)
+        nbyte.append(254)
+        nbyte.extend(sbyte)
+        cb = b''
+        for i in range(len(nbyte)):
+            cb += chr(nbyte[i])
+        cs = cb.decode('utf-16-le')
+        return cs.encode('utf8')
+
 
 def is_normal_char(cbyte):
     if cbyte >= ord('0') and cbyte <= ord('9'):
