@@ -26,7 +26,6 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from strparser import *
 from filehdl import *
 from fmthdl import *
-from mixed import *
 from cobattr import *
 from cobfile import *
 ##importdebugend
@@ -34,7 +33,6 @@ from cobfile import *
 REPLACE_STR_PARSER=1
 REPLACE_FILE_HDL=1
 REPLACE_FMT_HDL=1
-REPLACE_MIXED=1
 REPLACE_COB_ATTR=1
 REPLACE_COB_FILE=1
 
@@ -471,7 +469,6 @@ def debug_release():
     strparser = os.path.abspath(os.path.join(curdir,'strparser.py'))
     filehdl = os.path.abspath(os.path.join(curdir,'filehdl.py'))
     fmthdl =os.path.abspath(os.path.join(curdir,'fmthdl.py'))
-    mixed = os.path.abspath(os.path.join(curdir,'mixed.py'))
     cobattr = os.path.abspath(os.path.join(curdir,'cobattr.py'))
     cobfile = os.path.abspath(os.path.join(curdir,'cobfile.py'))
     if len(sys.argv) > 2:
@@ -490,7 +487,6 @@ def debug_release():
     strparser_c = get_import_file(strparser)
     filehdl_c = get_import_file(filehdl)
     fmthdl_c = get_import_file(fmthdl)
-    mixed_c = get_import_file(mixed)
     cobattr_c = get_import_file(cobattr)
     cobfile_c = get_import_file(cobfile)
     logging.info('str_c\n%s'%(strparser_c))
@@ -504,7 +500,6 @@ def debug_release():
     repls[r'REPLACE_STR_PARSER=1'] = make_string_slash_ok(strparser_c)
     repls[r'REPLACE_FILE_HDL=1']= make_string_slash_ok(filehdl_c)
     repls[r'REPLACE_FMT_HDL=1']= make_string_slash_ok(fmthdl_c)
-    repls[r'REPLACE_MIXED=1'] = make_string_slash_ok(mixed_c)
     repls[r'REPLACE_COB_ATTR=1'] = make_string_slash_ok(cobattr_c)
     repls[r'REPLACE_COB_FILE=1'] = make_string_slash_ok(cobfile_c)
     #logging.info('repls %s'%(repls.keys()))
