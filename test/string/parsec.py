@@ -62,14 +62,24 @@ def param_handler(args,parser):
     sys.exit(0)
     return
 
-def unicode_handler(args,parser):
+def uni16_handler(args,parser):
     set_logging_level(args)
     for c in args.subnargs:
-        ints = strparser.string_to_uniints(c)
-        cb = strparser.uniints_to_string(ints)
+        ints = strparser.string_to_uni16(c)
+        cb = strparser.uni16_to_string(ints)
         sys.stdout.write('[%s] %s ret[%s]\n'%(c,ints,cb))
     sys.exit(0)
     return
+
+def uni32_handler(args,parser):
+    set_logging_level(args)
+    for c in args.subnargs:
+        ints = strparser.string_to_uni32(c)
+        cb = strparser.uni32_to_string(ints)
+        sys.stdout.write('[%s] %s ret[%s]\n'%(c,ints,cb))
+    sys.exit(0)
+    return
+
 
 def getbit_handler(args,parser):
     set_logging_level(args)
@@ -109,7 +119,10 @@ def main():
         "param<param_handler>##str... to parse param handler##" : {
             "$" : "+"
         },
-        "unicode<unicode_handler>##str... to parse unicode handler##" : {
+        "uni16<uni16_handler>##str... to parse unicode 16 le handler##" : {
+            "$" : "+"
+        },
+        "uni32<uni32_handler>##str... to parse unicode 32 le handler##" : {
             "$" : "+"
         },
         "getbit<getbit_handler>##number bits to get the bit number##" : {
