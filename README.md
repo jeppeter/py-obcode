@@ -3,6 +3,7 @@
 >  this project is to obfuscated for the c code
 
 ## release history
+* Oct 29th 2018 release 0.2.2 to make OB_MIXED_STR OB_MIXED_STR_SPEC OB_MIXED_WSTR OB_MIXED_WSTR_SPEC ok
 * Oct 25th 2018 release 0.1.8 to make OB_CONSTANT_STR OB_CONSTANT_STR_SPEC OB_CONSTANT_WSTR OB_CONSTANT_WSTR_SPEC
 * Oct 24th 2018 release 0.1.6 to make new parse for parameter with parse_param function
 * Sep 21st 2018 release 0.1.4 to make trans handler to obtrans handler
@@ -462,6 +463,10 @@ OB_CONSTANT_STR | give the constant replace for the original format  | OB_CONSTA
 OB_CONSTANT_STR_SPEC | give the constant replace for the original format  with specified config | OB_CONSTANT_STR_SPEC("funcname=10","hello world %s\n", "good"); |
 OB_CONSTANT_WSTR | give the constant replace for the original format of wide string  | OB_CONSTANT_WSTR(L"hello world %hs\n", "good"); |
 OB_CONSTANT_WSTR_SPEC | give the constant replace for the original format of wide string with specified config | OB_CONSTANT_WSTR_SPEC("funcname=10",L"hello world %hs\n", "good"); |
+OB_MIXED_STR | to give the replace string constant with dynamic string | OB_MIXED_STR("hello world") |
+OB_MIXED_STR_SPEC | to give the replace string constant with dynamic string  with config| OB_MIXED_STR_SPEC("funcname=10","hello world") |
+OB_MIXED_WSTR | to give the replace wide string constant with dynamic wide string | OB_MIXED_WSTR(L"hello world") |
+OB_MIXED_WSTR_SPEC | to give the replace wide string constant with dynamic wide string  with config| OB_MIXED_WSTR_SPEC("funcname=10",L"hello world") |
 
 
 ## config specification

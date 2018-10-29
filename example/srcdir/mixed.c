@@ -11,7 +11,7 @@ int CallNew()
     a = 1;
     b = 2;
     c = 3;
-    printf(OB_MIXED_STR("[%s:%d] up hello world %d %d %d\n"), __FILE__, __LINE__, a, b, c);
+    printf(OB_MIXED_STR("up hello world %d %d %d\n"), a, b, c);
     return 0;
 }
 
@@ -67,11 +67,10 @@ int PrintFunc()
     a = 1;
     b = 2;
     c = 3;
-    printf(OB_MIXED_STR_SPEC("funcname=17", "[%s:%d] hello world %d %d %d\n"), __FILE__, __LINE__, a, b, c);
-    printf(OB_MIXED_STR_SPEC("funcmin=10,funcmax=30", "[%s:%d] hello world again %d %d %d\n"), __FILE__, __LINE__, a, b, c);
-    fwprintf(stderr, OB_MIXED_WSTR(L"[%hs:%d] hello world wide %d %d %d\n"), OB_MIXED_STR_SPEC("funcmin=10,funcmax=30", "cc again"), __LINE__, a, b, c);
-    fwprintf(stderr, OB_MIXED_WSTR_SPEC("funcname=30", L"[%hs:%d] hello world wide %d %d %d\n"), OB_MIXED_STR("cc again"), __LINE__, a, b, c);
-    output_buffer(__FILE__,__LINE__,(unsigned char*)OB_MIXED_WSTR(L"[%hs:%d] hello world wide %d %d %d\n"),144);
+    printf(OB_MIXED_STR_SPEC("funcname=17", "hello world %d %d %d\n"),  a, b, c);
+    printf(OB_MIXED_STR_SPEC("funcmin=10,funcmax=30", "hello world again %d %d %d\n"),  a, b, c);
+    fwprintf(stderr, OB_MIXED_WSTR(L"[%hs]hello world wide %d %d %d\n"), OB_MIXED_STR_SPEC("funcmin=10,funcmax=30", "cc again"), a, b, c);
+    fwprintf(stderr, OB_MIXED_WSTR_SPEC("funcname=30", L"[%hs]hello world wide %d %d %d\n"), OB_MIXED_STR("cc again"), a, b, c);
     CallNew();
     return 0;
 }
@@ -82,8 +81,8 @@ int PrintFunc2()
     a = 1;
     b = 2;
     c = 3;
-    printf("[%s:%d] hello world %d %d %d\n", __FILE__, __LINE__, a, b, c);
-    printf("[%s:%d] hello world again %d %d %d\n", __FILE__, __LINE__, a, b, c);
+    printf("hello world %d %d %d\n", a, b, c);
+    printf("hello world again %d %d %d\n", a, b, c);
     CallNew();
     return 0;
 }

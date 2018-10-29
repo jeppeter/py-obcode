@@ -3,6 +3,16 @@ import sys
 import json
 import logging
 import re
+import os
+import sys
+
+
+##importdebugstart
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+from strparser import *
+from fmthdl import *
+##importdebugend
+
 
 ##extractcode_start
 def read_file(infile=None):
@@ -58,18 +68,6 @@ def get_file_lines(sfile=None):
         retsarr.append(c)
     return retsarr
 
-def format_comment_line(l):
-    s = ''
-    idx = 0
-    while idx < len(l):
-        if l[idx] == '*':
-            s += '\\*'
-        elif l[idx] == '/':
-            s += '\\/'
-        else:
-            s += l[idx]
-        idx += 1
-    return s
 
 def count_tabs(l):
     tabs = 0

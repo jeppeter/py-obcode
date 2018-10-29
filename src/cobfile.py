@@ -11,6 +11,7 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from strparser import *
 from filehdl import *
 from fmthdl import *
+from cobattr import *
 ##importdebugend
 
 
@@ -66,15 +67,19 @@ class COBFile(object):
         if k in self.__ob_mixed_str_dicts.keys():
             for curb in self.__ob_mixed_str_dicts[k]:
                 if curb.hash == cb.hash and curb.equal_byte(sbyte):
-                    if len(sbyte) >= 2 and sbyte[-1] == 0 and sbyte[-2] == 0:
-                        logging.info('at [%d] %s [%s] already inserted'%(self.__cur_line, sbyte, uniints_to_string(sbyte)))
+                    if len(sbyte) >=4 and sbyte[-1] == 0 and sbyte[-2] == 0 and sbyte[-3] == 0 and sbyte[-4] == 0:
+                        logging.info('at [%d] %s [%s] already inserted'%(self.__cur_line, sbyte, uni32_to_string(sbyte)))
+                    elif len(sbyte) >= 2 and sbyte[-1] == 0 and sbyte[-2] == 0:
+                        logging.info('at [%d] %s [%s] already inserted'%(self.__cur_line, sbyte, uni16_to_string(sbyte)))
                     else:
                         logging.info('at [%d] %s [%s] already inserted'%(self.__cur_line, sbyte, ints_to_string(sbyte)))
                     return
         else:
             self.__ob_mixed_str_dicts[k] = []
-        if len(sbyte) >= 2 and sbyte[-1] == 0 and sbyte[-2] == 0:
-            logging.info('%s [%s] into %s'%(sbyte, uniints_to_string(sbyte),cb.funcname))
+        if len(sbyte) >=4 and sbyte[-1] == 0 and sbyte[-2] == 0 and sbyte[-3] == 0 and sbyte[-4] == 0:
+            logging.info('%s [%s] into %s'%(sbyte, uni32_to_string(sbyte),cb.funcname))
+        elif len(sbyte) >= 2 and sbyte[-1] == 0 and sbyte[-2] == 0:
+            logging.info('%s [%s] into %s'%(sbyte, uni16_to_string(sbyte),cb.funcname))
         else:
             logging.info('%s [%s] into %s'%(sbyte, ints_to_string(sbyte),cb.funcname))
         self.__ob_mixed_str_dicts[k].append(cb)
@@ -114,7 +119,10 @@ class COBFile(object):
         assert(cbyte[0] == ord('L'))
         nbyte,lbyte = parse_string(cbyte[1:])
         rs = ints_to_string(nbyte)
-        sbyte = string_to_uniints(rs)
+        if cfg.unicodewidth == 32:
+            sbyte = string_to_uni32(rs)
+        else:
+            sbyte = string_to_uni16(rs)
         self.__prepare_mix_sbyte(sbyte, cfg)
         newl = '%sinbyte%s'%(before,after)
         return newl
@@ -127,7 +135,10 @@ class COBFile(object):
         assert(cbyte[0] == ord('L'))
         nbyte,lbyte = parse_string(cbyte[1:])
         rs = ints_to_string(nbyte)
-        sbyte = string_to_uniints(rs)
+        if cfg.unicodewidth == 32:
+            sbyte = string_to_uni32(rs)
+        else:
+            sbyte = string_to_uni16(rs)
         self.__prepare_mix_sbyte(sbyte, cfg)
         newl = '%sinbyte%s'%(before,after)
         return newl
@@ -649,13 +660,19 @@ class COBFile(object):
         if len(lbyte) >0:
             assert(lbyte[0]== 0)
         rs = ints_to_string(sbyte)
-        sbyte = string_to_uniints(rs)
+        if cfg.unicodewidth == 32:
+            sbyte = string_to_uni32(rs)
+        else:
+            sbyte = string_to_uni16(rs)
         vn ,vfunc = dc.add_bytes(sbyte,cfg)
         rets = ''
         if vfunc is not None:
             # now 
             tabs = count_tabs(l)
-            rets += format_line('wchar_t %s[%d];'%(vn,len(sbyte)/2),tabs)
+            if cfg.unicodewidth == 32:
+                rets += format_line('wchar_t %s[%d];'%(vn,len(sbyte)/4),tabs)
+            else:
+                rets += format_line('wchar_t %s[%d];'%(vn,len(sbyte)/2),tabs)
             rets += format_line('%s((unsigned char*)%s,%d);'%(vfunc,vn,len(sbyte)), tabs)
         # now replace
         newl = before

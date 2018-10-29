@@ -4,11 +4,16 @@ import random
 import json
 import logging
 import re
+import sys
+import os
+
+##importdebugstart
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+from strparser import *
+##importdebugend
+
 
 ##extractcode_start
-
-
-
 class Utf8Encode(object):
     def __dict_utf8(self,val):
         newdict =dict()
@@ -123,6 +128,19 @@ def quote_string(l):
             else:
                 rets += c
     return rets
+
+def format_comment_line(l):
+    s = ''
+    idx = 0
+    while idx < len(l):
+        if l[idx] == '*':
+            s += '\\*'
+        elif l[idx] == '/':
+            s += '\\/'
+        else:
+            s += l[idx]
+        idx += 1
+    return s
 
 
 def format_debug_line(l,tab=0,debug=0):
@@ -373,8 +391,10 @@ def format_bytes_xor_function(sbyte,abyte,abytefunc,bbyte,bbytefunc,nameprefix='
     if len(ss) > 0:
         ss += ']'
     funcstr += format_debug_line('%s'%(ss), tabs + 1, debug)
-    if len(sbyte) >= 2 and sbyte[-1] == 0 and sbyte[-2] == 0:
-        funcstr += format_debug_line('var wstring:[%s]'%(quote_string(uniints_to_string(sbyte))), tabs + 1, debug)
+    if  len(sbyte) >= 4 and sbyte[-1] == 0 and sbyte[-2] == 0 and sbyte[-3] == 0 and sbyte[-4] == 0:
+        funcstr += format_debug_line('var wstring:[%s]'%(quote_string(uni32_to_string(sbyte))), tabs + 1, debug)    
+    elif len(sbyte) >= 2 and sbyte[-1] == 0 and sbyte[-2] == 0:
+        funcstr += format_debug_line('var wstring:[%s]'%(quote_string(uni16_to_string(sbyte))), tabs + 1, debug)
     else:
         funcstr += format_debug_line('var string:[%s]'%(quote_string(ints_to_string(sbyte))), tabs + 1, debug)
     funcstr += format_line('unsigned char %s[%d];'%(bname, len(sbyte)), tabs + 1)
