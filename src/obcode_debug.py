@@ -171,19 +171,24 @@ class Utf8Encode(object):
         return self.__val
 
 GL_VAR_NAME_VARS=''
+GL_VAR_NAME_STARTS=''
 for i in range(26):
     GL_VAR_NAME_VARS += chr(ord('a')+i)
+    GL_VAR_NAME_STARTS += chr(ord('a')+i)
 
 for i in range(26):
     GL_VAR_NAME_VARS += chr(ord('A') + i)
+    GL_VAR_NAME_STARTS += chr(ord('A')+i)
 
 for i in range(10):
     GL_VAR_NAME_VARS += chr(ord('0')+i)
+
 
 GL_RANDOM_NAMES=[]
 
 def get_random_name(num=10):
     global GL_VAR_NAME_VARS
+    global GL_VAR_NAME_STARTS
     global GL_RANDOM_NAMES
     retval = True
     while retval:
@@ -191,8 +196,12 @@ def get_random_name(num=10):
         retstr = ''
         idx = 0
         while idx < num:
-            rnd = random.randint(0, len(GL_VAR_NAME_VARS)-1)
-            retstr += GL_VAR_NAME_VARS[rnd]
+            if idx == 0:
+                rnd = random.randint(0,len(GL_VAR_NAME_STARTS)-1)
+                retstr += GL_VAR_NAME_STARTS[rnd]
+            else:
+                rnd = random.randint(0, len(GL_VAR_NAME_VARS)-1)
+                retstr += GL_VAR_NAME_VARS[rnd]
             idx = idx +1 
         if retstr in GL_RANDOM_NAMES:
             retval = True
@@ -587,7 +596,6 @@ def format_bytes_xor_function(sbyte,abyte,abytefunc,bbyte,bbytefunc,nameprefix='
 
 
 
-
 class MixedString(object):
 
     def __get_bytes(self,size):
@@ -665,6 +673,32 @@ class MixedString(object):
             if sbyte[i] != self.__sbyte[i]:
                 return False
         return True
+
+class MixedStrVariable(object):
+    def __init__(self,dc):
+        self.__dict = dict()
+        self.__dc = dc
+        return
+
+    def add_bytes(self,sbyte,cfg):        
+        # to check whether the name in the handle
+        for k in self.__dict.keys():
+            s = self.__dict[k]
+            if s.equal_byte(sbyte):
+                return k, None
+        # now we do not have this ,so we should 
+        # find out
+        s = MixedString(sbyte, cfg)
+        hn = '%s'%(s.hash)
+        if hn not in self.__dc.keys():
+            raise Exception('can not find [%s] for insert'%(sbyte))
+        for k in self.__dc[hn]:
+            if k.equal_byte(sbyte):
+                name = get_random_name(random.randint(cfg.namemin,cfg.namemax))
+                self.__dict[name] = k
+                return name, k.funcname
+        raise Exception('can not found %s bytes'%(sbyte))   
+
 
 
 GL_INIT_ATTR={
@@ -1403,9 +1437,93 @@ class COBFile(object):
 
         return rets
 
-    def __format_ob_mixed(self,l):
+    def __format_ob_mixed_str_inner(self,l,dc,params,cfg,before,after):
+        assert(len(params) == 1)
+        bs = string_to_ints(params[0])
+        sbyte,lbyte = parse_string(bs)
+        assert(len(lbyte) <= 1)
+        if len(lbyte) > 0 :
+            assert(lbyte[0] == 0)
+        rs = ints_to_string(sbyte)
+        sbyte = string_to_ints(rs)
+        vn ,vfunc = dc.add_bytes(sbyte,cfg)
         rets = ''
-        return rets
+        if vfunc is not None:
+            # now 
+            tabs = count_tabs(l)
+            rets += format_line('char %s[%d];'%(vn,len(sbyte)),tabs)
+            rets += format_line('%s((unsigned char*)%s,%d);'%(vfunc,vn,len(sbyte)), tabs)
+        # now replace
+        newl = before
+        newl += vn
+        newl += after
+        return newl,rets
+
+    def __format_ob_mixed_str_func(self,l,dc):
+        cfg , params, before ,after = self.__get_variables(l, self.__ob_mixed_str_expr)
+        return self.__format_ob_mixed_str_inner(l,dc,params,cfg,before,after)
+
+    def __format_ob_mixed_str_spec_func(self,l,dc):
+        cfg ,params,before ,after = self.__get_spec_config_variables(l,self.__ob_mixed_str_spec_expr)
+        return self.__format_ob_mixed_str_inner(l,dc,params,cfg,before,after)
+
+    def __format_ob_mixed_wstr_inner(self,l,dc,params,cfg,before,after):
+        assert(len(params) == 1)
+        sbyte = string_to_ints(params[0])
+        assert(len(sbyte) > 1)
+        assert(sbyte[0] == ord('L'))
+        sbyte,lbyte = parse_string(sbyte[1:])
+        assert(len(lbyte) <= 1)
+        if len(lbyte) >0:
+            assert(lbyte[0]== 0)
+        rs = ints_to_string(sbyte)
+        sbyte = string_to_uniints(rs)
+        vn ,vfunc = dc.add_bytes(sbyte,cfg)
+        rets = ''
+        if vfunc is not None:
+            # now 
+            tabs = count_tabs(l)
+            rets += format_line('wchar_t %s[%d];'%(vn,len(sbyte)/2),tabs)
+            rets += format_line('%s((unsigned char*)%s,%d);'%(vfunc,vn,len(sbyte)), tabs)
+        # now replace
+        newl = before
+        newl += vn
+        newl += after
+        return newl,rets
+
+    def __format_ob_mixed_wstr_func(self,l,dc):
+        cfg , params, before ,after = self.__get_variables(l, self.__ob_mixed_wstr_expr)
+        return self.__format_ob_mixed_wstr_inner(l,dc,params,cfg,before,after)
+
+    def __format_ob_mixed_wstr_spec_func(self,l,dc):
+        cfg ,params,before ,after = self.__get_spec_config_variables(l,self.__ob_mixed_wstr_spec_expr)
+        return self.__format_ob_mixed_wstr_inner(l,dc,params,cfg,before,after)
+
+    def __format_ob_mixed(self,l):
+        s = ''
+        dc = MixedStrVariable(self.__ob_mixed_str_dicts)
+        newl = l
+        tabs = count_tabs(l)
+        s += format_debug_line('origin line [%s]'%(l),tabs, self.__cfg.debug)
+        while True:
+            if self.__get_filter_expr_not_defined(newl, self.__ob_mixed_str_expr):
+                newl,rets = self.__format_ob_mixed_str_func(newl,dc)
+                s += rets
+            elif self.__get_filter_expr_not_defined(newl, self.__ob_mixed_str_spec_expr):
+                newl ,rets = self.__format_ob_mixed_str_spec_func(newl,dc)
+                s += rets
+            elif self.__get_filter_expr_not_defined(newl, self.__ob_mixed_wstr_expr):
+                newl,rets = self.__format_ob_mixed_wstr_func(newl,dc)
+                s += rets
+            elif self.__get_filter_expr_not_defined(newl, self.__ob_mixed_wstr_spec_expr):
+                newl, rets = self.__format_ob_mixed_wstr_spec_func(newl,dc)
+                s += rets
+            else:
+                break
+        if not self.__cfg.noline:
+            s += format_line('#line %d "%s"'%(self.__cur_line,quote_string(self.__srcfile)),0)
+        s += format_line('%s'%(newl),0)
+        return s
 
 
     def out_str(self):
