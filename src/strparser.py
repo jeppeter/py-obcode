@@ -3,6 +3,9 @@
 import sys
 import logging
 
+
+
+##extractcode_start
 def string_to_ints(s):
     ri = []
     if sys.version[0] == '3':
@@ -503,3 +506,4 @@ def expand_bit(num,nbit):
                 return fnum
         cnum <<= 1
     return fnum
+##extractcode_end
