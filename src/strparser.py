@@ -36,7 +36,7 @@ def ints_to_string(sbyte):
         return str(cb)
 
 
-def string_to_uniints(s):
+def string_to_uni16(s):
     sbyte = []
     ri = []
     if sys.version[0] == '3':
@@ -54,13 +54,11 @@ def string_to_uniints(s):
     ri.append(0)
     return ri
 
-def uniints_to_string(sbyte):
+def uni16_to_string(sbyte):
     s = ''  
     if len(sbyte) >= 2 and sbyte[-1] == 0 and sbyte[-2] == 0:
         sbyte = sbyte[:-2]
     nbyte = []
-    nbyte.append(255)
-    nbyte.append(254)
     nbyte.extend(sbyte)
     if sys.version[0] == '3':
         cb = b''
@@ -73,6 +71,46 @@ def uniints_to_string(sbyte):
             cb += chr(nbyte[i])
         cs = cb.decode('utf-16-le')
         return cs.encode('utf8')
+
+def string_to_uni32(s):
+    sbyte = []
+    ri = []
+    if sys.version[0] == '3':
+        rb = s.encode('utf-32-le')
+    else:       
+        rc = s.decode('utf8')   
+        rb = rc.encode('utf-32-le')
+    for i in range(len(rb)):
+        if sys.version[0] == '3':
+            ri.append(int(rb[i]))
+        else:
+            ri.append(ord(rb[i]))
+    # to add null for unicode
+    ri.append(0)
+    ri.append(0)
+    ri.append(0)
+    ri.append(0)
+    logging.info('ri %s'%(ri))
+    return ri
+
+def uni32_to_string(sbyte):
+    s = ''  
+    if len(sbyte) >= 4 and sbyte[-1] == 0 and sbyte[-2] == 0 and sbyte[-3] == 0 and sbyte[-4] == 0:
+        sbyte = sbyte[:-4]
+    nbyte = []
+    nbyte.extend(sbyte)
+    if sys.version[0] == '3':
+        cb = b''
+        for i in range(len(nbyte)):
+            cb += nbyte[i].to_bytes(1,'little')
+        return cb.decode('utf-32-le')
+    else:
+        cb = b''
+        for i in range(len(nbyte)):
+            cb += chr(nbyte[i])
+        cs = cb.decode('utf-32-le')
+        return cs.encode('utf8')
+
 
 def is_normal_char(cbyte):
     if cbyte >= ord('0') and cbyte <= ord('9'):

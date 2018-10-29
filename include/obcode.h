@@ -27,6 +27,10 @@ extern "C" {
 #define  OB_CONSTANT_STR_SPEC(x,...)    __VA_ARGS__
 #define  OB_CONSTANT_WSTR_SPEC(x,...)   __VA_ARGS__
 
+#define  OB_MIXED_STR(x)                x
+#define  OB_MIXED_STR_SPEC(c,x)         x
+#define  OB_MIXED_WSTR(x)               x
+#define  OB_MIXED_WSTR_SPEC(c,x)        x
 
 #if defined(_MSC_VER)
 #include <Windows.h>
