@@ -39,20 +39,6 @@ REPLACE_COB_ATTR=1
 REPLACE_COB_FILE=1
 
 
-def make_dir_safe(ddir):
-    try:
-        os.makedirs(ddir)
-    except Exception as e:
-        if os.path.isdir(ddir):
-            return
-        raise e
-    return
-
-def raw_copy(sfile,dfile):
-    make_dir_safe(os.path.dirname(dfile))
-    #logging.info('[%s] => [%s]'%(sfile,dfile))
-    shutil.copy2(sfile, dfile)
-    return
 
 
 def handle_c_file(sfile,dfile,args,param):
@@ -103,19 +89,6 @@ def ob_walk_path(srcdir,dstdir,opthdl,args,params):
             opthdl(sfile, dfile, args, params)
     return
 
-def set_default_cob_attr(args):
-    global GL_DEFAULT_ATTR
-    global GL_INIT_ATTR
-    for k in GL_INIT_ATTR.keys():
-        nk = 'cob_%s'%(k)
-        v = args.__getattr__(nk)
-        GL_DEFAULT_ATTR[k] = v
-    return
-
-
-def format_cob_config(tabs):
-    global GL_INIT_ATTR
-    return format_object_string(GL_INIT_ATTR, tabs)
 
 
 def cob_handler(args,parser):

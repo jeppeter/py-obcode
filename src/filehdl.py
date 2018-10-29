@@ -88,4 +88,19 @@ def count_tabs(l):
             break
         idx += 1
     return tabs
+
+def make_dir_safe(ddir):
+    try:
+        os.makedirs(ddir)
+    except Exception as e:
+        if os.path.isdir(ddir):
+            return
+        raise e
+    return
+
+def raw_copy(sfile,dfile):
+    make_dir_safe(os.path.dirname(dfile))
+    #logging.info('[%s] => [%s]'%(sfile,dfile))
+    shutil.copy2(sfile, dfile)
+    return
 ##extractcode_end

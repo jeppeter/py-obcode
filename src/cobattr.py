@@ -168,4 +168,37 @@ class CompoundAttr(COBAttr):
 
     def get_count(self):
         return self.__basic_inc
+
+def format_object_string(odict,tabs):
+    s = json.dumps(odict,indent=4)
+    logging.info('s\n%s'%(s))
+    sarr = re.split('\n', s)
+    idx = 1
+    rets = ''
+    while idx < (len(sarr) - 1):
+        curs = sarr[idx]
+        curs = curs.rstrip('\r\n')
+        if idx == (len(sarr) - 2):
+            rets += format_tabs(tabs)
+            rets += '%s'%(curs)
+        else:
+            rets += format_line('%s'%(curs), tabs)
+        idx += 1    
+    return rets
+
+
+def set_default_cob_attr(args):
+    global GL_DEFAULT_ATTR
+    global GL_INIT_ATTR
+    for k in GL_INIT_ATTR.keys():
+        nk = 'cob_%s'%(k)
+        v = args.__getattr__(nk)
+        GL_DEFAULT_ATTR[k] = v
+    return
+
+
+def format_cob_config(tabs):
+    global GL_INIT_ATTR
+    return format_object_string(GL_INIT_ATTR, tabs)
+
 ##extractcode_end

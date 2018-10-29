@@ -7,22 +7,6 @@ import re
 
 ##extractcode_start
 
-def format_object_string(odict,tabs):
-    s = json.dumps(odict,indent=4)
-    logging.info('s\n%s'%(s))
-    sarr = re.split('\n', s)
-    idx = 1
-    rets = ''
-    while idx < (len(sarr) - 1):
-        curs = sarr[idx]
-        curs = curs.rstrip('\r\n')
-        if idx == (len(sarr) - 2):
-            rets += format_tabs(tabs)
-            rets += '%s'%(curs)
-        else:
-            rets += format_line('%s'%(curs), tabs)
-        idx += 1    
-    return rets
 
 
 class Utf8Encode(object):
