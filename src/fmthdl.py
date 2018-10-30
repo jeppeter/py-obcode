@@ -330,7 +330,7 @@ def format_bytes_set_function(sbyte,nameprefix='prefix', namelen=10, numturns=30
         funcstr += format_debug_line('pbuf[%d] & 0x%x ?=> 0x%x'%(i,curnum,sbyte[i]), tabs + 1, debug)
         funcstr += format_line('if (size > %d){'%(i), tabs + 1)
         funcstr += format_printf_func('printf("[%d][%%d:0x%%x] & [%%d:0x%%x] = [%%d:0x%%x] [target:0x%x:%d]\\n",pbuf[%d], pbuf[%d], %d,%d, (pbuf[%d] & %d), (pbuf[%d] & %d));'%(i,sbyte[i],sbyte[i],i,i,curnum,curnum,i,curnum,i,curnum), tabs+2)
-        funcstr += format_line('pbuf[%d] = pbuf[%d] & 0x%x;'%(i,i,curnum), tabs + 2)
+        funcstr += format_line('pbuf[%d] = (unsigned char)(pbuf[%d] & 0x%x);'%(i,i,curnum), tabs + 2)
         funcstr += format_line('}',tabs + 1)
 
     # we need not to set the number directly ,but just used
@@ -343,14 +343,14 @@ def format_bytes_set_function(sbyte,nameprefix='prefix', namelen=10, numturns=30
             funcstr += format_line('', tabs + 1)
             funcstr += format_line('if ( size > %d){'%(cidx), tabs + 1)
             funcstr += format_printf_func('printf("||[%d][%%d:0x%%x] | [%%d:0x%%x] = [%%d:0x%%x] [target:0x%x:%d]\\n",pbuf[%d],pbuf[%d],%d,%d,(pbuf[%d] | %d), (pbuf[%d] | %d));'%(cidx,sbyte[cidx],sbyte[cidx],cidx,cidx,cnum,cnum,cidx,cnum,cidx,cnum), tabs + 2)
-            funcstr += format_line('pbuf[%d] = pbuf[%d] | 0x%x;'%(cidx,cidx, cnum), tabs + 2)
+            funcstr += format_line('pbuf[%d] = (unsigned char)(pbuf[%d] | 0x%x);'%(cidx,cidx, cnum), tabs + 2)
             funcstr += format_line('}', tabs + 1)
         else:
             cnum = expand_bit(sbyte[cidx], cbit)
             funcstr += format_line('', tabs + 1)
             funcstr += format_line('if ( size > %d){'%(cidx), tabs + 1)
             funcstr += format_printf_func('printf("&&[%d][%%d:0x%%x] & [%%d:0x%%x] = [%%d:0x%%x] [target:0x%x:%d]\\n",pbuf[%d],pbuf[%d],%d,%d,(pbuf[%d] & %d), (pbuf[%d] & %d));'%(cidx,sbyte[cidx],sbyte[cidx],cidx,cidx,cnum,cnum,cidx,cnum,cidx,cnum), tabs + 2)
-            funcstr += format_line('pbuf[%d] = pbuf[%d] & 0x%x;'%(cidx,cidx, cnum), tabs + 2)
+            funcstr += format_line('pbuf[%d] = (unsigned char)(pbuf[%d] & 0x%x);'%(cidx,cidx, cnum), tabs + 2)
             funcstr += format_line('}', tabs + 1)
 
     # now we should filled the number
@@ -361,7 +361,7 @@ def format_bytes_set_function(sbyte,nameprefix='prefix', namelen=10, numturns=30
             funcstr += format_debug_line('pbuf[%d] | 0x%x ?=> 0x%x'%(i,cnum, sbyte[i]), tabs + 1, debug)
             funcstr += format_line('if (size > %d){'%(i), tabs + 1)
             funcstr += format_printf_func('printf("[%d] [%%d:0x%%x] | [%%d:0x%%x] = [%%d:0x%%x] [target:0x%x:%d]\\n", pbuf[%d], pbuf[%d], %d ,%d , (pbuf[%d] | %d), (pbuf[%d] | %d));'%(i,sbyte[i],sbyte[i],i,i,cnum,cnum,i,cnum,i,cnum), tabs + 2)
-            funcstr += format_line('pbuf[%d] = pbuf[%d] | 0x%x;'%(i,i,cnum), tabs + 2)
+            funcstr += format_line('pbuf[%d] = (unsigned char)(pbuf[%d] | 0x%x);'%(i,i,cnum), tabs + 2)
             funcstr += format_line('}',tabs + 1)
 
     funcstr += format_line('', tabs + 1)
@@ -423,7 +423,7 @@ def format_bytes_xor_function(sbyte,abyte,abytefunc,bbyte,bbytefunc,nameprefix='
             funcstr += format_debug_line('abyte[%d] = abyte[%d] & bbyte[%d]'%(cidx,cidx,didx), tabs + 1, debug)
             funcstr += format_debug_line('0x%x & 0x%x = 0x%0x'%(abyte[cidx],bbyte[didx], (abyte[cidx] & bbyte[didx])), tabs + 1, debug)
             funcstr += format_line('if ( %d < size && %d < size ) {'%(cidx, didx), tabs + 1 )
-            funcstr += format_line('pbuf[%d] = pbuf[%d] & %s[%d];'%(cidx, cidx, bname, didx), tabs + 2)
+            funcstr += format_line('pbuf[%d] = (unsigned char)(pbuf[%d] & %s[%d]);'%(cidx, cidx, bname, didx), tabs + 2)
             funcstr += format_line('}', tabs + 1)
             abyte[cidx] = abyte[cidx] & bbyte[didx]
         elif hdl == 1:
@@ -431,7 +431,7 @@ def format_bytes_xor_function(sbyte,abyte,abytefunc,bbyte,bbytefunc,nameprefix='
             funcstr += format_debug_line('abyte[%d] = abyte[%d] | bbyte[%d]'%(cidx,cidx,didx), tabs + 1, debug)
             funcstr += format_debug_line('0x%x | 0x%x = 0x%0x'%(abyte[cidx],bbyte[didx], (abyte[cidx] | bbyte[didx])), tabs + 1, debug)
             funcstr += format_line('if ( %d < size && %d < size ) {'%(cidx, didx), tabs + 1 )
-            funcstr += format_line('pbuf[%d] = pbuf[%d] | %s[%d];'%(cidx, cidx, bname, didx), tabs + 2)
+            funcstr += format_line('pbuf[%d] = (unsigned char)(pbuf[%d] | %s[%d]);'%(cidx, cidx, bname, didx), tabs + 2)
             funcstr += format_line('}', tabs + 1)
             abyte[cidx] = abyte[cidx] | bbyte[didx]
         elif hdl == 2:
@@ -439,7 +439,7 @@ def format_bytes_xor_function(sbyte,abyte,abytefunc,bbyte,bbytefunc,nameprefix='
             funcstr += format_debug_line('bbyte[%d] = abyte[%d] & bbyte[%d]'%(didx,cidx,didx), tabs + 1, debug)
             funcstr += format_debug_line('0x%x & 0x%x = 0x%0x'%(abyte[cidx],bbyte[didx], (abyte[cidx] & bbyte[didx])), tabs + 1, debug)
             funcstr += format_line('if ( %d < size && %d < size ) {'%(cidx, didx), tabs + 1 )
-            funcstr += format_line('%s[%d] = pbuf[%d] & %s[%d];'%(bname,didx, cidx, bname, didx), tabs + 2)
+            funcstr += format_line('%s[%d] = (unsigned char)(pbuf[%d] & %s[%d]);'%(bname,didx, cidx, bname, didx), tabs + 2)
             funcstr += format_line('}', tabs + 1)
             bbyte[didx] = abyte[cidx] & bbyte[didx]
         elif hdl == 3:
@@ -447,7 +447,7 @@ def format_bytes_xor_function(sbyte,abyte,abytefunc,bbyte,bbytefunc,nameprefix='
             funcstr += format_debug_line('bbyte[%d] = abyte[%d] | bbyte[%d]'%(didx,cidx,didx), tabs + 1, debug)
             funcstr += format_debug_line('0x%x & 0x%x = 0x%0x'%(abyte[cidx],bbyte[didx], (abyte[cidx] | bbyte[didx])), tabs + 1, debug)
             funcstr += format_line('if ( %d < size && %d < size ) {'%(cidx, didx), tabs + 1 )
-            funcstr += format_line('%s[%d] = pbuf[%d] | %s[%d];'%(bname,didx, cidx, bname, didx), tabs + 2)
+            funcstr += format_line('%s[%d] = (unsigned char)(pbuf[%d] | %s[%d]);'%(bname,didx, cidx, bname, didx), tabs + 2)
             funcstr += format_line('}', tabs + 1)
             bbyte[didx] = abyte[cidx] | bbyte[didx]
         elif hdl == 4:
@@ -455,7 +455,7 @@ def format_bytes_xor_function(sbyte,abyte,abytefunc,bbyte,bbytefunc,nameprefix='
             funcstr += format_debug_line('abyte[%d] = abyte[%d] ^ bbyte[%d]'%(cidx,cidx,didx), tabs + 1, debug)
             funcstr += format_debug_line('0x%x ^ 0x%x = 0x%0x'%(abyte[cidx],bbyte[didx], (abyte[cidx] ^ bbyte[didx])), tabs + 1, debug)
             funcstr += format_line('if ( %d < size && %d < size ) {'%(cidx, didx), tabs + 1 )
-            funcstr += format_line('pbuf[%d] = pbuf[%d] ^ %s[%d];'%(cidx, cidx, bname, didx), tabs + 2)
+            funcstr += format_line('pbuf[%d] = (unsigned char)(pbuf[%d] ^ %s[%d]);'%(cidx, cidx, bname, didx), tabs + 2)
             funcstr += format_line('}', tabs + 1)
             abyte[cidx] = abyte[cidx] ^ bbyte[didx]
         elif hdl == 5:
@@ -463,7 +463,7 @@ def format_bytes_xor_function(sbyte,abyte,abytefunc,bbyte,bbytefunc,nameprefix='
             funcstr += format_debug_line('bbyte[%d] = abyte[%d] ^ bbyte[%d]'%(didx,cidx,didx), tabs + 1, debug)
             funcstr += format_debug_line('0x%x ^ 0x%x = 0x%0x'%(abyte[cidx],bbyte[didx], (abyte[cidx] ^ bbyte[didx])), tabs + 1, debug)
             funcstr += format_line('if ( %d < size && %d < size ) {'%(cidx, didx), tabs + 1 )
-            funcstr += format_line('%s[%d] = pbuf[%d] ^ %s[%d];'%(bname,didx, cidx, bname, didx), tabs + 2)
+            funcstr += format_line('%s[%d] = (unsigned char)(pbuf[%d] ^ %s[%d]);'%(bname,didx, cidx, bname, didx), tabs + 2)
             funcstr += format_line('}', tabs + 1)
             bbyte[didx] = abyte[cidx] ^ bbyte[didx]
         else:
@@ -476,13 +476,13 @@ def format_bytes_xor_function(sbyte,abyte,abytefunc,bbyte,bbytefunc,nameprefix='
             cnum = sbyte[i] ^ abyte[i]
             funcstr += format_debug_line('pbuf[%d] = (abyte[%d])0x%x ^ 0x%x'%(i,i,abyte[i], cnum),tabs + 1, debug)
             funcstr += format_line('if (%d < size){'%(i), tabs + 1)
-            funcstr += format_line('pbuf[%d] = pbuf[%d] ^ 0x%x;'%(i,i,cnum),tabs + 2)
+            funcstr += format_line('pbuf[%d] = (unsigned char)(pbuf[%d] ^ 0x%x);'%(i,i,cnum),tabs + 2)
             funcstr += format_line('}',tabs + 1)
         elif hdl == 1:
             cnum = sbyte[i] ^ bbyte[i]
             funcstr += format_debug_line('pbuf[%d] = (bbyte[%d])0x%x ^ 0x%x'%(i,i,bbyte[i], cnum),tabs + 1, debug)
             funcstr += format_line('if (%d < size){'%(i), tabs + 1)
-            funcstr += format_line('pbuf[%d] = %s[%d] ^ 0x%x;'%(i,bname,i,cnum),tabs + 2)
+            funcstr += format_line('pbuf[%d] = (unsigned char)(%s[%d] ^ 0x%x);'%(i,bname,i,cnum),tabs + 2)
             funcstr += format_line('}',tabs + 1)
         else:
             raise Exception('unexpected random valud [%d]'%(hdl))

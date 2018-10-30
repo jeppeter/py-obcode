@@ -30,6 +30,8 @@ from cobattr import *
 from cobfile import *
 ##importdebugend
 
+REPLACE_IMPORT_LIB=1
+
 REPLACE_STR_PARSER=1
 REPLACE_FILE_HDL=1
 REPLACE_FMT_HDL=1
@@ -416,6 +418,7 @@ def main():
 
 ##importdebugstart
 import disttools
+from pyparser import *
 
 def make_string_slash_ok(s):
     sarr = re.split('\n', s)
@@ -458,6 +461,63 @@ def get_import_file(fname):
                     rets += '\n'
     return rets
 
+def make_filters_out(ims,files):
+    cont = True
+    jdx = 0
+    idx = 0
+    while cont:
+        cont = False
+        jdx = 0
+        idx = 0
+        while idx < len(ims) and not cont:
+            while jdx < len(files) and not cont:
+                if ims[idx].frommodule == files[jdx]:
+                    cont = True
+                    del ims[idx]
+                    break
+                jdx += 1
+            idx += 1
+    return ims
+
+def fromat_ext_import_files():
+    files = get_file_filter(os.path.abspath(os.path.dirname(__file__)),['.py'])
+    curbase = re.sub('\.py$','',os.path.basename(__file__))
+    allims = []
+    for f in files:
+        if len(f) == 0:
+            continue
+        if f == curbase:
+            continue
+        curf = os.path.abspath(os.path.join(os.path.dirname(__file__),'%s.py'%(f)))
+        allims.extend(get_import_names(curf))
+
+    curims= get_import_names(__file__)
+    curims = packed_import(curims)
+    curims = make_filters_out(curims, files)
+    allims = packed_import(allims)
+    allims = make_filters_out(allims, files)
+    cont = True
+    seccont = True
+    while cont:
+        cont = False
+        idx = 0
+        while idx < len(allims) :
+            jdx = 0
+            while jdx < len(curims) :
+                if allims[idx].frommodule == curims[jdx].frommodule and \
+                    allims[idx].module == curims[jdx].module:
+                    cont = True
+                    del allims[idx]
+                    break
+                jdx += 1
+            if cont:
+                break
+            idx += 1
+    rets = ''
+    for m in allims:
+        rets += '%s\n'%(format_import(m))
+    return rets
+
 def debug_release():
     if '-v' in sys.argv[1:]:
         #sys.stderr.write('will make verbose\n')
@@ -489,11 +549,13 @@ def debug_release():
     fmthdl_c = get_import_file(fmthdl)
     cobattr_c = get_import_file(cobattr)
     cobfile_c = get_import_file(cobfile)
-    logging.info('str_c\n%s'%(strparser_c))
+    #logging.info('str_c\n%s'%(strparser_c))
     sarr = re.split('\.',vernum)
     if len(sarr) != 3:
         raise Exception('version (%s) not format x.x.x'%(vernum))
     VERSIONNUMBER = vernum
+    import_rets = fromat_ext_import_files()
+    logging.info('import_rets\n%s'%(import_rets))
     repls = dict()
     repls[r'VERSION_RELACE_STRING'] = VERSIONNUMBER
     repls[r'debug_main'] = 'main'
@@ -502,6 +564,7 @@ def debug_release():
     repls[r'REPLACE_FMT_HDL=1']= make_string_slash_ok(fmthdl_c)
     repls[r'REPLACE_COB_ATTR=1'] = make_string_slash_ok(cobattr_c)
     repls[r'REPLACE_COB_FILE=1'] = make_string_slash_ok(cobfile_c)
+    repls[r'REPLACE_IMPORT_LIB=1'] = make_string_slash_ok(import_rets)
     #logging.info('repls %s'%(repls.keys()))
     disttools.release_file('__main__',tofile,[],[[r'##importdebugstart.*',r'##importdebugend.*']],[],repls)
     return

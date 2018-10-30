@@ -101,4 +101,15 @@ def raw_copy(sfile,dfile):
     #logging.info('[%s] => [%s]'%(sfile,dfile))
     shutil.copy2(sfile, dfile)
     return
+
+def get_file_filter(sdir,suffixes=['.py']):
+    filters = []
+    absdir = os.path.abspath(sdir)
+    for root, dirs, files in os.walk(absdir):
+        if root == absdir:
+            for f in files:
+                for s in suffixes:
+                    if f.endswith(s):                        
+                        filters.append(re.sub('%s$'%(s),'',f))
+    return filters
 ##extractcode_end
