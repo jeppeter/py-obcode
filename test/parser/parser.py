@@ -8,6 +8,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..','src')))
 from filehdl import *
 from pyparser import *
+from elfparser import *
+from peparser import *
 
 
 def set_logging_level(args):
@@ -70,6 +72,18 @@ def pack_handler(args,parser):
 	sys.exit(0)
 	return
 
+def elfsym_handler(args,parser):
+	set_logging_level(args)
+	if len(args.subnargs) < 2:
+		raise Exception('elffile symbol... needed')
+	fname = args.subnargs[0]
+	elffile = ElfParser(fname)
+	for sym in args.subnargs[1:]:
+		offset = elffile.func_offset(sym)
+		size = elffile.func_size(sym)
+		sys.stdout.write('[%s].[%s] offset[0x%x] size[0x%x]\n'%(fname,sym,offset,size))
+	sys.exit(0)
+	return
 
 
 def main():
@@ -83,6 +97,9 @@ def main():
 			"$" : "+"
 		},
 		"pack<pack_handler>##pyfiles... to pack out python file import##" : {
+			"$" : "+"
+		},
+		"elfsym<elfsym_handler>##elffile symbol... to extract symbol offset and get size##" : {
 			"$" : "+"
 		}
 	}
