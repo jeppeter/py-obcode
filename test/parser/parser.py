@@ -80,8 +80,23 @@ def elfsym_handler(args,parser):
 	elffile = ElfParser(fname)
 	for sym in args.subnargs[1:]:
 		offset = elffile.func_offset(sym)
+		reloff = elffile.func_vaddr(sym)
 		size = elffile.func_size(sym)
-		sys.stdout.write('[%s].[%s] offset[0x%x] size[0x%x]\n'%(fname,sym,offset,size))
+		sys.stdout.write('[%s].[%s] fileoff[0x%x] offset[0x%x] size[0x%x]\n'%(fname,sym,offset,reloff,size))
+		sys.stdout.write('relocation [%s]\n'%(sym))
+		startaddr = None
+		for i in range(size):
+			vaddr = reloff + i
+			if elffile.is_in_reloc(vaddr):
+				if startaddr is None:
+					startaddr = vaddr
+			else:
+				if startaddr is not None:
+					sys.stdout.write('[%s].[%s][0x%x] [+0x%x]reloc\n'%(fname,sym,startaddr, startaddr - reloff))
+					startaddr = None
+		if startaddr is not None:
+			sys.stdout.write('[%s].[%s][0x%x] [+0x%x]reloc\n'%(fname,sym,startaddr, startaddr - reloff))
+			startaddr = None
 	sys.exit(0)
 	return
 

@@ -49,14 +49,7 @@ class MixedString(object):
         return
 
     def __get_hash(self,sbyte):
-        cval = 0
-        for s in sbyte:
-            cval += s
-            # 113 is the prime number
-            cval *= 113
-            # 104729 is the prime number
-            cval = cval % 104729
-        return cval
+        return get_bytes_hash(sbyte)
 
     def __getattr__(self,keyname):
         if keyname == 'sbyte':

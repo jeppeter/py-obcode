@@ -21,6 +21,20 @@ def string_to_ints(s):
     return ri
 
 
+def get_bytes_hash(sbyte):
+    hv = 0
+    for v in sbyte:
+        # 113 is primer
+        hv *= 113
+        hv += v
+        # 104729 is the primer
+        hv = hv % 104729
+    return hv
+
+def get_name_hash(s):
+    sbyte = string_to_ints(s)
+    return get_bytes_hash(sbyte)
+
 def ints_to_string(sbyte):
     if len(sbyte) >= 1 and sbyte[-1] == 0:
         sbyte = sbyte[:-1]
