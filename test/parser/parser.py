@@ -92,10 +92,10 @@ def elfsym_handler(args,parser):
 					startaddr = vaddr
 			else:
 				if startaddr is not None:
-					sys.stdout.write('[%s].[%s][0x%x] [+0x%x]reloc\n'%(fname,sym,startaddr, startaddr - reloff))
+					sys.stdout.write('[%s].[%s][0x%x] [+0x%x]reloc [0x%x]size\n'%(fname,sym,startaddr, startaddr - reloff, (vaddr - startaddr)))
 					startaddr = None
 		if startaddr is not None:
-			sys.stdout.write('[%s].[%s][0x%x] [+0x%x]reloc\n'%(fname,sym,startaddr, startaddr - reloff))
+			sys.stdout.write('[%s].[%s][0x%x] [+0x%x]reloc [0x%x]size\n'%(fname,sym,startaddr, startaddr - reloff, (vaddr - startaddr)))
 			startaddr = None
 	sys.exit(0)
 	return
@@ -120,10 +120,10 @@ def coffsym_handler(args,parser):
 					startaddr = vaddr
 			else:
 				if startaddr is not None:
-					sys.stdout.write('[%s].[%s][0x%x] [+0x%x]reloc\n'%(fname,sym,startaddr, startaddr - reloff))
+					sys.stdout.write('[%s].[%s][0x%x] [+0x%x]reloc [0x%x]size\n'%(fname,sym,startaddr, (startaddr - reloff), (vaddr - startaddr)))
 					startaddr = None
 		if startaddr is not None:
-			sys.stdout.write('[%s].[%s][0x%x] [+0x%x]reloc\n'%(fname,sym,startaddr, startaddr - reloff))
+			sys.stdout.write('[%s].[%s][0x%x] [+0x%x]reloc [0x%x]size\n'%(fname,sym,startaddr, startaddr - reloff, (vaddr - startaddr)))
 			startaddr = None
 	sys.exit(0)
 	return

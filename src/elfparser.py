@@ -14,16 +14,17 @@ from strparser import *
 
 ##extractcode_start
 class FuncInfo(object):
-	def __init__(self,vaddr,offset,size,name):
+	def __init__(self,vaddr,offset,size,name,secidx):
 		self.__vaddr = vaddr
 		self.__offset = offset
 		self.__name = name
 		self.__size = size
+		self.__secidx = secidx
 		self.__hash = get_name_hash(name)
 		return
 
 	def __str__(self):
-		return '[%s].vaddr=[0x%x] .offset[0x%x]'%(self.name,self.vaddr,self.offset)
+		return '[%s].vaddr=[0x%x] .offset[0x%x] .secidx[%s]'%(self.name,self.vaddr,self.offset, self.secidx)
 
 	def __repr__(self):
 		return str(self)
@@ -39,20 +40,20 @@ class FuncInfo(object):
 			return self.__size
 		elif keyname == 'hash':
 			return self.__hash
+		elif keyname == 'secidx':
+			return self.__secidx
 		else:
 			if keyname in self.__dict__.keys():
 				return self.__dict__[keyname]
 		raise Exception('not [%s]'%(keyname))
 		return None
 
-	def __setattr(self,k,v):
+	def __setattr__(self,k,v):
 		if k == 'vaddr' or k == 'offset' or \
-			k == 'size' or k=='name' or k == 'hash':
+			k == 'size' or k=='name' or k == 'hash' or k == 'secidx':
 			raise Exception('can not set [%s]'%(k))
 		else:
-			if k in self.__dict__.keys():
-				self.__dict__[k] = v
-		raise Exception('not set [%s] =[%s]'%(k,v))
+			self.__dict__[k] = v
 
 	def __eq__(self,other):
 		if self.name != other.name:
@@ -63,14 +64,17 @@ class FuncInfo(object):
 			return False
 		if self.size != other.size:
 			return False
+		if self.secidx != other.secidx:
+			return False
 		return True
 
 class RelocInfo(object):
-	def __init__(self,name,vaddr,typestr):
+	def __init__(self,name,vaddr,typestr,secidx):
 		self.__name = name
 		self.__vaddr = vaddr
 		self.__type =  typestr
 		self.__size = 4
+		self.__secidx = secidx
 		self.__hash = vaddr
 		return
 
@@ -78,7 +82,7 @@ class RelocInfo(object):
 		return str(self) == str(other)
 
 	def __str__(self):
-		return '[%s].vaddr [0x%x] .type[0x%x] size[0x%x]'%(self.name, self.vaddr,self.type, self.size)
+		return '[%s].vaddr [0x%x] .type[0x%x] .size[0x%x] .secidx[%s]'%(self.name, self.vaddr,self.type, self.size, self.secidx)
 
 	def __repr__(self):
 		return str(self)
@@ -94,6 +98,8 @@ class RelocInfo(object):
 			return self.__size
 		elif k == 'hash':
 			return self.__hash
+		elif k == 'secidx':
+			return self.__secidx
 		else:
 			if k in self.__dict__.keys():
 				return self.__dict__[k]
@@ -101,7 +107,7 @@ class RelocInfo(object):
 		return None
 
 	def __setattr__(self,k,v):
-		if k == 'vaddr' or 	k=='name' or k == 'hash' or k == 'size':
+		if k == 'vaddr' or 	k=='name' or k == 'hash' or k == 'size' or k == 'secidx':
 			raise Exception('can not set [%s]'%(k))
 		self.__dict__[k] = v
 		return
@@ -141,21 +147,27 @@ class ElfParser(object):
 			for sym in symtab.iter_symbols():
 				vaddr = sym['st_value']
 				size = sym['st_size']
+				secidx = sym['st_shndx']
 				off = self._vaddr_to_off(vaddr,sym.name)
-				funcinfo = FuncInfo(vaddr,off,size,sym.name)
+				funcinfo = FuncInfo(vaddr,off,size,sym.name,secidx)
 				hv = '%x'%(funcinfo.hash)
 				inserted = False
-				if hv in self.__funcinfo.keys():
-					for k in self.__funcinfo[hv]:
-						if k == funcinfo:
-							logging.info('%s already insert'%(funcinfo))
-							inserted = True
-							break
-					if not inserted:
-						self.__funcinfo[hv].append(funcinfo)
+				if secidx in self.__funcinfo.keys():
+					if hv in self.__funcinfo[secidx]:
+						for k in self.__funcinfo[secidx][hv]:
+							if k == funcinfo:
+								logging.info('%s already insert'%(funcinfo))
+								inserted = True
+								break
+						if not inserted:
+							self.__funcinfo[secidx][hv].append(funcinfo)
+					else:
+						self.__funcinfo[secidx][hv] = []
+						self.__funcinfo[secidx][hv].append(funcinfo)
 				else:
-					self.__funcinfo[hv] = []
-					self.__funcinfo[hv].append(funcinfo)
+					self.__funcinfo[secidx] = dict()
+					self.__funcinfo[secidx][hv] = []
+					self.__funcinfo[secidx][hv].append(funcinfo)
 		return
 
 	def _vaddr_to_off(self,vaddr,name=''):
@@ -169,13 +181,14 @@ class ElfParser(object):
 	def __parse_elf_relocinfo(self):
 		assert(self.__elffile is not None)
 		assert(self.__relocinfo is None)
-		self.__relocinfo = []
+		self.__relocinfo = dict()
 		ndict = dict()
 		for section in self.__elffile.iter_sections():
 			if not isinstance(section, RelocationSection):
 				continue
 			symtab = self.__elffile.get_section(section['sh_link'])
 			idxnum = -1
+			logging.info('section [%s] type [%s]'%(section.name,section.header['sh_type']))
 			for rel in section.iter_relocations():
 				idxnum += 1
 				vaddr = rel['r_offset']
@@ -185,39 +198,48 @@ class ElfParser(object):
 					symbol = symtab.get_symbol(rel['r_info_sym'])
 					if symbol['st_name'] == 0:
 						symsec = self.__elffile.get_section(symbol['st_shndx'])
-						symbol_name = symsec.name						
+						symbol_name = symsec.name
 					else:
 						symbol_name = symbol.name
 					name = symbol_name
-				relinfo = RelocInfo(name,vaddr,typeval)
+				relinfo = RelocInfo(name,vaddr,typeval, section.name)
 				hv = '%x'%(relinfo.hash)
 				inserted = False
-				if hv in ndict.keys():
-					for k in ndict[hv]:
-						if k == relinfo:
-							inserted = True
-							break
+				if section.name in ndict.keys():
+					if hv in ndict[section.name].keys():
+						for k in ndict[section.name][hv]:
+							if k == relinfo:
+								logging.info('%s already inserted'%(relinfo))
+								inserted = True
+								break
+					else:
+						ndict[section.name][hv] = []
 				else:
-					ndict[hv] = []
+					ndict[section.name] = dict()
+					ndict[section.name][hv] = []
 				if not inserted:
-					ndict[hv].append(relinfo)
+					logging.info('%s %s'%(section.name, relinfo))
+					ndict[section.name][hv].append(relinfo)
 		for k in ndict.keys():
-			for v in ndict[k]:
-				self.__relocinfo.append(v)
-		self.__relocinfo = sorted(self.__relocinfo, key=lambda vinfo:vinfo.vaddr)
+			self.__relocinfo[k] = []
+			for v in ndict[k].keys():
+				kv = ndict[k][v][0]
+				self.__relocinfo[k].append(kv)
+		for k in ndict.keys():
+			vks = sorted(self.__relocinfo[k], key = lambda vinfo : vinfo.vaddr)
+			self.__relocinfo[k] = vks
 		return
 
 	def __find_funcinfo(self,name):
-		retinfo = None
 		if self.__funcinfo is None:
 			self.__parse_elf_funcinfo()
 		hv = '%x'%(get_name_hash(name))
-		if hv  in self.__funcinfo.keys():
-			for k in self.__funcinfo[hv]:
-				if k.name == name:
-					retinfo = k
-					break
-		return retinfo
+		for sec in self.__funcinfo.keys():
+			if hv  in self.__funcinfo[sec].keys():
+				for k in self.__funcinfo[sec][hv]:
+					if k.name == name:
+						return k
+		return None
 	def __is_in_relocate_addr(self,vaddr,relinfo):
 		if vaddr >= relinfo.vaddr and \
 			vaddr < (relinfo.vaddr + relinfo.size):
@@ -234,28 +256,37 @@ class ElfParser(object):
 			return True
 		return False
 
-	def __find_relocinfo(self,vaddr):
+	def __find_relocinfo(self,vaddr,secname):
 		if self.__relocinfo is None:
 			self.__parse_elf_relocinfo()
+		if self.__funcinfo is None:
+			self.__parse_elf_funcinfo()
+		if secname not in self.__relocinfo.keys():
+			return None
+		relsecinfos = self.__relocinfo[secname]
 		minidx = 0
-		maxidx = len(self.__relocinfo) - 1
+		maxidx = len(relsecinfos) - 1
 		while minidx < maxidx:
 			curidx = int((minidx + maxidx) / 2)
-			if self.__is_in_relocate_addr(vaddr,self.__relocinfo[curidx]):
-				return self.__relocinfo[curidx]
-			if self.__is_less_relocate_addr(vaddr,self.__relocinfo[curidx]):
+			if self.__is_in_relocate_addr(vaddr,relsecinfos[curidx]):
+				logging.info('[%d].%s [0x%x]'%(curidx,relsecinfos[curidx],vaddr))
+				return relsecinfos[curidx]
+			if self.__is_less_relocate_addr(vaddr,relsecinfos[curidx]):
 				maxidx = curidx
-			elif self.__is_greate_relocate_addr(vaddr,self.__relocinfo[curidx]):
+			elif self.__is_greate_relocate_addr(vaddr,relsecinfos[curidx]):
 				minidx = curidx
 			if minidx >= (maxidx - 1):
-				if self.__is_in_relocate_addr(vaddr,self.__relocinfo[minidx]):
-					return self.__relocinfo[minidx]
-				if self.__is_in_relocate_addr(vaddr,self.__relocinfo[maxidx]):
-					return self.__relocinfo[maxidx]
+				if self.__is_in_relocate_addr(vaddr,relsecinfos[minidx]):
+					logging.info('[%d].%s [0x%x]'%(curidx,relsecinfos[minidx], vaddr))
+					return relsecinfos[minidx]
+				if self.__is_in_relocate_addr(vaddr,relsecinfos[maxidx]):
+					logging.info('[%d].%s [0x%x]'%(curidx,relsecinfos[maxidx],vaddr))
+					return relsecinfos[maxidx]
 				return None
 		if minidx == maxidx:
-			if self.__is_in_relocate_addr(vaddr,self.__relocinfo[minidx]):
-				return self.__relocinfo[minidx]
+			if self.__is_in_relocate_addr(vaddr,relsecinfos[minidx]):
+				logging.info('[%d].%s [0x%x]'%(curidx,relsecinfos[minidx], vaddr))
+				return relsecinfos[minidx]
 		return None
 
 	def func_offset(self,name):
@@ -281,9 +312,24 @@ class ElfParser(object):
 
 	def is_in_reloc(self,vaddr,name):
 		assert(self.__elffile is not None)
-		relinfo = self.__find_relocinfo(vaddr)
-		if relinfo is not None:
-			return True
+		funcinfo = self.__find_funcinfo(name)
+		if funcinfo is None:
+			logging.warn('find [%s] none'%(name))
+			return False
+		try:
+			secidx = int(funcinfo.secidx)
+		except:
+			logging.warn('get %s'%(funcinfo))
+			return False
+		# now to get the function sections
+		for nidx, section in enumerate(self.__elffile.iter_sections()):
+			if nidx == secidx:
+				relinfo = self.__find_relocinfo(vaddr,'.rel%s'%(section.name))
+				if relinfo is not None:
+					return True
+				relinfo = self.__find_relocinfo(vaddr,'.rela%s'%(section.name))
+				if relinfo is not None:
+					return True
 		return False
 
 

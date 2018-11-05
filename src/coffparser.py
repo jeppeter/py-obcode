@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import coff
+import logging
 
 
 ##extractcode_start
@@ -77,6 +78,7 @@ class CoffParser(object):
 			return False
 		if vaddr >= (rel.vaddr + rel.size):
 			return False
+		logging.info('vaddr [0x%x]%s'%(vaddr, rel))
 		return True
 
 	def _find_rel_in(self,reltbl,vaddr):
