@@ -2,6 +2,7 @@
 
 import coff
 import logging
+import sys
 
 
 ##extractcode_start
@@ -20,6 +21,14 @@ class CoffParser(object):
 		for k in self.__coff.relocs.keys():
 			self.__relocvalues[k] = []
 			self.__relocvalues[k] = sorted(self.__coff.relocs[k], key = lambda rel: rel.vaddr)
+		self.__data = []
+		if sys.version[0] == '3':
+			fin = open(fname,'rb')
+		else:
+			fin = open(fname,'r')
+		self.__data = fin.read()
+		fin.close()
+		fin = None
 		return
 
 	def close(self):
@@ -122,5 +131,8 @@ class CoffParser(object):
 		if vaddr < findsym.value or vaddr >= (findsym.value + findsym.size):
 			return True
 		return self._find_rel_in(self.__relocvalues[k], vaddr)
+
+	def get_data(self):
+		return self.__data
 
 ##extractcode_end

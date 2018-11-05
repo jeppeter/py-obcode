@@ -15,6 +15,7 @@ from fmthdl import *
 
 
 ##extractcode_start
+
 def read_file(infile=None):
     fin = sys.stdin
     if infile is not None:
@@ -32,14 +33,19 @@ def read_file(infile=None):
     fin = None
     return rets
 
-def write_file(s,outfile=None):
-    fout = sys.stdout
-    if outfile is not None:
-        fout = open(outfile, 'w+b')
+def write_file_direct(s,fout):
     outs = s
     if 'b' in fout.mode:
         outs = s.encode('utf-8')
     fout.write(outs)
+    return
+
+
+def write_file(s,outfile=None):
+    fout = sys.stdout
+    if outfile is not None:
+        fout = open(outfile, 'w+b')
+    write_file_direct(s,fout)
     if fout != sys.stdout:
         fout.close()
     fout = None

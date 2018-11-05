@@ -1,0 +1,8 @@
+#ifndef __MAIN_H_B4A752BC7B8694C38FD413662A4302B4__
+#define __MAIN_H_B4A752BC7B8694C38FD413662A4302B4__
+
+#include <obcode.h>
+
+int OB_FUNC unpactch_handler(void);
+
+#endif /* __MAIN_H_B4A752BC7B8694C38FD413662A4302B4__ */

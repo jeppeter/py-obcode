@@ -117,12 +117,18 @@ class ElfParser(object):
 	def __init__(self,fname):
 		if sys.version[0] == '3':
 			self.__fin = open(fname,'rb')
+			fin = open(fname,'rb')
 		else:
 			self.__fin = open(fname,'r')
+			fin = open(fname,'r')
 		self.__fname= fname
 		self.__elffile = ELFFile(self.__fin)
 		self.__funcinfo = None
 		self.__relocinfo = None
+		self.__data=[]
+		self.__data = fin.read()
+		fin.close()
+		fin = None
 		return
 
 	def close(self):
@@ -331,6 +337,9 @@ class ElfParser(object):
 				if relinfo is not None:
 					return True
 		return False
+
+	def get_data(self):
+		return self.__data
 
 
 ##extractcode_end

@@ -365,11 +365,126 @@ def obuntrans_handler(args,parser):
     sys.exit(0)
     return
 
+def format_ob_patch_functions(objparser,jsondump,funcname,formatname,times,debuglevel=0):
+    rets = ''
+    ftimes = times
+    funcsize = objparser.func_size(funcname)
+    funcoff = objparser.func_offset(funcname)
+    funcdata = []
+    funcvaddr = objparser.func_vaddr(funcname)
+    validbytes = 0
+    data = []
+    data = objparser.get_data()
+    for i in range(funcsize):
+        if objparser.is_in_reloc((funcvaddr + i), funcname):
+            funcdata.append(1)
+        else:
+            funcdata.append(0)
+            validbytes += 1
+    if times == 0:
+        # now to get the funcsize
+        ftimes = int(validbytes / 2)
+    if ftimes >= validbytes:
+        ftimes = validbytes - 1
+
+    rets += format_line('int %s()'%(formatname), 0)
+    if funcname not in jsondump.keys():
+        jsondump[funcname] = dict()
+    if 'xors' not in jsondump[funcname].keys():
+        jsondump[funcname]['xors'] = dict()
+    jsondump[funcname]['formatfunc'] = formatfunc
+    if ftimes > 0:
+        i = 0
+        rets += format_line('unsigned char* pbaseptr=(unsigned char*)&%s;'%(funcname),1)
+        rets += format_line('unsigned char* pcurptr;',1)
+        while i < ftimes:
+            xornum = random.randint(0,255)
+            xoroff = random.randint(0,funcsize - 1)
+            if funcdata[xoroff] == 1:
+                continue
+            funcdata[xoroff] = 1
+            rets += format_line('',1)
+            rets += format_debug_line('%s[%d] = 0x%x ^ 0x%x = 0x%x'%(funcname, xoroff, data[funcoff + xoroff],xornum, (data[funcoff + xoroff]^xornum)), 1, debuglevel)
+            rets += format_line('pcurptr = (pbaseptr + %d);'%(curoff),1)
+            rets += format_line('*pcurptr ^= %d;'%(xornum),1)
+            jsondump[funcname]['xors'][xoroff] = xornum
+            i += 1
+    rets += format_line('return 0;',1)
+    rets += format_line('}',0)
+    return rets
+
+def obunpatchelf_handler(args,parser):
+    set_logging_level(args)
+    if len(args.subnargs) < 1:
+        raise Exception('obunpackelf objectfile functions')
+    ofile = args.subnargs[0]    
+    elfparser = ElfParser(ofile)
+    if args.dump is None:
+        odict = dict()
+    else:
+        with open(args.dump) as fin:
+            odict = json.load(fin)
+    rets = ''
+    for s in args.includes:
+        rets += format_line('#include <%s>'%(s),0)
+
+    for s in args.includefiles:
+        rets += format_line('#include "%s"'%(s),0)
+
+
+    for funcname in args.subnargs[1:]:
+        nformatfunc = get_random_name(random.randint(5,20))
+        rets += format_line('',0)
+        rets += format_ob_patch_functions(elfparser,odict,funcname,nformatfunc,args.times,args.verbose)
+
+    rets += format_line('',0)
+    rets += format_line('int %s()'%(args.obunpatchelf_funcname),0)
+    if len(args.subnargs) >= 2:
+        rets += format_line('int ret;',1)
+        for f in args.subnargs[1:]:
+            rets += format_debug_line('format for %s'%(f),1,args.verbose)
+            rets += format_line('ret = %s();'%(odict[f]['formatfunc']),1)
+            rets += format_line('if (ret < 0) {', 1)
+            rets += format_line('return ret;',2)
+            rets += format_line('}',1)
+    rets += format_line('return 0',1)
+    rets += format_line('}',0)
+
+    if args.output is None:
+        fout = sys.stdout
+    else:
+        fout = open(args.output,'w+b')
+
+    write_file_direct(rets,fout)
+    if fout != sys.stdout:
+        fout.close()
+    else:
+        fout.flush()
+    fout = None
+
+    if args.dump is None:
+        fout = sys.stderr
+    else:
+        fout = open(args.dump,'w+b')
+    write_file_direct(json.dumps(odict,sort_keys=True,indent=4), fout)
+    if fout != sys.stderr:
+        fout.close()
+    else:
+        fout.flush()
+    fout = None
+    sys.exit(0)
+    return
+
 def main():
     commandline_fmt='''
     {
         "verbose|v" : "+",
         "version|V" : false,
+        "output|o" : null,
+        "times|T" : 0,
+        "dump|D" : null,
+        "includes|I" : [],
+        "includefiles" : [],
         "cob<cob_handler>##srcdir dstdir to obfuscated code in c mode##" : {
             "handles" : ["\\\\.c$","\\\\.h$","\\\\.cpp$","\\\\.cxx$"],
             "filters" : ["\\\\.git$"],
@@ -400,7 +515,15 @@ def main():
         },
         "obuntrans<obuntrans_handler>##inputfile [outputfile] to trans file from MAKOB_FILE##" : {
             "$" : "+"
+        },
+        "obunpatchelf<obunpatchelf_handler>##inputfile function... to format unpatch elf functions##" : {
+            "$" : "+",
+            "funcname" : "unpatch_handler"
+        },
+        "obpatchelf<obpatchelf_handler>##inputfile dumpfile to patch elf functions##" : {
+            "$" : "+"
         }
+
     }
     '''
     commandline = commandline_fmt%(format_cob_config(4))
