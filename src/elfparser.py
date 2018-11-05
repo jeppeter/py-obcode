@@ -279,7 +279,7 @@ class ElfParser(object):
 			return funcinfo.size
 		return -1
 
-	def is_in_reloc(self,vaddr):
+	def is_in_reloc(self,vaddr,name):
 		assert(self.__elffile is not None)
 		relinfo = self.__find_relocinfo(vaddr)
 		if relinfo is not None:

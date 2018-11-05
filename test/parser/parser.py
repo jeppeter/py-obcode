@@ -9,7 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'
 from filehdl import *
 from pyparser import *
 from elfparser import *
-from peparser import *
+from coffparser import *
 
 
 def set_logging_level(args):
@@ -87,7 +87,35 @@ def elfsym_handler(args,parser):
 		startaddr = None
 		for i in range(size):
 			vaddr = reloff + i
-			if elffile.is_in_reloc(vaddr):
+			if elffile.is_in_reloc(vaddr,sym):
+				if startaddr is None:
+					startaddr = vaddr
+			else:
+				if startaddr is not None:
+					sys.stdout.write('[%s].[%s][0x%x] [+0x%x]reloc\n'%(fname,sym,startaddr, startaddr - reloff))
+					startaddr = None
+		if startaddr is not None:
+			sys.stdout.write('[%s].[%s][0x%x] [+0x%x]reloc\n'%(fname,sym,startaddr, startaddr - reloff))
+			startaddr = None
+	sys.exit(0)
+	return
+
+def coffsym_handler(args,parser):
+	set_logging_level(args)
+	if len(args.subnargs) < 2:
+		raise Exception('cofffile symbol... needed')
+	fname = args.subnargs[0]
+	cofffile = CoffParser(fname)
+	for sym in args.subnargs[1:]:
+		offset = cofffile.func_offset(sym)
+		reloff = cofffile.func_vaddr(sym)
+		size = cofffile.func_size(sym)
+		sys.stdout.write('[%s].[%s] fileoff[0x%x] offset[0x%x] size[0x%x]\n'%(fname,sym,offset,reloff,size))
+		sys.stdout.write('relocation [%s]\n'%(sym))
+		startaddr = None
+		for i in range(size):
+			vaddr = reloff + i
+			if cofffile.is_in_reloc(vaddr,sym):
 				if startaddr is None:
 					startaddr = vaddr
 			else:
@@ -115,6 +143,9 @@ def main():
 			"$" : "+"
 		},
 		"elfsym<elfsym_handler>##elffile symbol... to extract symbol offset and get size##" : {
+			"$" : "+"
+		},
+		"coffsym<coffsym_handler>##cofffile symbol... to extract symbol offset and get size##" : {
 			"$" : "+"
 		}
 	}
