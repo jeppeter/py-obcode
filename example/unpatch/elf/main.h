@@ -3,6 +3,8 @@
 
 #include <obcode.h>
 
-int OB_FUNC unpactch_handler(void);
+int OB_FUNC unpatch_handler(map_prot_func_t protfunc);
+int print_out_a(void);
+int print_out_b(void);
 
 #endif /* __MAIN_H_B4A752BC7B8694C38FD413662A4302B4__ */

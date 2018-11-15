@@ -59,6 +59,21 @@ def ints_to_bytes(sbyte):
             cb += chr(sbyte[i])
     return cb
 
+def dump_ints(ints):
+    rets = ''
+    idx = 0
+    curidx = 0
+    for c in ints:
+        if (idx % 16) == 0:
+            if idx > 0:
+                rets += '\n'
+            rets += '0x%08x'%(idx)
+        rets += ' 0x%02x'%(c)
+        idx += 1
+    rets += '\n'
+    return rets
+
+
 def bytes_to_ints(sbyte):
     ints = []
     for c in sbyte:

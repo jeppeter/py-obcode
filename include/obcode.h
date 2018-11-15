@@ -32,6 +32,11 @@ extern "C" {
 #define  OB_MIXED_WSTR(x)               x
 #define  OB_MIXED_WSTR_SPEC(c,x)        x
 
+#define OB_MAP_EXEC                   1
+#define OB_MAP_READ                   2
+#define OB_MAP_WRITE                  4
+
+
 #if defined(_MSC_VER)
 #include <Windows.h>
 #define  OB_TYPEOF(x)                       decltype(x)
@@ -46,10 +51,44 @@ typedef UINT32                              OB_ADDR;
 #define  OB_TYPEOF(x)                       typeof(x)
 
 #define OB_ADDR                             unsigned long int
+#include <sys/mman.h>
+
+
+#define OB_MAP_FUNCTION()                                                                         \
+int ux_map_prot(void* addr, int size, int prot)                                                   \
+{                                                                                                 \
+	OB_ADDR addralign = (OB_ADDR)(addr);                                                          \
+	int alignsize = size;                                                                         \
+	int uxprot=0;                                                                                 \
+	addralign += OB_PAGE_MASK;                                                                    \
+	addralign &= ~((OB_ADDR)OB_PAGE_MASK);                                                        \
+	alignsize += OB_PAGE_MASK;                                                                    \
+	alignsize &= ~((int)OB_PAGE_MASK);                                                            \
+	if (prot & OB_MAP_READ) {                                                                     \
+		uxprot |= PROT_READ;                                                                      \
+	}                                                                                             \
+	if (prot & OB_MAP_WRITE) {                                                                    \
+		uxprot |= PROT_WRITE;                                                                     \
+	}                                                                                             \
+	if (prot & OB_MAP_EXEC) {                                                                     \
+		uxprot |= PROT_EXEC;                                                                      \
+	}                                                                                             \
+                                                                                                  \
+	return mprotect((void*)addralign,alignsize, uxprot);                                          \
+}
+
+
+#define OB_MAP_FUNC   ux_map_prot
 
 #else
 #error "not supported compilers"
 #endif
+
+
+typedef int (*map_prot_func_t)(void* addr, int size, int prot);
+
+#define  OB_PAGE_ALIGN                     4096
+#define  OB_PAGE_MASK                      (OB_PAGE_ALIGN - 1)
 
 #ifdef __cplusplus
 };

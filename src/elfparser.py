@@ -5,6 +5,7 @@ import sys
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.relocation import RelocationSection
+from elftools.elf.enums import *
 import os
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
@@ -152,8 +153,11 @@ class ElfParser(object):
 			for sym in symtab.iter_symbols():
 				vaddr = sym['st_value']
 				size = sym['st_size']
-				secidx = sym['st_shndx']
-				off = self._vaddr_to_off(vaddr,sym.name)
+				secidx = sym['st_shndx']				
+				if self.__elffile.header['e_type'] == ENUM_E_TYPE['ET_EXEC']:
+					off = self._vaddr_to_off(vaddr,sym.name)
+				else:
+					off = self._sec_to_off(secidx,vaddr)
 				funcinfo = FuncInfo(vaddr,off,size,sym.name,secidx)
 				hv = '%x'%(funcinfo.hash)
 				inserted = False
@@ -174,6 +178,15 @@ class ElfParser(object):
 					self.__funcinfo[secidx][hv] = []
 					self.__funcinfo[secidx][hv].append(funcinfo)
 		return
+
+	def _sec_to_off(self,secidx,vaddr = 0):
+		assert(self.__elffile is not None)
+		idx = 0
+		for section in self.__elffile.iter_sections():
+			if idx == secidx:
+				return section['sh_offset'] + vaddr
+			idx += 1
+		return 0
 
 	def _vaddr_to_off(self,vaddr,name=''):
 		assert(self.__elffile is not None)
@@ -340,5 +353,40 @@ class ElfParser(object):
 	def get_data(self):
 		return bytes_to_ints(self.__data)
 
+	def get_text_file_off(self,data,rels,symname=''):
+		if len(data) != len(rels):
+			raise Exception('len(data) [%d] != len(rels)[%d]'%(len(data),len(rels)))
+		sbyte = bytes_to_ints(self.__data)
+		retoff = -1
+		idx = 0
+		jdx = 0
+		fidx = 0
+		while fidx < len(rels):
+			if rels[fidx] == 0:
+				break
+			fidx += 1
+		if fidx >= len(rels):
+			raise Exception('all rels')
+		idx = 0
+		while idx < len(sbyte):
+			jdx = fidx
+			if sbyte[(idx+fidx)] == data[(jdx)]:
+				curidx = idx + fidx + 1
+				jdx += 1
+				while jdx < len(data):
+					if rels[jdx] == 0 and \
+						data[jdx] != sbyte[curidx]:
+						#logging.info('[%s].[+0x%x] [+0x%x] [0x%02x] != [0x%02x]'%(symname,jdx,curidx,data[jdx], sbyte[curidx]))
+						break
+					jdx += 1
+					curidx += 1
+				if jdx == len(data):
+					if retoff >= 0:
+						raise Exception('double match at [0x%x] and [0x%x]'%(retoff,idx))
+					retoff = idx
+			idx += 1
+		if retoff < 0:
+			raise Exception('can not find [%s] code\nrels\n%s\ndata\n%s\n'%(symname, dump_ints(rels), dump_ints(data)))
+		return retoff
 
 ##extractcode_end

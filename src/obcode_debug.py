@@ -25,16 +25,17 @@ def set_logging_level(args):
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from strparser import *
 from filehdl import *
+from elfparser import *
 from fmthdl import *
 from cobattr import *
 from cobfile import *
-from elfparser import *
 ##importdebugend
 
 REPLACE_IMPORT_LIB=1
 
 REPLACE_STR_PARSER=1
 REPLACE_FILE_HDL=1
+REPLACE_ELF_PARSER=1
 REPLACE_FMT_HDL=1
 REPLACE_COB_ATTR=1
 REPLACE_COB_FILE=1
@@ -366,14 +367,14 @@ def obuntrans_handler(args,parser):
     sys.exit(0)
     return
 
-FORMAT_FUNC_KEY='formatfunc'
-FORMAT_CODE_KEY='formatcode'
-FUNC_DATA_OFFSET_KEY='dataset'
-XORS_KEY='xors'
+FORMAT_FUNC_NAME_KEY='funcname'
+FORMAT_FUNC_CODE_KEY='funccode'
+FORMAT_FUNC_OFFSET_KEY='funcoff'
+FORMAT_FUNC_XORS_KEY='xors'
 FUNC_DATA_KEY='funcdata'
 FUNC_DATA_RELOC_KEY='relocs'
 
-def format_ob_patch_functions(objparser,jsondump,funcname,formatname,times,debuglevel=0):
+def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,times,debuglevel=0):
     rets = ''
     ftimes = times
     funcsize = objparser.func_size(funcname)
@@ -395,113 +396,170 @@ def format_ob_patch_functions(objparser,jsondump,funcname,formatname,times,debug
     if ftimes >= validbytes:
         ftimes = validbytes - 1
 
-    rets += format_line('int %s()'%(formatname), 0)
-    if funcname not in jsondump.keys():
-        jsondump[funcname] = dict()
-    if XORS_KEY not in jsondump[funcname].keys():
-        jsondump[funcname][XORS_KEY] = dict()
-    if FUNC_DATA_OFFSET_KEY not in jsondump[funcname].keys():
-        jsondump[funcname][FUNC_DATA_OFFSET_KEY] = dict()
-    jsondump[funcname][FORMAT_FUNC_KEY] = formatname
-    jsondump[funcname][FUNC_DATA_RELOC_KEY] = []
+    rets += format_line('int %s(map_prot_func_t mapfunc)'%(formatname), 0)
+    rets += format_line('{', 0)
+    if objname not in jsondump.keys():
+        jsondump[objname] = dict()
+        logging.info('jsondump [%s]'%(objname))
+    if funcname not in jsondump[objname].keys():
+        jsondump[objname][funcname] = dict()
+    if FORMAT_FUNC_XORS_KEY not in jsondump[objname][funcname].keys():
+        jsondump[objname][funcname][FORMAT_FUNC_XORS_KEY] = dict()
+    if FORMAT_FUNC_OFFSET_KEY not in jsondump[objname][funcname].keys():
+        jsondump[objname][funcname][FORMAT_FUNC_OFFSET_KEY] = dict()
+    jsondump[objname][funcname][FORMAT_FUNC_NAME_KEY] = formatname
+    jsondump[objname][funcname][FUNC_DATA_RELOC_KEY] = []
     for i in range(funcsize):
         if objparser.is_in_reloc((funcvaddr+i), funcname):
-            jsondump[funcname][FUNC_DATA_RELOC_KEY].append(1)
+            jsondump[objname][funcname][FUNC_DATA_RELOC_KEY].append(1)
         else:
-            jsondump[funcname][FUNC_DATA_RELOC_KEY].append(0)
+            jsondump[objname][funcname][FUNC_DATA_RELOC_KEY].append(0)
 
     if ftimes > 0:
         i = 0
         rets += format_line('unsigned char* pbaseptr=(unsigned char*)&%s;'%(funcname),1)
         rets += format_line('unsigned char* pcurptr;',1)
+        rets += format_line('int ret;',1)
+        rets += format_line('',1)
+        rets += format_line('if (mapfunc != NULL){',1)
+        rets += format_line('ret = mapfunc(pbaseptr,%d,OB_MAP_READ|OB_MAP_EXEC|OB_MAP_WRITE);'%(funcsize),2)
+        rets += format_line('if (ret < 0) {',2)
+        rets += format_line('return -1;',3)
+        rets += format_line('}',2)
+        rets += format_line('}',1)
         while i < ftimes:
             xornum = random.randint(0,255)
             xoroff = random.randint(0,funcsize - 1)
-            if funcdata[xoroff] > 0 or  (xoroff in  jsondump[funcname][FUNC_DATA_OFFSET_KEY].keys() \
-                and jsondump[funcname][FUNC_DATA_OFFSET_KEY][xoroff] > 0):
+            if funcdata[xoroff] > 0 or  (xoroff in  jsondump[objname][funcname][FORMAT_FUNC_OFFSET_KEY].keys() \
+                and jsondump[objname][funcname][FORMAT_FUNC_OFFSET_KEY][xoroff] > 0):
                 continue
             funcdata[xoroff] += 2
             rets += format_line('',1)
             rets += format_debug_line('%s[%d] = 0x%x ^ 0x%x = 0x%x'%(funcname, xoroff, data[funcoff + xoroff],xornum, (data[funcoff + xoroff]^xornum)), 1, debuglevel)
             rets += format_line('pcurptr = (pbaseptr + %d);'%(xoroff),1)
             rets += format_line('*pcurptr ^= %d;'%(xornum),1)
-            jsondump[funcname][XORS_KEY][xoroff] = xornum
-            jsondump[funcname][FUNC_DATA_OFFSET_KEY][xoroff] = funcdata[xoroff]
+            jsondump[objname][funcname][FORMAT_FUNC_XORS_KEY][xoroff] = xornum
+            jsondump[objname][funcname][FORMAT_FUNC_OFFSET_KEY][xoroff] = funcdata[xoroff]
             i += 1
+        rets += format_line('if (mapfunc != NULL){',1)
+        rets += format_line('ret = mapfunc(pbaseptr,%d,OB_MAP_READ|OB_MAP_EXEC);'%(funcsize),2)
+        rets += format_line('if (ret < 0) {',2)
+        rets += format_line('return -1;',3)
+        rets += format_line('}',2)
+        rets += format_line('}',1)
+
     rets += format_line('return 0;',1)
     rets += format_line('}',0)
-    jsondump[funcname][FORMAT_CODE_KEY]= rets
-    return rets
+    jsondump[objname][funcname][FORMAT_FUNC_CODE_KEY]= rets
+    return jsondump
 
-def patch_data(odict,objparser,funcs,objdata):
+def patch_data(odict,objparser,objname,funcs,objdata):
     for f in funcs:
         foff = objparser.func_offset(f)
         if foff < 0 :
             raise Exception('can not find [%s]'%(f))
         fvaddr = objparser.func_vaddr(f)
         assert(fvaddr >= 0)
-        for off in odict[f][XORS_KEY].keys():
-            if odict[f][FUNC_DATA_OFFSET_KEY][off] >= 2:
+        for off in odict[objname][f][FORMAT_FUNC_XORS_KEY].keys():
+            if odict[objname][f][FORMAT_FUNC_OFFSET_KEY][off] >= 2:
                 # we change the xor data into
-                objdata[(foff + off)] = objdata[(foff + off)] ^ odict[f][XORS_KEY][off]
+                objdata[(foff + off)] = objdata[(foff + off)] ^ odict[objname][f][FORMAT_FUNC_XORS_KEY][off]
     for f in funcs:
         foff = objparser.func_offset(f)      
         fsize = objparser.func_size(f)
-        odict[f][FUNC_DATA_KEY] = objdata[foff:(foff+ fsize)]
+        odict[objname][f][FUNC_DATA_KEY] = objdata[foff:(foff+ fsize)]
     return objdata
+
+def elf_one_file(odict,objfile,funcs,times,verbose):
+    elfparser = ElfParser(objfile)
+    for funcname in funcs:
+        nformatfunc = get_random_name(random.randint(5,20))
+        odict = format_ob_patch_functions(elfparser,odict,objfile,funcname,nformatfunc,times,verbose)
+
+
+    # now to give the change file
+    objdata = elfparser.get_data()
+    #logging.info('[%s] data\n%s'%(objfile,dump_ints(objdata)))
+    logging.info('funcs %s'%(funcs))
+    for f in funcs:
+        foff = elfparser.func_offset(f)
+        fsize = elfparser.func_size(f)
+        logging.info('foff [%d]'%(foff))
+        if foff < 0 :
+            raise Exception('can not find [%s]'%(f))
+        fvaddr = elfparser.func_vaddr(f)
+        assert(fvaddr >= 0)
+        for off in odict[objfile][f][FORMAT_FUNC_XORS_KEY].keys():            
+            if odict[objfile][f][FORMAT_FUNC_OFFSET_KEY][off] >= 2:
+                # we change the xor data into
+                logging.info('[%s].[%s]foff [0x%x] + off [0x%x] [0x%02x] ^ [0x%02x] => [0x%02x]'%(objfile,f,\
+                 foff, off,objdata[(foff + off)] ,\
+                 odict[objfile][f][FORMAT_FUNC_XORS_KEY][off], \
+                 objdata[(foff + off)] ^ odict[objfile][f][FORMAT_FUNC_XORS_KEY][off]))
+                objdata[(foff + off)] = objdata[(foff + off)] ^ odict[objfile][f][FORMAT_FUNC_XORS_KEY][off]
+        odict[objfile][f][FUNC_DATA_KEY] = objdata[foff:(foff+fsize)]
+    elfparser.close()
+    #logging.info('writeback [%s]\n%s'%(objfile,dump_ints(objdata)))
+    write_file_ints(objdata,objfile)
+    return odict
 
 def obunpatchelf_handler(args,parser):
     set_logging_level(args)
     if len(args.subnargs) < 1:
         raise Exception('obunpackelf objectfile functions')
-    ofile = args.subnargs[0]    
-    elfparser = ElfParser(ofile)
+    jdict = dict()
+    for a in args.subnargs:
+        sarr = re.split(':',a)
+        if len(sarr) < 2:
+            continue
+        carr = re.split(',',sarr[1])
+        jdict[sarr[0]] = carr
+
+
     if args.dump is None or not os.path.exists(args.dump):
         odict = dict()
     else:
         with open(args.dump) as fin:
             odict = json.load(fin)
+            odict = Utf8Encode(odict).get_val()
     rets = ''
+    rets += format_line('#include <obcode.h>',0)
+    rets += format_line('#include <stdio.h>',0)
+    rets += format_line('#include <stdlib.h>',0)
     for s in args.includes:
         rets += format_line('#include <%s>'%(s),0)
 
     for s in args.includefiles:
         rets += format_line('#include "%s"'%(s),0)
 
+    for f in jdict.keys():
+        logging.info('f [%s] funcs %s'%(f,jdict[f]))
+        elf_one_file(odict,f,jdict[f],args.times,args.verbose)
 
-    for funcname in args.subnargs[1:]:
-        nformatfunc = get_random_name(random.randint(5,20))
-        rets += format_line('',0)
-        rets += format_ob_patch_functions(elfparser,odict,funcname,nformatfunc,args.times,args.verbose)
+    for o in odict.keys():
+        rets += format_debug_line('format file [%s]'%(o),0,args.verbose)
+        for f in odict[o]:
+            rets += format_line('',0)
+            rets += format_debug_line('format for function [%s]'%(f),0,args.verbose)
+            rets += odict[o][f][FORMAT_FUNC_CODE_KEY]
 
     rets += format_line('',0)
-    rets += format_line('int %s()'%(args.obunpatchelf_funcname),0)
-    if len(args.subnargs) >= 2:
-        rets += format_line('int ret;',1)
-        for f in args.subnargs[1:]:
+    rets += format_line('int %s(map_prot_func_t mapfunc)'%(args.obunpatchelf_funcname),0)
+    rets += format_line('{',0)
+    retout = 0
+    for o in jdict.keys():
+        if retout == 0:
+            rets += format_line('int ret;',1)
+            retout = 1
+        for f in jdict[o]:
+            rets += format_line('',1)
             rets += format_debug_line('format for %s'%(f),1,args.verbose)
-            rets += format_line('ret = %s();'%(odict[f][FORMAT_FUNC_KEY]),1)
+            rets += format_line('ret = %s(mapfunc);'%(odict[o][f][FORMAT_FUNC_NAME_KEY]),1)
             rets += format_line('if (ret < 0) {', 1)
             rets += format_line('return ret;',2)
             rets += format_line('}',1)
-    rets += format_line('return 0',1)
+    rets += format_line('return 0;',1)
     rets += format_line('}',0)
-
-    # now to give the change file
-    objdata = elfparser.get_data()
-    for f in args.subnargs[1:]:
-        foff = elfparser.func_offset(f)
-        if foff < 0 :
-            raise Exception('can not find [%s]'%(f))
-        fvaddr = elfparser.func_vaddr(f)
-        assert(fvaddr >= 0)
-        for off in odict[f][XORS_KEY].keys():
-            if odict[f][FUNC_DATA_OFFSET_KEY][off] >= 2:
-                # we change the xor data into
-                objdata[(foff + off)] = objdata[(foff + off)] ^ odict[f][XORS_KEY][off]
-    elfparser.close()
-    write_file_ints(objdata,ofile)
-
 
     if args.output is None:
         fout = sys.stdout
@@ -530,11 +588,36 @@ def obunpatchelf_handler(args,parser):
 
 def obpatchelf_handler(args,parser):
     set_logging_level(args)
+    if args.dump is None:
+        raise Exception('no dump file get')
     ofile = args.subnargs[0]
-    if args.dump is not None and os.path.exists(args.dump):
-        with open(args.dump) as fin:
-            odict = json.load(fin)
+    with open(args.dump,'r') as fin:
+        odict = json.load(fin)
+        odict = Utf8Encode(odict).get_val()
 
+    elfparser = ElfParser(ofile)
+    alldatas = elfparser.get_data()
+    for o in odict.keys():
+        for f in odict[o].keys():
+            rels = odict[o][f][FUNC_DATA_RELOC_KEY]
+            #logging.info('rels\n%s'%(dump_ints(rels)))
+            offsetk = odict[o][f][FORMAT_FUNC_OFFSET_KEY]
+            data = odict[o][f][FUNC_DATA_KEY]
+            reloff = elfparser.get_text_file_off(data,rels,f)
+            xors = odict[o][f][FORMAT_FUNC_XORS_KEY]
+            for k in xors.keys():
+                if xors[k] <= 1:
+                    ki = int(k)
+                    logging.info('[%s].[%s] [+%d] [0x%02x] = [0x%02x] ^ [0x%02x]'%( o, f,ki,\
+                        alldatas[(reloff + ki)] ^ offsetk[k], alldatas[(reloff + ki)], \
+                        offsetk[k]))
+                    alldatas[(reloff + ki)] = alldatas[(reloff + ki)] ^ offsetk[k]
+                    xors[k] = 2
+            odict[o][f][FORMAT_FUNC_XORS_KEY] = xors
+    elfparser.close()
+    write_file_ints(alldatas,ofile)
+    with open(args.dump,'w+b') as fout:
+        write_file_direct(json.dumps(odict,sort_keys=True,indent=4), fout)
     sys.exit(0)
     return
 
@@ -579,12 +662,12 @@ def main():
         "obuntrans<obuntrans_handler>##inputfile [outputfile] to trans file from MAKOB_FILE##" : {
             "$" : "+"
         },
-        "obunpatchelf<obunpatchelf_handler>##inputfile function... to format unpatch elf functions##" : {
+        "obunpatchelf<obunpatchelf_handler>##objfilename:func1,func2 ... to format unpatch elf file with func1##" : {
             "$" : "+",
             "funcname" : "unpatch_handler"
         },
-        "obpatchelf<obpatchelf_handler>##inputfile dumpfile to patch elf functions##" : {
-            "$" : "+"
+        "obpatchelf<obpatchelf_handler>##inputfile to patch elf functions##" : {
+            "$" : 1
         }
 
     }
@@ -653,15 +736,17 @@ def make_filters_out(ims,files):
     idx = 0
     while cont:
         cont = False
-        jdx = 0
         idx = 0
         while idx < len(ims) and not cont:
+            jdx = 0
             while jdx < len(files) and not cont:
                 if ims[idx].frommodule == files[jdx]:
                     cont = True
+                    logging.info('del [%d] jdx [%d] [%s]'%(idx,jdx,ims[idx]))
                     del ims[idx]
+                    logging.info('%s'%(ims))
                     break
-                jdx += 1
+                jdx += 1                
             idx += 1
     return ims
 
@@ -680,8 +765,10 @@ def fromat_ext_import_files():
     curims= get_import_names(__file__)
     curims = packed_import(curims)
     curims = make_filters_out(curims, files)
+    logging.info('curims %s'%(curims))
     allims = packed_import(allims)
     allims = make_filters_out(allims, files)
+    logging.info('allims %s'%(allims))
     cont = True
     seccont = True
     while cont:
@@ -693,6 +780,7 @@ def fromat_ext_import_files():
                 if allims[idx].frommodule == curims[jdx].frommodule and \
                     allims[idx].module == curims[jdx].module:
                     cont = True
+                    #logging.info('del [%d] %s'%(idx,allims[idx]))
                     del allims[idx]
                     break
                 jdx += 1
@@ -708,6 +796,8 @@ def debug_release():
     if '-v' in sys.argv[1:]:
         #sys.stderr.write('will make verbose\n')
         loglvl =  logging.DEBUG
+        if logging.root is not None and len(logging.root.handlers) > 0:
+            logging.root.handlers = []
         logging.basicConfig(level=loglvl,format='%(asctime)s:%(filename)s:%(funcName)s:%(lineno)d\t%(message)s')
     topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
     tofile= os.path.abspath(os.path.join(topdir,'obcode.py'))
@@ -717,6 +807,7 @@ def debug_release():
     fmthdl =os.path.abspath(os.path.join(curdir,'fmthdl.py'))
     cobattr = os.path.abspath(os.path.join(curdir,'cobattr.py'))
     cobfile = os.path.abspath(os.path.join(curdir,'cobfile.py'))
+    elfparser = os.path.abspath(os.path.join(curdir,'elfparser.py'))
     if len(sys.argv) > 2:
         for k in sys.argv[1:]:
             if not k.startswith('-'):
@@ -735,6 +826,7 @@ def debug_release():
     fmthdl_c = get_import_file(fmthdl)
     cobattr_c = get_import_file(cobattr)
     cobfile_c = get_import_file(cobfile)
+    elfparser_c = get_import_file(elfparser)
     #logging.info('str_c\n%s'%(strparser_c))
     sarr = re.split('\.',vernum)
     if len(sarr) != 3:
@@ -750,6 +842,7 @@ def debug_release():
     repls[r'REPLACE_FMT_HDL=1']= make_string_slash_ok(fmthdl_c)
     repls[r'REPLACE_COB_ATTR=1'] = make_string_slash_ok(cobattr_c)
     repls[r'REPLACE_COB_FILE=1'] = make_string_slash_ok(cobfile_c)
+    repls[r'REPLACE_ELF_PARSER=1'] = make_string_slash_ok(elfparser_c)
     repls[r'REPLACE_IMPORT_LIB=1'] = make_string_slash_ok(import_rets)
     #logging.info('repls %s'%(repls.keys()))
     disttools.release_file('__main__',tofile,[],[[r'##importdebugstart.*',r'##importdebugend.*']],[],repls)
