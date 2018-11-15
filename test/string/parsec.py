@@ -6,7 +6,7 @@ import sys
 import os
 
 sys.path.append(os.path.join(os.path.abspath(os.path.dirname(__file__)),'..','..','src'))
-import strparser
+from strparser import *
 
 def set_logging_level(args):
     loglvl= logging.ERROR
@@ -25,11 +25,11 @@ def set_logging_level(args):
 def string_handler(args,parser):
     set_logging_level(args)
     for s in args.subnargs:
-        sbyte = strparser.string_to_ints(s)
-        cbyte,lbyte = strparser.parse_string(sbyte)
+        sbyte = string_to_ints(s)
+        cbyte,lbyte = parse_string(sbyte)
         logging.info('cbyte [%s] lbyte [%s]'%(cbyte,lbyte))
-        cs = strparser.ints_to_string(cbyte)
-        ls = strparser.ints_to_string(lbyte)
+        cs = ints_to_string(cbyte)
+        ls = ints_to_string(lbyte)
         sys.stdout.write('cbyte [%s] lbyte [%s]\n'%(cs,ls))
     sys.exit(0) 
     return
@@ -38,14 +38,14 @@ def param_handler(args,parser):
     set_logging_level(args)
     idx = 0
     for s in args.subnargs:
-        sbyte = strparser.string_to_ints(s)
+        sbyte = string_to_ints(s)
         startidx=0
         while startidx < len(sbyte):
             if sbyte[startidx] == ord('\x28'):              
                 break
             startidx += 1
-        params, lbyte = strparser.parse_param(sbyte[startidx:])
-        ls = strparser.ints_to_string(lbyte)
+        params, lbyte = parse_param(sbyte[startidx:])
+        ls = ints_to_string(lbyte)
         cs = ''
         cs += '[%s][%s]'%(idx,s)
         cs += ' params('
@@ -65,8 +65,8 @@ def param_handler(args,parser):
 def uni16_handler(args,parser):
     set_logging_level(args)
     for c in args.subnargs:
-        ints = strparser.string_to_uni16(c)
-        cb = strparser.uni16_to_string(ints)
+        ints = string_to_uni16(c)
+        cb = uni16_to_string(ints)
         sys.stdout.write('[%s] %s ret[%s]\n'%(c,ints,cb))
     sys.exit(0)
     return
@@ -74,8 +74,8 @@ def uni16_handler(args,parser):
 def uni32_handler(args,parser):
     set_logging_level(args)
     for c in args.subnargs:
-        ints = strparser.string_to_uni32(c)
-        cb = strparser.uni32_to_string(ints)
+        ints = string_to_uni32(c)
+        cb = uni32_to_string(ints)
         sys.stdout.write('[%s] %s ret[%s]\n'%(c,ints,cb))
     sys.exit(0)
     return
@@ -85,7 +85,7 @@ def getbit_handler(args,parser):
     set_logging_level(args)
     c = int(args.subnargs[0])
     bit = int(args.subnargs[1])
-    rnum = strparser.get_bit(c,bit)
+    rnum = get_bit(c,bit)
     sys.stdout.write('[%d:0x%x] get [%d] = [%d:0x%x]\n'%(c,c,bit,rnum,rnum))
     sys.exit(0)
     return
@@ -94,7 +94,7 @@ def clearbit_handler(args,parser):
     set_logging_level(args)
     c = int(args.subnargs[0])
     bit = int(args.subnargs[1])
-    rnum = strparser.clear_bit(c,bit)
+    rnum = clear_bit(c,bit)
     sys.stdout.write('[%d:0x%x] clear [%d] = [%d:0x%x]\n'%(c,c,bit,rnum,rnum))
     sys.exit(0)
     return
@@ -103,8 +103,33 @@ def expandbit_handler(args,parser):
     set_logging_level(args)
     c = int(args.subnargs[0])
     bit = int(args.subnargs[1])
-    rnum = strparser.expand_bit(c,bit)
+    rnum = expand_bit(c,bit)
     sys.stdout.write('[%d:0x%x] expand [%d] = [%d:0x%x]\n'%(c,c,bit,rnum,rnum))
+    sys.exit(0)
+    return
+
+def dump_ints(ints):
+    rets = ''
+    idx = 0
+    curidx = 0
+    for c in ints:
+        if (idx % 16) == 0:
+            if idx > 0:
+                rets += '\n'
+            rets += '0x%08x'%(idx)
+        rets += ' 0x%02x'%(c)
+        idx += 1
+    rets += '\n'
+    return rets
+
+def readint_handler(args,parser):
+    set_logging_level(args)
+    for f in args.subnargs:
+        sbyte = b''
+        with open(f,'rb') as fin:
+            sbyte = fin.read()
+        ints = bytes_to_ints(sbyte)
+        sys.stdout.write('read [%s]\n%s'%(f,dump_ints(ints)))
     sys.exit(0)
     return
 
@@ -133,6 +158,9 @@ def main():
         },
         "expandbit<expandbit_handler>##number bits to expand the bit for number##" : {
             "$" : 2
+        },
+        "readint<readint_handler>##files... to dump file int##" : {
+            "$" : "+"
         }
     }
     '''

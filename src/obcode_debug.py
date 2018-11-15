@@ -28,6 +28,7 @@ from filehdl import *
 from fmthdl import *
 from cobattr import *
 from cobfile import *
+from elfparser import *
 ##importdebugend
 
 REPLACE_IMPORT_LIB=1
@@ -365,6 +366,13 @@ def obuntrans_handler(args,parser):
     sys.exit(0)
     return
 
+FORMAT_FUNC_KEY='formatfunc'
+FORMAT_CODE_KEY='formatcode'
+FUNC_DATA_OFFSET_KEY='dataset'
+XORS_KEY='xors'
+FUNC_DATA_KEY='funcdata'
+FUNC_DATA_RELOC_KEY='relocs'
+
 def format_ob_patch_functions(objparser,jsondump,funcname,formatname,times,debuglevel=0):
     rets = ''
     ftimes = times
@@ -377,7 +385,7 @@ def format_ob_patch_functions(objparser,jsondump,funcname,formatname,times,debug
     data = objparser.get_data()
     for i in range(funcsize):
         if objparser.is_in_reloc((funcvaddr + i), funcname):
-            funcdata.append(1)
+            funcdata.append(-1)
         else:
             funcdata.append(0)
             validbytes += 1
@@ -390,9 +398,18 @@ def format_ob_patch_functions(objparser,jsondump,funcname,formatname,times,debug
     rets += format_line('int %s()'%(formatname), 0)
     if funcname not in jsondump.keys():
         jsondump[funcname] = dict()
-    if 'xors' not in jsondump[funcname].keys():
-        jsondump[funcname]['xors'] = dict()
-    jsondump[funcname]['formatfunc'] = formatfunc
+    if XORS_KEY not in jsondump[funcname].keys():
+        jsondump[funcname][XORS_KEY] = dict()
+    if FUNC_DATA_OFFSET_KEY not in jsondump[funcname].keys():
+        jsondump[funcname][FUNC_DATA_OFFSET_KEY] = dict()
+    jsondump[funcname][FORMAT_FUNC_KEY] = formatname
+    jsondump[funcname][FUNC_DATA_RELOC_KEY] = []
+    for i in range(funcsize):
+        if objparser.is_in_reloc((funcvaddr+i), funcname):
+            jsondump[funcname][FUNC_DATA_RELOC_KEY].append(1)
+        else:
+            jsondump[funcname][FUNC_DATA_RELOC_KEY].append(0)
+
     if ftimes > 0:
         i = 0
         rets += format_line('unsigned char* pbaseptr=(unsigned char*)&%s;'%(funcname),1)
@@ -400,18 +417,38 @@ def format_ob_patch_functions(objparser,jsondump,funcname,formatname,times,debug
         while i < ftimes:
             xornum = random.randint(0,255)
             xoroff = random.randint(0,funcsize - 1)
-            if funcdata[xoroff] == 1:
+            if funcdata[xoroff] > 0 or  (xoroff in  jsondump[funcname][FUNC_DATA_OFFSET_KEY].keys() \
+                and jsondump[funcname][FUNC_DATA_OFFSET_KEY][xoroff] > 0):
                 continue
-            funcdata[xoroff] = 1
+            funcdata[xoroff] += 2
             rets += format_line('',1)
             rets += format_debug_line('%s[%d] = 0x%x ^ 0x%x = 0x%x'%(funcname, xoroff, data[funcoff + xoroff],xornum, (data[funcoff + xoroff]^xornum)), 1, debuglevel)
-            rets += format_line('pcurptr = (pbaseptr + %d);'%(curoff),1)
+            rets += format_line('pcurptr = (pbaseptr + %d);'%(xoroff),1)
             rets += format_line('*pcurptr ^= %d;'%(xornum),1)
-            jsondump[funcname]['xors'][xoroff] = xornum
+            jsondump[funcname][XORS_KEY][xoroff] = xornum
+            jsondump[funcname][FUNC_DATA_OFFSET_KEY][xoroff] = funcdata[xoroff]
             i += 1
     rets += format_line('return 0;',1)
     rets += format_line('}',0)
+    jsondump[funcname][FORMAT_CODE_KEY]= rets
     return rets
+
+def patch_data(odict,objparser,funcs,objdata):
+    for f in funcs:
+        foff = objparser.func_offset(f)
+        if foff < 0 :
+            raise Exception('can not find [%s]'%(f))
+        fvaddr = objparser.func_vaddr(f)
+        assert(fvaddr >= 0)
+        for off in odict[f][XORS_KEY].keys():
+            if odict[f][FUNC_DATA_OFFSET_KEY][off] >= 2:
+                # we change the xor data into
+                objdata[(foff + off)] = objdata[(foff + off)] ^ odict[f][XORS_KEY][off]
+    for f in funcs:
+        foff = objparser.func_offset(f)      
+        fsize = objparser.func_size(f)
+        odict[f][FUNC_DATA_KEY] = objdata[foff:(foff+ fsize)]
+    return objdata
 
 def obunpatchelf_handler(args,parser):
     set_logging_level(args)
@@ -419,7 +456,7 @@ def obunpatchelf_handler(args,parser):
         raise Exception('obunpackelf objectfile functions')
     ofile = args.subnargs[0]    
     elfparser = ElfParser(ofile)
-    if args.dump is None:
+    if args.dump is None or not os.path.exists(args.dump):
         odict = dict()
     else:
         with open(args.dump) as fin:
@@ -443,12 +480,28 @@ def obunpatchelf_handler(args,parser):
         rets += format_line('int ret;',1)
         for f in args.subnargs[1:]:
             rets += format_debug_line('format for %s'%(f),1,args.verbose)
-            rets += format_line('ret = %s();'%(odict[f]['formatfunc']),1)
+            rets += format_line('ret = %s();'%(odict[f][FORMAT_FUNC_KEY]),1)
             rets += format_line('if (ret < 0) {', 1)
             rets += format_line('return ret;',2)
             rets += format_line('}',1)
     rets += format_line('return 0',1)
     rets += format_line('}',0)
+
+    # now to give the change file
+    objdata = elfparser.get_data()
+    for f in args.subnargs[1:]:
+        foff = elfparser.func_offset(f)
+        if foff < 0 :
+            raise Exception('can not find [%s]'%(f))
+        fvaddr = elfparser.func_vaddr(f)
+        assert(fvaddr >= 0)
+        for off in odict[f][XORS_KEY].keys():
+            if odict[f][FUNC_DATA_OFFSET_KEY][off] >= 2:
+                # we change the xor data into
+                objdata[(foff + off)] = objdata[(foff + off)] ^ odict[f][XORS_KEY][off]
+    elfparser.close()
+    write_file_ints(objdata,ofile)
+
 
     if args.output is None:
         fout = sys.stdout
@@ -472,6 +525,16 @@ def obunpatchelf_handler(args,parser):
     else:
         fout.flush()
     fout = None
+    sys.exit(0)
+    return
+
+def obpatchelf_handler(args,parser):
+    set_logging_level(args)
+    ofile = args.subnargs[0]
+    if args.dump is not None and os.path.exists(args.dump):
+        with open(args.dump) as fin:
+            odict = json.load(fin)
+
     sys.exit(0)
     return
 

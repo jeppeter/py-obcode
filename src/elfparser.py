@@ -120,12 +120,11 @@ class ElfParser(object):
 			fin = open(fname,'rb')
 		else:
 			self.__fin = open(fname,'r')
-			fin = open(fname,'r')
+			fin = open(fname,'rb')
 		self.__fname= fname
 		self.__elffile = ELFFile(self.__fin)
 		self.__funcinfo = None
 		self.__relocinfo = None
-		self.__data=[]
 		self.__data = fin.read()
 		fin.close()
 		fin = None
@@ -339,7 +338,7 @@ class ElfParser(object):
 		return False
 
 	def get_data(self):
-		return self.__data
+		return bytes_to_ints(self.__data)
 
 
 ##extractcode_end

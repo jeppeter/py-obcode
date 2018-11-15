@@ -51,6 +51,18 @@ def write_file(s,outfile=None):
     fout = None
     return 
 
+def write_file_ints(ints,outfile=None):
+    fout = sys.stdout
+    if outfile is not None:
+        fout = open(outfile,'wb')
+    sbyte = ints_to_bytes(ints)
+    fout.write(sbyte)
+    if fout != sys.stdout:
+        fout.close()
+    fout = None
+    return
+
+
 def append_file(s,outfile=None):
     fout = sys.stdout
     if outfile is not None:

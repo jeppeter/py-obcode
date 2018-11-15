@@ -133,6 +133,6 @@ class CoffParser(object):
 		return self._find_rel_in(self.__relocvalues[k], vaddr)
 
 	def get_data(self):
-		return self.__data
+		return bytes_to_ints(self.__data)
 
 ##extractcode_end

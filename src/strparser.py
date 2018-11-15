@@ -49,6 +49,25 @@ def ints_to_string(sbyte):
             cb += chr(sbyte[i])
         return str(cb)
 
+def ints_to_bytes(sbyte):
+    cb = b''
+    if sys.version[0] == '3':
+        for i in range(len(sbyte)):
+            cb += sbyte[i].to_bytes(1,'little')
+    else:
+        for i in range(len(sbyte)):
+            cb += chr(sbyte[i])
+    return cb
+
+def bytes_to_ints(sbyte):
+    ints = []
+    for c in sbyte:
+        if sys.version[0] == '3':
+            ints.append(int(c))
+        else:
+            ints.append(ord(c))
+    return ints
+
 
 def string_to_uni16(s):
     sbyte = []
