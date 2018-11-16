@@ -236,7 +236,7 @@ class obcode_test(unittest.TestCase):
         obdir = os.path.abspath(os.path.join( os.path.dirname(os.path.abspath(__file__)),'..','..','include'))
         if sys.platform == 'win32':
             objfile = self.__write_temp_file('',description='obj file for [%s]'%(sfile), suffix_add='.obj')
-            cmds = ['cl.exe','/nologo','/Zi','/Os','/Wall','/wd','4668','/wd','4710', '/wd','5045', '/wd','4774','/wd','4132']
+            cmds = ['cl.exe','/nologo','/Zi','/Os','/Wall','/wd','4668', '/wd','4820','/wd','4710', '/wd','5045', '/wd','4774','/wd','4132']
 
             if len(includedir) > 0:
                 for c in includedir:

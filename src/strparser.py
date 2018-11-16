@@ -2,10 +2,23 @@
 
 import sys
 import logging
-
+import random
 
 
 ##extractcode_start
+
+def set_logging_level(args):
+    loglvl= logging.ERROR
+    if args.verbose >= 3:
+        loglvl = logging.DEBUG
+    elif args.verbose >= 2:
+        loglvl = logging.INFO
+    if logging.root is not None and len(logging.root.handlers) > 0:
+        logging.root.handlers = []
+    logging.basicConfig(level=loglvl,format='%(asctime)s:%(filename)s:%(funcName)s:%(lineno)d\t%(message)s')
+    return
+
+
 def string_to_ints(s):
     ri = []
     if sys.version[0] == '3':
@@ -592,4 +605,55 @@ def expand_bit(num,nbit):
                 return fnum
         cnum <<= 1
     return fnum
+
+GL_VAR_NAME_VARS=''
+GL_VAR_NAME_STARTS=''
+for i in range(26):
+    GL_VAR_NAME_VARS += chr(ord('a')+i)
+    GL_VAR_NAME_STARTS += chr(ord('a')+i)
+
+for i in range(26):
+    GL_VAR_NAME_VARS += chr(ord('A') + i)
+    GL_VAR_NAME_STARTS += chr(ord('A')+i)
+
+for i in range(10):
+    GL_VAR_NAME_VARS += chr(ord('0')+i)
+
+
+GL_RANDOM_NAMES=[]
+
+def get_random_name(num=10):
+    global GL_VAR_NAME_VARS
+    global GL_VAR_NAME_STARTS
+    global GL_RANDOM_NAMES
+    retval = True
+    while retval:
+        retval = False
+        retstr = ''
+        idx = 0
+        while idx < num:
+            if idx == 0:
+                rnd = random.randint(0,len(GL_VAR_NAME_STARTS)-1)
+                retstr += GL_VAR_NAME_STARTS[rnd]
+            else:
+                rnd = random.randint(0, len(GL_VAR_NAME_VARS)-1)
+                retstr += GL_VAR_NAME_VARS[rnd]
+            idx = idx +1 
+        if retstr in GL_RANDOM_NAMES:
+            retval = True
+        else:
+            GL_RANDOM_NAMES.append(retstr)
+
+    return retstr
+
+def clear_random_name():
+    global GL_ADD_NAMES
+    GL_ADD_NAMES=[]
+    return
+def format_tabs(tabs=0):
+    rets = ''
+    for i in range(tabs):
+        rets += '    '
+    return rets
+
 ##extractcode_end

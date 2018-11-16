@@ -10,17 +10,6 @@ import random
 import json
 
 
-def set_logging_level(args):
-    loglvl= logging.ERROR
-    if args.verbose >= 3:
-        loglvl = logging.DEBUG
-    elif args.verbose >= 2:
-        loglvl = logging.INFO
-    if logging.root is not None and len(logging.root.handlers) > 0:
-        logging.root.handlers = []
-    logging.basicConfig(level=loglvl,format='%(asctime)s:%(filename)s:%(funcName)s:%(lineno)d\t%(message)s')
-    return
-
 ##importdebugstart
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from strparser import *
@@ -30,6 +19,7 @@ from peparser import *
 from fmthdl import *
 from cobattr import *
 from cobfile import *
+from obmaklib import *
 ##importdebugend
 
 REPLACE_IMPORT_LIB=1
@@ -41,8 +31,7 @@ REPLACE_PE_PARSER=1
 REPLACE_FMT_HDL=1
 REPLACE_COB_ATTR=1
 REPLACE_COB_FILE=1
-
-
+REPLACE_OBMAK_LIB=1
 
 
 def handle_c_file(sfile,dfile,args,param):
@@ -145,229 +134,6 @@ def cob_handler(args,parser):
     sys.exit(0)
     return
 
-GL_MAKOB_FILE_VAR='MAKOB_FILE'
-
-def get_makeob_file(fname,makeobfile,args):
-    retf = ''
-    cdict = dict()
-    if os.path.exists(makeobfile):
-        s = read_file(makeobfile)
-        try:
-            cdict = json.loads(s)
-            cdict = Utf8Encode(cdict).get_val()
-        except:
-            cdict = dict()
-    # now to get the code
-    fdict = dict()
-    if 'files' in cdict.keys():
-        fdict = cdict['files']
-    if fname in fdict.keys():
-        retf = fdict[fname]
-    else:
-        valid = False
-        while not valid :
-            valid = True
-            retf = os.path.join(os.path.dirname(fname),get_random_name(random.randint(args.makob_namemin,args.makob_namemax)))
-            fc, extf = os.path.splitext(fname)
-            retf += extf
-            for k in fdict.keys():
-                if fdict[k] == retf:
-                    valid = False
-        # now to write back
-        fdict[fname] = retf
-        cdict['files'] = fdict
-        write_file(json.dumps(cdict, indent=4), makeobfile)
-    # if exists fname and not exists retf just copy
-    if os.path.exists(fname) and not os.path.exists(retf):
-        shutil.copy2(fname, retf)
-    return retf
-
-def makob_handler(args,parser):
-    global GL_MAKOB_FILE_VAR
-    set_logging_level(args)
-    makeobfile = os.path.join(os.getcwd(),'makob.json')
-    if GL_MAKOB_FILE_VAR in os.environ.keys():
-        makeobfile = os.environ[GL_MAKOB_FILE_VAR]
-    rets = ''
-    for c in args.subnargs:
-        c = os.path.abspath(c)
-        retf = get_makeob_file(c,makeobfile,args)
-        if len(rets) > 0:
-            rets += ' '
-        rets += retf
-    sys.stdout.write('%s\n'%(rets))
-    sys.exit(0)
-    return
-
-def obtrans_file_inner(fname,args):
-    cdict = dict()
-    if os.path.exists(fname):
-        s = read_file(fname)
-        try:
-            cdict = json.loads(s)
-            cdict = Utf8Encode(cdict).get_val()
-        except:
-            cdict = dict()
-    # now to get the code
-    if 'files' in cdict.keys():
-        fdict = cdict['files']
-        sortkeys = sorted(fdict.keys())
-        idx = 0
-        while idx < len(sortkeys):
-            ok = sortkeys[idx]
-            ov = fdict[ok]
-            k = re.sub(args.obtrans_srcdir, args.obtrans_dstdir, ok)
-            v = re.sub(args.obtrans_srcdir, args.obtrans_dstdir, ov)
-            k = os.path.abspath(k)
-            v = os.path.abspath(v)
-            fdict[k] = v
-            del fdict[ok]
-            idx += 1
-        # now rewrite back to files
-        cdict['files'] = fdict
-        write_file(json.dumps(cdict,indent=4), fname)
-    return
-
-def obtrans_handler(args,parser):
-    set_logging_level(args)
-    for c in args.subnargs:
-        obtrans_file_inner(c, args)
-    sys.exit(0)
-    return
-
-def get_unmakob_file(fname,makeobfile,args):
-    retf = fname
-    cdict = dict()
-    if os.path.exists(makeobfile):
-        s = read_file(makeobfile)
-        try:
-            cdict = json.loads(s)
-            cdict = Utf8Encode(cdict).get_val()
-        except:
-            cdict = dict()
-    # now to get the code
-    fdict = dict()
-    if 'files' in cdict.keys():
-        fdict = cdict['files']
-    if fname in fdict.values():
-        for k in fdict.keys():
-            if fdict[k] == fname:
-                retf = k
-                break
-    if args.unmakob_short:
-        retf = os.path.basename(retf)
-    return retf
-
-
-def unmakob_handler(args,parser):
-    global GL_MAKOB_FILE_VAR
-    set_logging_level(args)
-    makeobfile = os.path.join(os.getcwd(),'makob.json')
-    if GL_MAKOB_FILE_VAR in os.environ.keys():
-        makeobfile = os.environ[GL_MAKOB_FILE_VAR]
-    s = ''
-    for c in args.subnargs:
-        c = os.path.abspath(c)
-        rets = get_unmakob_file(c,makeobfile,args)
-        if len(s) > 0:
-            s += ' '
-        s += rets
-    sys.stdout.write('%s\n'%(s))
-    sys.exit(0)
-    return
-
-def basename_handler(args,parser):
-    set_logging_level(args)
-    s = ''
-    for c in args.subnargs:
-        c = os.path.abspath(c)
-        rets = os.path.basename(c)
-        if len(s) > 0:
-            s += ' '
-        s += rets
-    sys.stdout.write('%s\n'%(s))
-    sys.exit(0)
-    return
-
-def get_ob_list(fname,args,parser):
-    rets = ''
-    cdict = dict()
-    with open(fname) as fin:
-        try:
-            cdict = json.load(fin)
-        except:
-            cdict = dict()
-    if 'files' in cdict.keys():
-        fdict = cdict['files']
-        for k in fdict.keys():
-            rets += '%s\n'%(fdict[k])
-    return rets
-
-def oblist_handler(args,parser):
-    global GL_MAKOB_FILE_VAR
-    set_logging_level(args)
-    if len(args.subnargs) == 0:
-        makobfile = os.path.join(os.getcwd(),'makob.json')
-        if GL_MAKOB_FILE_VAR in os.environ.keys():
-            makobfile = os.environ[GL_MAKOB_FILE_VAR]
-        rets = get_ob_list(makobfile, args, parser)
-        sys.stdout.write('%s'%(rets))
-    else:
-        for c in args.subnargs:
-            rets = get_ob_list(c, args, parser)
-            sys.stdout.write('%s'%(rets))
-    sys.exit(0)
-    return
-
-def obuntrans_inner(fname,makobfile,args):
-    rets= ''
-    ins = read_file(fname)
-    sarr = re.split('\n', ins)
-    cdict = dict()
-    with open(makobfile) as fin:
-        try:
-            cdict = json.load(fin)
-            cdict = Utf8Encode(cdict).get_val()
-        except:
-            cdict = dict()
-    fdict = dict()
-    if 'files' in cdict.keys():
-        fdict = cdict['files']
-
-    for l in sarr:
-        l = l.rstrip('\r\n')
-        for k in fdict.keys():
-            v = fdict[k]
-            ck = os.path.basename(k)
-            cv = os.path.basename(v)
-            logging.info('ck [%s] cv [%s]'%(ck,cv))
-            l = re.sub(cv, ck, l)
-            s1 = re.split('\.', ck)
-            ok = s1[0]
-            s2 = re.split('\.', cv)
-            ov = s2[0]
-            l = re.sub(ov, ok, l)
-        rets += '%s\n'%(l)
-
-    return rets
-
-def obuntrans_handler(args,parser):
-    global GL_MAKOB_FILE_VAR
-    set_logging_level(args)
-    if len(args.subnargs) < 1:
-        raise Exception('need at least one put file')
-
-    fname = args.subnargs[0]
-    outfile = None
-    if len(args.subnargs) > 1:
-        outfile = args.subnargs[1]
-    makobfile = os.path.join(os.getcwd(),'makob.json')
-    if GL_MAKOB_FILE_VAR in os.environ.keys():
-        makobfile = os.environ[GL_MAKOB_FILE_VAR]
-    rets = obuntrans_inner(fname, makobfile, args)
-    write_file(rets,outfile)
-    sys.exit(0)
-    return
 
 FORMAT_FUNC_NAME_KEY='funcname'
 FORMAT_FUNC_CODE_KEY='funccode'
@@ -502,10 +268,7 @@ def elf_one_file(odict,objfile,funcs,times,verbose):
     write_file_ints(objdata,objfile)
     return odict
 
-def obunpatchelf_handler(args,parser):
-    set_logging_level(args)
-    if len(args.subnargs) < 1:
-        raise Exception('obunpackelf objectfile functions')
+def get_jdict(args):
     jdict = dict()
     for a in args.subnargs:
         sarr = re.split(':',a)
@@ -513,14 +276,19 @@ def obunpatchelf_handler(args,parser):
             continue
         carr = re.split(',',sarr[1])
         jdict[sarr[0]] = carr
+    return jdict
 
-
-    if args.dump is None or not os.path.exists(args.dump):
+def get_odict(args,force):
+    if args.dump is None or (not os.path.exists(args.dump) and not force):
         odict = dict()
     else:
         with open(args.dump) as fin:
             odict = json.load(fin)
             odict = Utf8Encode(odict).get_val()
+    return odict
+
+
+def format_includes(args):
     rets = ''
     rets += format_line('#include <obcode.h>',0)
     rets += format_line('#include <stdio.h>',0)
@@ -530,11 +298,10 @@ def obunpatchelf_handler(args,parser):
 
     for s in args.includefiles:
         rets += format_line('#include "%s"'%(s),0)
+    return rets
 
-    for f in jdict.keys():
-        logging.info('f [%s] funcs %s'%(f,jdict[f]))
-        elf_one_file(odict,f,jdict[f],args.times,args.verbose)
-
+def format_patch_funcions(args,odict,jdict):
+    rets = format_includes(args)
     for o in odict.keys():
         rets += format_debug_line('format file [%s]'%(o),0,args.verbose)
         for f in odict[o]:
@@ -559,7 +326,9 @@ def obunpatchelf_handler(args,parser):
             rets += format_line('}',1)
     rets += format_line('return 0;',1)
     rets += format_line('}',0)
+    return rets
 
+def write_patch_output(args,rets,odict):
     if args.output is None:
         fout = sys.stdout
     else:
@@ -582,6 +351,21 @@ def obunpatchelf_handler(args,parser):
     else:
         fout.flush()
     fout = None
+    return
+
+def obunpatchelf_handler(args,parser):
+    set_logging_level(args)
+    if len(args.subnargs) < 1:
+        raise Exception('obunpackelf objectfile functions')
+    jdict = get_jdict(args)
+    odict = get_odict(args,False)
+
+    for f in jdict.keys():
+        logging.info('f [%s] funcs %s'%(f,jdict[f]))
+        elf_one_file(odict,f,jdict[f],args.times,args.verbose)
+
+    rets = format_patch_funcions(args,odict,jdict)
+    write_patch_output(args,rets,odict)
     sys.exit(0)
     return
 
@@ -689,111 +473,7 @@ def main():
     return
 
 ##importdebugstart
-import disttools
-from pyparser import *
-
-def make_string_slash_ok(s):
-    sarr = re.split('\n', s)
-    rets = ''
-    for l in sarr:
-        l = l.rstrip('\r\n')
-        cexpr = None
-        if len(l) > 0 and l[-1] == '\\':
-            cexpr = get_random_name(20)
-            cont = True
-            while cont:
-                cont = False
-                matchl = re.sub(cexpr, '', l)
-                if matchl != l:
-                    cont = True
-                    cexpr = get_random_name(20)
-            l = re.sub('\\$', cexpr, l)
-        l = re.sub(r'\\', r'\\\\', l)
-        if cexpr is not None:
-            l = re.sub(cexpr, r'\\', l)
-        rets += '%s\n'%(l)
-    return rets
-
-def get_import_file(fname):
-    rets = ''
-    started = False
-    with open(fname,'r+b') as f:
-        for l in f:
-            if sys.version[0] == '3':
-                l = l.decode('utf8')                
-            l = l.rstrip('\r\n')
-            if not started:
-                if l.startswith('##extractcode_start'):
-                    started = True
-            else:
-                if l.startswith('##extractcode_end'):
-                    started = False
-                else:
-                    rets += l
-                    rets += '\n'
-    return rets
-
-def make_filters_out(ims,files):
-    cont = True
-    jdx = 0
-    idx = 0
-    while cont:
-        cont = False
-        idx = 0
-        while idx < len(ims) and not cont:
-            jdx = 0
-            while jdx < len(files) and not cont:
-                if ims[idx].frommodule == files[jdx]:
-                    cont = True
-                    logging.info('del [%d] jdx [%d] [%s]'%(idx,jdx,ims[idx]))
-                    del ims[idx]
-                    logging.info('%s'%(ims))
-                    break
-                jdx += 1                
-            idx += 1
-    return ims
-
-def fromat_ext_import_files():
-    files = get_file_filter(os.path.abspath(os.path.dirname(__file__)),['.py'])
-    curbase = re.sub('\.py$','',os.path.basename(__file__))
-    allims = []
-    for f in files:
-        if len(f) == 0:
-            continue
-        if f == curbase:
-            continue
-        curf = os.path.abspath(os.path.join(os.path.dirname(__file__),'%s.py'%(f)))
-        allims.extend(get_import_names(curf))
-
-    curims= get_import_names(__file__)
-    curims = packed_import(curims)
-    curims = make_filters_out(curims, files)
-    logging.info('curims %s'%(curims))
-    allims = packed_import(allims)
-    allims = make_filters_out(allims, files)
-    logging.info('allims %s'%(allims))
-    cont = True
-    seccont = True
-    while cont:
-        cont = False
-        idx = 0
-        while idx < len(allims) :
-            jdx = 0
-            while jdx < len(curims) :
-                if allims[idx].frommodule == curims[jdx].frommodule and \
-                    allims[idx].module == curims[jdx].module:
-                    cont = True
-                    #logging.info('del [%d] %s'%(idx,allims[idx]))
-                    del allims[idx]
-                    break
-                jdx += 1
-            if cont:
-                break
-            idx += 1
-    rets = ''
-    for m in allims:
-        rets += '%s\n'%(format_import(m))
-    return rets
+from obrelease import *
 
 def debug_release():
     if '-v' in sys.argv[1:]:
@@ -805,13 +485,23 @@ def debug_release():
     topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
     tofile= os.path.abspath(os.path.join(topdir,'obcode.py'))
     curdir = os.path.abspath(os.path.dirname(__file__))
+    allincludes = []
     strparser = os.path.abspath(os.path.join(curdir,'strparser.py'))
+    allincludes.append(strparser)
     filehdl = os.path.abspath(os.path.join(curdir,'filehdl.py'))
+    allincludes.append(filehdl)
     fmthdl =os.path.abspath(os.path.join(curdir,'fmthdl.py'))
+    allincludes.append(fmthdl)
     cobattr = os.path.abspath(os.path.join(curdir,'cobattr.py'))
+    allincludes.append(cobattr)
     cobfile = os.path.abspath(os.path.join(curdir,'cobfile.py'))
+    allincludes.append(cobfile)
     elfparser = os.path.abspath(os.path.join(curdir,'elfparser.py'))
+    allincludes.append(elfparser)
     peparser = os.path.abspath(os.path.join(curdir,'peparser.py'))
+    allincludes.append(peparser)
+    obmaklib = os.path.abspath(os.path.join(curdir,'obmaklib.py'))
+    allincludes.append(obmaklib)
     if len(sys.argv) > 2:
         for k in sys.argv[1:]:
             if not k.startswith('-'):
@@ -832,12 +522,13 @@ def debug_release():
     cobfile_c = get_import_file(cobfile)
     elfparser_c = get_import_file(elfparser)
     peparser_c = get_import_file(peparser)
+    obmaklib_c = get_import_file(obmaklib)
     #logging.info('str_c\n%s'%(strparser_c))
     sarr = re.split('\.',vernum)
     if len(sarr) != 3:
         raise Exception('version (%s) not format x.x.x'%(vernum))
     VERSIONNUMBER = vernum
-    import_rets = fromat_ext_import_files()
+    import_rets = fromat_ext_import_files(__file__,allincludes)
     logging.info('import_rets\n%s'%(import_rets))
     repls = dict()
     repls[r'VERSION_RELACE_STRING'] = VERSIONNUMBER
@@ -850,6 +541,7 @@ def debug_release():
     repls[r'REPLACE_ELF_PARSER=1'] = make_string_slash_ok(elfparser_c)
     repls[r'REPLACE_PE_PARSER=1'] = make_string_slash_ok(peparser_c)
     repls[r'REPLACE_IMPORT_LIB=1'] = make_string_slash_ok(import_rets)
+    repls[r'REPLACE_OBMAK_LIB=1'] = make_string_slash_ok(obmaklib_c)
     #logging.info('repls %s'%(repls.keys()))
     disttools.release_file('__main__',tofile,[],[[r'##importdebugstart.*',r'##importdebugend.*']],[],repls)
     return

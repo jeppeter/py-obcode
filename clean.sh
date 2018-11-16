@@ -10,3 +10,4 @@ rm -f $script_dir/src/*.pyc
 rm -rf $script_dir/__pycache__
 rm -rf $script_dir/src/__pycache__
 rm -f $script_dir/obcode.mak
+rm -f $script_dir/obmak.py

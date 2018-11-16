@@ -53,55 +53,6 @@ class Utf8Encode(object):
     def get_val(self):
         return self.__val
 
-GL_VAR_NAME_VARS=''
-GL_VAR_NAME_STARTS=''
-for i in range(26):
-    GL_VAR_NAME_VARS += chr(ord('a')+i)
-    GL_VAR_NAME_STARTS += chr(ord('a')+i)
-
-for i in range(26):
-    GL_VAR_NAME_VARS += chr(ord('A') + i)
-    GL_VAR_NAME_STARTS += chr(ord('A')+i)
-
-for i in range(10):
-    GL_VAR_NAME_VARS += chr(ord('0')+i)
-
-
-GL_RANDOM_NAMES=[]
-
-def get_random_name(num=10):
-    global GL_VAR_NAME_VARS
-    global GL_VAR_NAME_STARTS
-    global GL_RANDOM_NAMES
-    retval = True
-    while retval:
-        retval = False
-        retstr = ''
-        idx = 0
-        while idx < num:
-            if idx == 0:
-                rnd = random.randint(0,len(GL_VAR_NAME_STARTS)-1)
-                retstr += GL_VAR_NAME_STARTS[rnd]
-            else:
-                rnd = random.randint(0, len(GL_VAR_NAME_VARS)-1)
-                retstr += GL_VAR_NAME_VARS[rnd]
-            idx = idx +1 
-        if retstr in GL_RANDOM_NAMES:
-            retval = True
-        else:
-            GL_RANDOM_NAMES.append(retstr)
-
-    return retstr
-
-def clear_random_name():
-    global GL_ADD_NAMES
-    GL_ADD_NAMES=[]
-    return
-def format_tabs(tabs=0):
-    rets = ''
-    for i in range(tabs):
-        rets += '    '
-    return rets
 
 def format_line(l, tab=0):
     retstr = ''
