@@ -300,7 +300,7 @@ def format_includes(args):
         rets += format_line('#include "%s"'%(s),0)
     return rets
 
-def format_patch_funcions(args,odict,jdict):
+def format_patch_funcions(args,odict,jdict,patchfuncname):
     rets = format_includes(args)
     for o in odict.keys():
         rets += format_debug_line('format file [%s]'%(o),0,args.verbose)
@@ -310,7 +310,7 @@ def format_patch_funcions(args,odict,jdict):
             rets += odict[o][f][FORMAT_FUNC_CODE_KEY]
 
     rets += format_line('',0)
-    rets += format_line('int %s(map_prot_func_t mapfunc)'%(args.obunpatchelf_funcname),0)
+    rets += format_line('int %s(map_prot_func_t mapfunc)'%(patchfuncname),0)
     rets += format_line('{',0)
     retout = 0
     for o in jdict.keys():
@@ -362,12 +362,34 @@ def obunpatchelf_handler(args,parser):
 
     for f in jdict.keys():
         logging.info('f [%s] funcs %s'%(f,jdict[f]))
-        elf_one_file(odict,f,jdict[f],args.times,args.verbose)
+        elf_one_file(odict,f,jdict[f],args.times,args.obunpatchelf_loglvl)
 
-    rets = format_patch_funcions(args,odict,jdict)
+    rets = format_patch_funcions(args,odict,jdict,args.obunpatchelf_funcname)
     write_patch_output(args,rets,odict)
     sys.exit(0)
     return
+
+def patch_objects(objparser,args,odict):
+    alldatas = objparser.get_data()
+    for o in odict.keys():
+        for f in odict[o].keys():
+            rels = odict[o][f][FUNC_DATA_RELOC_KEY]
+            #logging.info('rels\n%s'%(dump_ints(rels)))
+            offsetk = odict[o][f][FORMAT_FUNC_OFFSET_KEY]
+            data = odict[o][f][FUNC_DATA_KEY]
+            reloff = objparser.get_text_file_off(data,rels,f)
+            xors = odict[o][f][FORMAT_FUNC_XORS_KEY]
+            for k in offsetk.keys():
+                logging.info('xors[%s]=%d'%(k,offsetk[k]))
+                if offsetk[k] <= 1:
+                    ki = int(k)
+                    logging.info('[%s].[%s] [+0x%x:%d] [0x%02x] = [0x%02x] ^ [0x%02x]'%( o, f,ki,ki,\
+                        alldatas[(reloff + ki)] ^ offsetk[k], alldatas[(reloff + ki)], \
+                        offsetk[k]))
+                    alldatas[(reloff + ki)] = alldatas[(reloff + ki)] ^ xors[k]
+                    xors[k] = 2
+            odict[o][f][FORMAT_FUNC_OFFSET_KEY] = offsetk
+    return odict,alldatas
 
 def obpatchelf_handler(args,parser):
     set_logging_level(args)
@@ -379,32 +401,12 @@ def obpatchelf_handler(args,parser):
         odict = Utf8Encode(odict).get_val()
 
     elfparser = ElfParser(ofile)
-    alldatas = elfparser.get_data()
-    modified = 0
-    for o in odict.keys():
-        for f in odict[o].keys():
-            rels = odict[o][f][FUNC_DATA_RELOC_KEY]
-            #logging.info('rels\n%s'%(dump_ints(rels)))
-            offsetk = odict[o][f][FORMAT_FUNC_OFFSET_KEY]
-            data = odict[o][f][FUNC_DATA_KEY]
-            reloff = elfparser.get_text_file_off(data,rels,f)
-            xors = odict[o][f][FORMAT_FUNC_XORS_KEY]
-            for k in offsetk.keys():
-                logging.info('xors[%s]=%d'%(k,offsetk[k]))
-                if offsetk[k] <= 1:
-                    ki = int(k)
-                    logging.info('[%s].[%s] [+0x%x:%d] [0x%02x] = [0x%02x] ^ [0x%02x]'%( o, f,ki,ki,\
-                        alldatas[(reloff + ki)] ^ offsetk[k], alldatas[(reloff + ki)], \
-                        offsetk[k]))
-                    alldatas[(reloff + ki)] = alldatas[(reloff + ki)] ^ xors[k]
-                    xors[k] = 2
-                    modified += 1
-            odict[o][f][FORMAT_FUNC_OFFSET_KEY] = offsetk
+    odict,alldatas = patch_objects(elfparser,args,odict)
     elfparser.close()
-    if modified > 0:
-        write_file_ints(alldatas,ofile)
+    write_file_ints(alldatas,ofile)
     with open(args.dump,'w+b') as fout:
         write_file_direct(json.dumps(odict,sort_keys=True,indent=4), fout)
+
     sys.exit(0)
     return
 
@@ -449,14 +451,21 @@ def main():
         "obuntrans<obuntrans_handler>##inputfile [outputfile] to trans file from MAKOB_FILE##" : {
             "$" : "+"
         },
-        "obunpatchelf<obunpatchelf_handler>##objfilename:func1,func2 ... to format unpatch elf file with func1##" : {
+        "obunpatchelf<obunpatchelf_handler>##objfilename:func1,func2 ... to format unpatch elf file with func1 func2##" : {
             "$" : "+",
+            "loglvl" : 3,
             "funcname" : "unpatch_handler"
         },
         "obpatchelf<obpatchelf_handler>##inputfile to patch elf functions##" : {
             "$" : 1
+        },
+        "obunpatchcoff<obunpatchcoff_handler>##objfile:func1,func2 ... to format unpatch coff file with func1 func2##" : {
+            "$" : "+",
+            "funcname" : "unpatch_handler"
+        },
+        "obpatchpe<obpatchpe_handler>##inputfile to patch pe functions##" : {
+            "$" : 1
         }
-
     }
     '''
     commandline = commandline_fmt%(format_cob_config(4))
