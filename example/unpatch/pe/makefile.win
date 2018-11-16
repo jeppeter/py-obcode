@@ -79,11 +79,18 @@ main.exe:$(OBJECTS)
 
 unpatch.cpp:unpatch.json
 
+!IFDEF OB_PATCH
 unpatch.json:main.obj
 	echo {} >unpatch.json
 	echo #include "main.h" >unpatch.cpp
 	echo int unpatch_handler(map_prot_func_t protfunc) { protfunc = protfunc;return 0;} >>unpatch.cpp
-
+	echo "call OB_PATCH"
+!ELSE
+unpatch.json:main.obj
+	echo {} >unpatch.json
+	echo #include "main.h" >unpatch.cpp
+	echo int unpatch_handler(map_prot_func_t protfunc) { protfunc = protfunc;return 0;} >>unpatch.cpp
+!ENDIF
 
 
 
