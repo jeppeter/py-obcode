@@ -58,12 +58,13 @@ typedef UINT32                              OB_ADDR;
 int ux_map_prot(void* addr, int size, int prot)                                                   \
 {                                                                                                 \
 	OB_ADDR addralign = (OB_ADDR)(addr);                                                          \
+	OB_ADDR addrendalign = (addralign + size);                                                    \
 	int alignsize = size;                                                                         \
 	int uxprot=0;                                                                                 \
-	addralign += OB_PAGE_MASK;                                                                    \
 	addralign &= ~((OB_ADDR)OB_PAGE_MASK);                                                        \
-	alignsize += OB_PAGE_MASK;                                                                    \
-	alignsize &= ~((int)OB_PAGE_MASK);                                                            \
+	addrendalign += OB_PAGE_MASK;                                                                 \
+	addrendalign &= ~((OB_ADDR)OB_PAGE_MASK);                                                     \
+	alignsize = (addrendalign - addralign);                                                       \
 	if (prot & OB_MAP_READ) {                                                                     \
 		uxprot |= PROT_READ;                                                                      \
 	}                                                                                             \
@@ -73,7 +74,6 @@ int ux_map_prot(void* addr, int size, int prot)                                 
 	if (prot & OB_MAP_EXEC) {                                                                     \
 		uxprot |= PROT_EXEC;                                                                      \
 	}                                                                                             \
-                                                                                                  \
 	return mprotect((void*)addralign,alignsize, uxprot);                                          \
 }
 

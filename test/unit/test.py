@@ -488,6 +488,43 @@ class obcode_test(unittest.TestCase):
         self.__compare_output(content)
         return
 
+    def test_A009(self):
+        if sys.platform == 'win32':
+            return
+        # now we should compare
+        topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'))
+        obcodepy = os.path.join(topdir,'obcode.py')
+        exampledir = os.path.join(topdir,'example','unpatch','elf')
+        stdnull = open(os.devnull,'w')
+
+        # patch mode
+        cmds = ['make','-C',exampledir,'OB_PATCH=1','clean']
+        subprocess.check_call(cmds,stdout=stdnull)
+        cmds = ['make','-C',exampledir,'OB_PATCH=1','all']
+        subprocess.check_call(cmds,stdout=stdnull)
+        cmdbin = os.path.join(exampledir,'main')
+        oblines = []
+        for l in cmdpack.run_cmd_output([cmdbin]):
+            l = l.rstrip('\r\n')
+            oblines.append(l)
+        # no patch mode
+        cmds = ['make','-C',exampledir,'clean']
+        subprocess.check_call(cmds,stdout=stdnull)
+        cmds = ['make','-C',exampledir,'all']
+        subprocess.check_call(cmds,stdout=stdnull)
+        cmdbin = os.path.join(exampledir,'main')
+        normlines = []
+        for l in cmdpack.run_cmd_output([cmdbin]):
+            l = l.rstrip('\r\n')
+            normlines.append(l)
+        cmds = ['make','-C',exampledir,'clean']
+        subprocess.check_call(cmds,stdout=stdnull)
+        self.assertEqual(normlines,oblines)
+
+        stdnull.close()
+        stdnull = None
+        return
+
 def main():
     unittest.main()
     return

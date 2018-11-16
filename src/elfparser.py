@@ -206,7 +206,7 @@ class ElfParser(object):
 				continue
 			symtab = self.__elffile.get_section(section['sh_link'])
 			idxnum = -1
-			logging.info('section [%s] type [%s]'%(section.name,section.header['sh_type']))
+			#logging.info('section [%s] type [%s]'%(section.name,section.header['sh_type']))
 			for rel in section.iter_relocations():
 				idxnum += 1
 				vaddr = rel['r_offset']
@@ -236,7 +236,7 @@ class ElfParser(object):
 					ndict[section.name] = dict()
 					ndict[section.name][hv] = []
 				if not inserted:
-					logging.info('%s %s'%(section.name, relinfo))
+					#logging.info('%s %s'%(section.name, relinfo))
 					ndict[section.name][hv].append(relinfo)
 		for k in ndict.keys():
 			self.__relocinfo[k] = []
@@ -287,7 +287,7 @@ class ElfParser(object):
 		while minidx < maxidx:
 			curidx = int((minidx + maxidx) / 2)
 			if self.__is_in_relocate_addr(vaddr,relsecinfos[curidx]):
-				logging.info('[%d].%s [0x%x]'%(curidx,relsecinfos[curidx],vaddr))
+				#logging.info('[%d].%s [0x%x]'%(curidx,relsecinfos[curidx],vaddr))
 				return relsecinfos[curidx]
 			if self.__is_less_relocate_addr(vaddr,relsecinfos[curidx]):
 				maxidx = curidx
@@ -295,15 +295,15 @@ class ElfParser(object):
 				minidx = curidx
 			if minidx >= (maxidx - 1):
 				if self.__is_in_relocate_addr(vaddr,relsecinfos[minidx]):
-					logging.info('[%d].%s [0x%x]'%(curidx,relsecinfos[minidx], vaddr))
+					#logging.info('[%d].%s [0x%x]'%(curidx,relsecinfos[minidx], vaddr))
 					return relsecinfos[minidx]
 				if self.__is_in_relocate_addr(vaddr,relsecinfos[maxidx]):
-					logging.info('[%d].%s [0x%x]'%(curidx,relsecinfos[maxidx],vaddr))
+					#logging.info('[%d].%s [0x%x]'%(curidx,relsecinfos[maxidx],vaddr))
 					return relsecinfos[maxidx]
 				return None
 		if minidx == maxidx:
 			if self.__is_in_relocate_addr(vaddr,relsecinfos[minidx]):
-				logging.info('[%d].%s [0x%x]'%(curidx,relsecinfos[minidx], vaddr))
+				#logging.info('[%d].%s [0x%x]'%(curidx,relsecinfos[minidx], vaddr))
 				return relsecinfos[minidx]
 		return None
 

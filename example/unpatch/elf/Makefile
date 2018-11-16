@@ -7,8 +7,8 @@ all:main
 
 main:${OBJECTS}
 	gcc -Wall -o $@ ${OBJECTS}
-ifneq (${PATCH},)
-	python ${TOPDIR}/obcode.py -D unpatch.json obpatchelf $@ -vvvv
+ifneq (${OB_PATCH},)
+	python ${TOPDIR}/obcode.py -D unpatch.json obpatchelf $@
 endif
 
 
@@ -19,12 +19,11 @@ unpatch.c:unpatch.json
 
 unpatch.json:main.o
 	cp main.o main_orig.o	
-ifeq (${PATCH},)
-	echo "int unpatch_handler(){ return 0;}" > unpatch.c
-	echo "{}" > unpatch.json
+ifeq (${OB_PATCH},)
+	/bin/echo -e "#include \"main.h\"\nint unpatch_handler(map_prot_func_t protfunc){return 0;}" >unpatch.c
+	/bin/echo "{}" >unpatch.json
 else
-	#python ${TOPDIR}/obcode.py --times 1 --includefiles main.h -D unpatch.json -o unpatch.c -vvvvv obunpatchelf '${CURDIR}/main.o:print_out_a,print_out_b' 
-	python ${TOPDIR}/obcode.py --times 1 --includefiles main.h -D unpatch.json -o unpatch.c -vvvvv obunpatchelf '${CURDIR}/main.o:print_out_a'
+	python ${TOPDIR}/obcode.py --includefiles main.h -D unpatch.json -o unpatch.c obunpatchelf '${CURDIR}/main.o:print_out_a,print_out_b,print_out_c' 
 endif
 
 clean:

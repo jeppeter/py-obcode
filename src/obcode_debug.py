@@ -371,8 +371,10 @@ FORMAT_FUNC_NAME_KEY='funcname'
 FORMAT_FUNC_CODE_KEY='funccode'
 FORMAT_FUNC_OFFSET_KEY='funcoff'
 FORMAT_FUNC_XORS_KEY='xors'
+FORMAT_FUNC_ORIG_KEY='origdata'
 FUNC_DATA_KEY='funcdata'
 FUNC_DATA_RELOC_KEY='relocs'
+
 
 def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,times,debuglevel=0):
     rets = ''
@@ -430,14 +432,22 @@ def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,tim
         while i < ftimes:
             xornum = random.randint(0,255)
             xoroff = random.randint(0,funcsize - 1)
+            if xornum == 0 :
+                continue
             if funcdata[xoroff] > 0 or  (xoroff in  jsondump[objname][funcname][FORMAT_FUNC_OFFSET_KEY].keys() \
                 and jsondump[objname][funcname][FORMAT_FUNC_OFFSET_KEY][xoroff] > 0):
                 continue
             funcdata[xoroff] += 2
             rets += format_line('',1)
-            rets += format_debug_line('%s[%d] = 0x%x ^ 0x%x = 0x%x'%(funcname, xoroff, data[funcoff + xoroff],xornum, (data[funcoff + xoroff]^xornum)), 1, debuglevel)
+            if funcdata[xoroff] >= 2:
+                rets += format_debug_line('%s[0x%x:%d] = 0x%x ^ 0x%x = 0x%x'%(funcname, xoroff, xoroff, data[funcoff + xoroff],xornum, (data[funcoff + xoroff]^xornum)), 1, debuglevel)
+            else:
+                rets += format_debug_line('%s[0x%x:%d] = ? ^ 0x%x = ?'%(funcname, xoroff, xoroff, xornum), 1, debuglevel)
             rets += format_line('pcurptr = (pbaseptr + %d);'%(xoroff),1)
+            #rets += format_debug_line('printf("patch [%%p] [0x%%02x] = [0x%%02x] ^ [0x%02x]\\n", pcurptr, (*pcurptr ^ 0x%x), *pcurptr);'%(xornum,xornum),1,debuglevel)
+            #rets += format_line('printf("patch [%%p] [0x%%02x] = [0x%%02x] ^ [0x%02x]\\n", pcurptr, (*pcurptr ^ 0x%x), *pcurptr);'%(xornum,xornum),1)
             rets += format_line('*pcurptr ^= %d;'%(xornum),1)
+            logging.info('[%s].[%s] +[0x%x:%d] xornum [0x%x:%d] funcdata[%d]'%(objname,funcname,xoroff,xoroff,xornum,xornum,funcdata[xoroff]))
             jsondump[objname][funcname][FORMAT_FUNC_XORS_KEY][xoroff] = xornum
             jsondump[objname][funcname][FORMAT_FUNC_OFFSET_KEY][xoroff] = funcdata[xoroff]
             i += 1
@@ -452,23 +462,6 @@ def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,tim
     rets += format_line('}',0)
     jsondump[objname][funcname][FORMAT_FUNC_CODE_KEY]= rets
     return jsondump
-
-def patch_data(odict,objparser,objname,funcs,objdata):
-    for f in funcs:
-        foff = objparser.func_offset(f)
-        if foff < 0 :
-            raise Exception('can not find [%s]'%(f))
-        fvaddr = objparser.func_vaddr(f)
-        assert(fvaddr >= 0)
-        for off in odict[objname][f][FORMAT_FUNC_XORS_KEY].keys():
-            if odict[objname][f][FORMAT_FUNC_OFFSET_KEY][off] >= 2:
-                # we change the xor data into
-                objdata[(foff + off)] = objdata[(foff + off)] ^ odict[objname][f][FORMAT_FUNC_XORS_KEY][off]
-    for f in funcs:
-        foff = objparser.func_offset(f)      
-        fsize = objparser.func_size(f)
-        odict[objname][f][FUNC_DATA_KEY] = objdata[foff:(foff+ fsize)]
-    return objdata
 
 def elf_one_file(odict,objfile,funcs,times,verbose):
     elfparser = ElfParser(objfile)
@@ -492,11 +485,12 @@ def elf_one_file(odict,objfile,funcs,times,verbose):
         for off in odict[objfile][f][FORMAT_FUNC_XORS_KEY].keys():            
             if odict[objfile][f][FORMAT_FUNC_OFFSET_KEY][off] >= 2:
                 # we change the xor data into
+                offi = int(off)
                 logging.info('[%s].[%s]foff [0x%x] + off [0x%x] [0x%02x] ^ [0x%02x] => [0x%02x]'%(objfile,f,\
-                 foff, off,objdata[(foff + off)] ,\
+                 foff, offi,objdata[(foff + offi)] ,\
                  odict[objfile][f][FORMAT_FUNC_XORS_KEY][off], \
-                 objdata[(foff + off)] ^ odict[objfile][f][FORMAT_FUNC_XORS_KEY][off]))
-                objdata[(foff + off)] = objdata[(foff + off)] ^ odict[objfile][f][FORMAT_FUNC_XORS_KEY][off]
+                 objdata[(foff + offi)] ^ odict[objfile][f][FORMAT_FUNC_XORS_KEY][off]))
+                objdata[(foff + offi)] = objdata[(foff + offi)] ^ odict[objfile][f][FORMAT_FUNC_XORS_KEY][off]
         odict[objfile][f][FUNC_DATA_KEY] = objdata[foff:(foff+fsize)]
     elfparser.close()
     #logging.info('writeback [%s]\n%s'%(objfile,dump_ints(objdata)))
@@ -597,6 +591,7 @@ def obpatchelf_handler(args,parser):
 
     elfparser = ElfParser(ofile)
     alldatas = elfparser.get_data()
+    modified = 0
     for o in odict.keys():
         for f in odict[o].keys():
             rels = odict[o][f][FUNC_DATA_RELOC_KEY]
@@ -605,17 +600,20 @@ def obpatchelf_handler(args,parser):
             data = odict[o][f][FUNC_DATA_KEY]
             reloff = elfparser.get_text_file_off(data,rels,f)
             xors = odict[o][f][FORMAT_FUNC_XORS_KEY]
-            for k in xors.keys():
-                if xors[k] <= 1:
+            for k in offsetk.keys():
+                logging.info('xors[%s]=%d'%(k,offsetk[k]))
+                if offsetk[k] <= 1:
                     ki = int(k)
-                    logging.info('[%s].[%s] [+%d] [0x%02x] = [0x%02x] ^ [0x%02x]'%( o, f,ki,\
+                    logging.info('[%s].[%s] [+0x%x:%d] [0x%02x] = [0x%02x] ^ [0x%02x]'%( o, f,ki,ki,\
                         alldatas[(reloff + ki)] ^ offsetk[k], alldatas[(reloff + ki)], \
                         offsetk[k]))
-                    alldatas[(reloff + ki)] = alldatas[(reloff + ki)] ^ offsetk[k]
+                    alldatas[(reloff + ki)] = alldatas[(reloff + ki)] ^ xors[k]
                     xors[k] = 2
-            odict[o][f][FORMAT_FUNC_XORS_KEY] = xors
+                    modified += 1
+            odict[o][f][FORMAT_FUNC_OFFSET_KEY] = offsetk
     elfparser.close()
-    write_file_ints(alldatas,ofile)
+    if modified > 0:
+        write_file_ints(alldatas,ofile)
     with open(args.dump,'w+b') as fout:
         write_file_direct(json.dumps(odict,sort_keys=True,indent=4), fout)
     sys.exit(0)
