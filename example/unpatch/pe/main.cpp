@@ -7,7 +7,7 @@
 
 int print_out_a(void)
 {
-    int x = 3, b = 3, c = 3;
+    int x = 1, b = 2, c = 3;
     OB_CODE(x, b, c);
     OUTP("hello world x=%d b=%d c=%d", x, b, c);
     OB_CODE(x, b, c);
@@ -67,7 +67,6 @@ void dump_func(FILE* fp, void* funcaddr, int size)
     }
     return;
 }
-#endif
 
 int print_out_b(void)
 {
@@ -101,6 +100,9 @@ int print_out_c(void)
     return 0;
 }
 
+#endif
+
+
 
 
 OB_MAP_FUNCTION();
@@ -110,10 +112,14 @@ int main(int argc, char* argv[])
     int ret;
     argc =argc;
     argv =argv;
-    unpatch_handler(OB_MAP_FUNC);
+    ret = unpatch_handler(OB_MAP_FUNC);
+    if (ret < 0) {
+        OUTP("can not unpatch");
+        return ret;
+    }
     //dump_func(stdout,&print_out_a,0x1f0);
     print_out_a();
-    print_out_b();
-    print_out_c();
+    //print_out_b();
+    //print_out_c();
     return 0;
 }

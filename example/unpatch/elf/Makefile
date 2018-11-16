@@ -23,7 +23,7 @@ ifeq (${OB_PATCH},)
 	/bin/echo -e "#include \"main.h\"\nint unpatch_handler(map_prot_func_t protfunc){return 0;}" >unpatch.c
 	/bin/echo "{}" >unpatch.json
 else
-	python ${TOPDIR}/obcode.py --includefiles main.h -D unpatch.json -o unpatch.c obunpatchelf '${CURDIR}/main.o:print_out_a,print_out_b,print_out_c'
+	python ${TOPDIR}/obcode.py --includefiles main.h -D unpatch.json -o unpatch.c obunpatchelf '${CURDIR}/main.o;print_out_a,print_out_b,print_out_c'
 endif
 
 clean:

@@ -273,7 +273,7 @@ def elf_one_file(odict,objfile,funcs,times,verbose):
 def get_jdict(args):
     jdict = dict()
     for a in args.subnargs:
-        sarr = re.split(':',a)
+        sarr = re.split(';',a)
         if len(sarr) < 2:
             continue
         carr = re.split(',',sarr[1])

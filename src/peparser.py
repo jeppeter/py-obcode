@@ -62,7 +62,7 @@ class PEParser(object):
 				while jdx < len(data):
 					if rels[jdx] == 0 and \
 						data[jdx] != sbyte[curidx]:
-						#logging.info('[%s].[+0x%x] [+0x%x] [0x%02x] != [0x%02x]'%(symname,jdx,curidx,data[jdx], sbyte[curidx]))
+						logging.info('[%s].[+0x%x] [+0x%x] [0x%02x] != [0x%02x]'%(symname,jdx,curidx,data[jdx], sbyte[curidx]))
 						break
 					jdx += 1
 					curidx += 1

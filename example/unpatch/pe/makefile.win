@@ -1,7 +1,5 @@
 CURDIR=$(MAKEDIR)
 TOPDIR=$(CURDIR)\..\..\..
-DYNAMICDIR=$(TOPDIR)\dynamiclib
-STATICDIR=$(TOPDIR)\staticlib
 
 CC      = cl.exe
 LD      = link.exe
@@ -57,7 +55,6 @@ REL_CFLAGS =
 DBG_CFLAGS = /Zi /Od 
 
 
-#INC_LDFLAGS = "$(TOPDIR)\winlib\winlib.lib" Advapi32.lib
 REL_LDFLAGS = 
 
 CFLAGS  =  $(NOLOGO_CFLAGS) $(STATIC_LIB_CFLAGS) $(INC_CFLAGS) $(COM_CFLAGS) $(REL_CFLAGS) $(DBG_CFLAGS)
@@ -69,31 +66,39 @@ OBJECTS=$(SOURCES:.cpp=.obj)
 
 all:main.exe
 
+!IFDEF OB_PATCH
 main.exe:$(OBJECTS)
 	$(QUIETCMD) echo "call static $(OBJECTS)"
 	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(OBJECTS)
 	$(QUIETCMD)echo "use static lib"
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py obpatchpe -D $(CURDIR)\unpatch.json $(CURDIR)\main.exe
+!ELSE
+main.exe:$(OBJECTS)
+	$(QUIETCMD) echo "call static $(OBJECTS)"
+	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(OBJECTS)
+	$(QUIETCMD)echo "use static lib"
+!ENDIF
 
 .cpp.obj:
 	$(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $<
 
 unpatch.cpp:unpatch.json
 
+
+#$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h -D unpatch.json -o unpatch.cpp --times 1 obunpatchcoff "$(CURDIR)\main.obj;print_out_a,print_out_b,print_out_c" -vvvv
+
 !IFDEF OB_PATCH
 unpatch.json:main.obj
-	echo {} >unpatch.json
-	echo #include "main.h" >unpatch.cpp
-	echo int unpatch_handler(map_prot_func_t protfunc) { protfunc = protfunc;return 0;} >>unpatch.cpp
-	echo "call OB_PATCH"
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h -D unpatch.json -o unpatch.cpp --times 1 obunpatchcoff "$(CURDIR)\main.obj;print_out_a" -vvvv
 !ELSE
 unpatch.json:main.obj
-	echo {} >unpatch.json
-	echo #include "main.h" >unpatch.cpp
-	echo int unpatch_handler(map_prot_func_t protfunc) { protfunc = protfunc;return 0;} >>unpatch.cpp
+	$(QUIETCMD)echo {} >unpatch.json
+	$(QUIETCMD)echo #include "main.h" >unpatch.cpp
+	$(QUIETCMD)echo int unpatch_handler(map_prot_func_t protfunc) { protfunc = protfunc;return 0;} >>unpatch.cpp
 !ENDIF
 
 
 
 clean:
-	$(QUIETCMD) $(RM) *.exe *.obj 2>NUL
+	$(QUIETCMD) $(RM) *.exe *.obj *.pdb 2>NUL
 	$(QUIETCMD) $(RM) unpatch.cpp unpatch.json 2>NUL
