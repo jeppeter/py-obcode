@@ -26,6 +26,7 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from strparser import *
 from filehdl import *
 from elfparser import *
+from peparser import *
 from fmthdl import *
 from cobattr import *
 from cobfile import *
@@ -36,6 +37,7 @@ REPLACE_IMPORT_LIB=1
 REPLACE_STR_PARSER=1
 REPLACE_FILE_HDL=1
 REPLACE_ELF_PARSER=1
+REPLACE_PE_PARSER=1
 REPLACE_FMT_HDL=1
 REPLACE_COB_ATTR=1
 REPLACE_COB_FILE=1
@@ -806,6 +808,7 @@ def debug_release():
     cobattr = os.path.abspath(os.path.join(curdir,'cobattr.py'))
     cobfile = os.path.abspath(os.path.join(curdir,'cobfile.py'))
     elfparser = os.path.abspath(os.path.join(curdir,'elfparser.py'))
+    peparser = os.path.abspath(os.path.join(curdir,'peparser.py'))
     if len(sys.argv) > 2:
         for k in sys.argv[1:]:
             if not k.startswith('-'):
@@ -825,6 +828,7 @@ def debug_release():
     cobattr_c = get_import_file(cobattr)
     cobfile_c = get_import_file(cobfile)
     elfparser_c = get_import_file(elfparser)
+    peparser_c = get_import_file(peparser)
     #logging.info('str_c\n%s'%(strparser_c))
     sarr = re.split('\.',vernum)
     if len(sarr) != 3:
@@ -841,6 +845,7 @@ def debug_release():
     repls[r'REPLACE_COB_ATTR=1'] = make_string_slash_ok(cobattr_c)
     repls[r'REPLACE_COB_FILE=1'] = make_string_slash_ok(cobfile_c)
     repls[r'REPLACE_ELF_PARSER=1'] = make_string_slash_ok(elfparser_c)
+    repls[r'REPLACE_PE_PARSER=1'] = make_string_slash_ok(peparser_c)
     repls[r'REPLACE_IMPORT_LIB=1'] = make_string_slash_ok(import_rets)
     #logging.info('repls %s'%(repls.keys()))
     disttools.release_file('__main__',tofile,[],[[r'##importdebugstart.*',r'##importdebugend.*']],[],repls)
