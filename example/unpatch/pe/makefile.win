@@ -60,7 +60,7 @@ REL_LDFLAGS =
 CFLAGS  =  $(NOLOGO_CFLAGS) $(STATIC_LIB_CFLAGS) $(INC_CFLAGS) $(COM_CFLAGS) $(REL_CFLAGS) $(DBG_CFLAGS)
 LDFLAGS = $(NOLOGO_LDFLAGS) $(INC_LDFLAGS) $(REL_LDFLAGS)
 
-SOURCES=main.cpp unpatch.cpp
+SOURCES=main.cpp callc.cpp unpatch.cpp
 OBJECTS=$(SOURCES:.cpp=.obj)
 
 
@@ -85,13 +85,12 @@ main.exe:$(OBJECTS)
 unpatch.cpp:unpatch.json
 
 
-#$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h -D unpatch.json -o unpatch.cpp --times 1 obunpatchcoff "$(CURDIR)\main.obj;print_out_a,print_out_b,print_out_c" -vvvv
 
 !IFDEF OB_PATCH
-unpatch.json:main.obj
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h -D unpatch.json -o unpatch.cpp --times 1 obunpatchcoff "$(CURDIR)\main.obj;print_out_a" -vvvv
+unpatch.json:main.obj callc.obj
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h -D unpatch.json -o unpatch.cpp obunpatchcoff "$(CURDIR)\main.obj;print_out_a,print_out_b,print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c"
 !ELSE
-unpatch.json:main.obj
+unpatch.json:main.obj callc.obj
 	$(QUIETCMD)echo {} >unpatch.json
 	$(QUIETCMD)echo #include "main.h" >unpatch.cpp
 	$(QUIETCMD)echo int unpatch_handler(map_prot_func_t protfunc) { protfunc = protfunc;return 0;} >>unpatch.cpp

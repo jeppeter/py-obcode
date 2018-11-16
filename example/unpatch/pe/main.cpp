@@ -68,6 +68,9 @@ void dump_func(FILE* fp, void* funcaddr, int size)
     return;
 }
 
+
+#endif
+
 int print_out_b(void)
 {
     int x = 3, b = 3, c = 3;
@@ -100,9 +103,6 @@ int print_out_c(void)
     return 0;
 }
 
-#endif
-
-
 
 
 OB_MAP_FUNCTION();
@@ -119,7 +119,10 @@ int main(int argc, char* argv[])
     }
     //dump_func(stdout,&print_out_a,0x1f0);
     print_out_a();
-    //print_out_b();
-    //print_out_c();
+    print_out_b();
+    print_out_c();
+    call_a();
+    call_b();
+    call_c();
     return 0;
 }
