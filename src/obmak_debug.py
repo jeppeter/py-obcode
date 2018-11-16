@@ -76,15 +76,11 @@ def debug_release():
     topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
     tofile= os.path.abspath(os.path.join(topdir,'obmak.py'))
     curdir = os.path.abspath(os.path.dirname(__file__))
-    allincludes = []
-    strparser = os.path.abspath(os.path.join(curdir,'strparser.py'))
-    allincludes.append(strparser)
-    fmthdl = os.path.abspath(os.path.join(curdir,'fmthdl.py'))
-    allincludes.append(fmthdl)
-    filehdl = os.path.abspath(os.path.join(curdir,'filehdl.py'))
-    allincludes.append(filehdl)
-    obmaklib = os.path.abspath(os.path.join(curdir,'obmaklib.py'))
-    allincludes.append(obmaklib)
+    rlfiles = ReleaseFiles(__file__)
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'strparser.py')),r'REPLACE_STR_PARSER=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'fmthdl.py')),r'REPLACE_FMT_HDL=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'filehdl.py')),r'REPLACE_FILE_HDL=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'obmaklib.py')),r'REPLACE_OBMAK_LIB=1')
     if len(sys.argv) > 2:
         for k in sys.argv[1:]:
             if not k.startswith('-'):
@@ -98,27 +94,18 @@ def debug_release():
             l = l.rstrip('\r\n')
             vernum = l
             break
-    strparser_c = get_import_file(strparser)
-    filehdl_c = get_import_file(filehdl)
-    obmaklib_c = get_import_file(obmaklib)
-    fmthdl_c = get_import_file(fmthdl)
     #logging.info('str_c\n%s'%(strparser_c))
     sarr = re.split('\.',vernum)
     if len(sarr) != 3:
         raise Exception('version (%s) not format x.x.x'%(vernum))
     VERSIONNUMBER = vernum
-    import_rets = fromat_ext_import_files(__file__,allincludes)
+    import_rets = fromat_ext_import_files(__file__,rlfiles.get_includes())
     logging.info('import_rets\n%s'%(import_rets))
-    repls = dict()
-    repls[r'VERSION_RELACE_STRING'] = VERSIONNUMBER
-    repls[r'debug_main'] = 'main'
-    repls[r'REPLACE_STR_PARSER=1'] = make_string_slash_ok(strparser_c)
-    repls[r'REPLACE_IMPORT_LIB=1'] = make_string_slash_ok(import_rets)
-    repls[r'REPLACE_FILE_HDL=1'] = make_string_slash_ok(filehdl_c)
-    repls[r'REPLACE_OBMAK_LIB=1'] = make_string_slash_ok(obmaklib_c)
-    repls[r'REPLACE_FMT_HDL=1'] = make_string_slash_ok(fmthdl_c)
+    rlfiles.add_repls(r'VERSION_RELACE_STRING',VERSIONNUMBER)
+    rlfiles.add_repls(r'debug_main','main')
+    rlfiles.add_repls(r'REPLACE_IMPORT_LIB=1',make_string_slash_ok(import_rets))
     #logging.info('repls %s'%(repls.keys()))
-    disttools.release_file('__main__',tofile,[],[[r'##importdebugstart.*',r'##importdebugend.*']],[],repls)
+    disttools.release_file('__main__',tofile,[],[[r'##importdebugstart.*',r'##importdebugend.*']],[],rlfiles.get_repls())
     return
 
 def test_main():
