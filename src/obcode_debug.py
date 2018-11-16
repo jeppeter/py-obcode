@@ -15,6 +15,7 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from strparser import *
 from filehdl import *
 from elfparser import *
+from coffparser import *
 from peparser import *
 from fmthdl import *
 from cobattr import *
@@ -27,6 +28,7 @@ REPLACE_IMPORT_LIB=1
 REPLACE_STR_PARSER=1
 REPLACE_FILE_HDL=1
 REPLACE_ELF_PARSER=1
+REPLACE_COFF_PARSER=1
 REPLACE_PE_PARSER=1
 REPLACE_FMT_HDL=1
 REPLACE_COB_ATTR=1
@@ -353,22 +355,6 @@ def write_patch_output(args,rets,odict):
     fout = None
     return
 
-def obunpatchelf_handler(args,parser):
-    set_logging_level(args)
-    if len(args.subnargs) < 1:
-        raise Exception('obunpackelf objectfile functions')
-    jdict = get_jdict(args)
-    odict = get_odict(args,False)
-
-    for f in jdict.keys():
-        logging.info('f [%s] funcs %s'%(f,jdict[f]))
-        elf_one_file(odict,f,jdict[f],args.times,args.obunpatchelf_loglvl)
-
-    rets = format_patch_funcions(args,odict,jdict,args.obunpatchelf_funcname)
-    write_patch_output(args,rets,odict)
-    sys.exit(0)
-    return
-
 def patch_objects(objparser,args,odict):
     alldatas = objparser.get_data()
     for o in odict.keys():
@@ -391,6 +377,23 @@ def patch_objects(objparser,args,odict):
             odict[o][f][FORMAT_FUNC_OFFSET_KEY] = offsetk
     return odict,alldatas
 
+
+def obunpatchelf_handler(args,parser):
+    set_logging_level(args)
+    if len(args.subnargs) < 1:
+        raise Exception('obunpackelf objectfile functions')
+    jdict = get_jdict(args)
+    odict = get_odict(args,False)
+
+    for f in jdict.keys():
+        logging.info('f [%s] funcs %s'%(f,jdict[f]))
+        elf_one_file(odict,f,jdict[f],args.times,args.obunpatchelf_loglvl)
+
+    rets = format_patch_funcions(args,odict,jdict,args.obunpatchelf_funcname)
+    write_patch_output(args,rets,odict)
+    sys.exit(0)
+    return
+
 def obpatchelf_handler(args,parser):
     set_logging_level(args)
     if args.dump is None:
@@ -409,6 +412,52 @@ def obpatchelf_handler(args,parser):
 
     sys.exit(0)
     return
+
+
+def coff_one_file(odict,objfile,funcs,times,verbose):
+    coffparser = CoffParser(objfile)
+    odict, objdata = object_one_file(coffparser,odict,objfile,funcs,times,verbose)
+    coffparser.close()
+    #logging.info('writeback [%s]\n%s'%(objfile,dump_ints(objdata)))
+    write_file_ints(objdata,objfile)
+    return odict
+
+
+def obunpatchcoff_handler(args,parser):
+    set_logging_level(args)
+    if len(args.subnargs) < 1:
+        raise Exception('obunpackelf objectfile functions')
+    jdict = get_jdict(args)
+    odict = get_odict(args,False)
+
+    for f in jdict.keys():
+        logging.info('f [%s] funcs %s'%(f,jdict[f]))
+        coff_one_file(odict,f,jdict[f],args.times,args.obunpatchcoff_loglvl)
+
+    rets = format_patch_funcions(args,odict,jdict,args.obunpatchcoff_funcname)
+    write_patch_output(args,rets,odict)
+    sys.exit(0)
+    return
+
+
+def obpatchpe_handler(args,parser):
+    set_logging_level(args)
+    if args.dump is None:
+        raise Exception('no dump file get')
+    ofile = args.subnargs[0]
+    with open(args.dump,'r') as fin:
+        odict = json.load(fin)
+        odict = Utf8Encode(odict).get_val()
+
+    peparser = PEParser(ofile)
+    odict,alldatas = patch_objects(peparser,args,odict)
+    peparser.close()
+    write_file_ints(alldatas,ofile)
+    with open(args.dump,'w+b') as fout:
+        write_file_direct(json.dumps(odict,sort_keys=True,indent=4), fout)
+    sys.exit(0)
+    return
+
 
 def main():
     commandline_fmt='''
@@ -461,6 +510,7 @@ def main():
         },
         "obunpatchcoff<obunpatchcoff_handler>##objfile:func1,func2 ... to format unpatch coff file with func1 func2##" : {
             "$" : "+",
+            "loglvl" : 3,
             "funcname" : "unpatch_handler"
         },
         "obpatchpe<obpatchpe_handler>##inputfile to patch pe functions##" : {
@@ -494,23 +544,17 @@ def debug_release():
     topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
     tofile= os.path.abspath(os.path.join(topdir,'obcode.py'))
     curdir = os.path.abspath(os.path.dirname(__file__))
-    allincludes = []
-    strparser = os.path.abspath(os.path.join(curdir,'strparser.py'))
-    allincludes.append(strparser)
-    filehdl = os.path.abspath(os.path.join(curdir,'filehdl.py'))
-    allincludes.append(filehdl)
-    fmthdl =os.path.abspath(os.path.join(curdir,'fmthdl.py'))
-    allincludes.append(fmthdl)
-    cobattr = os.path.abspath(os.path.join(curdir,'cobattr.py'))
-    allincludes.append(cobattr)
-    cobfile = os.path.abspath(os.path.join(curdir,'cobfile.py'))
-    allincludes.append(cobfile)
-    elfparser = os.path.abspath(os.path.join(curdir,'elfparser.py'))
-    allincludes.append(elfparser)
-    peparser = os.path.abspath(os.path.join(curdir,'peparser.py'))
-    allincludes.append(peparser)
-    obmaklib = os.path.abspath(os.path.join(curdir,'obmaklib.py'))
-    allincludes.append(obmaklib)
+    rlfiles = ReleaseFiles(__file__)
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'strparser.py')),r'REPLACE_STR_PARSER=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'filehdl.py')), r'REPLACE_FILE_HDL=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'fmthdl.py')), r'REPLACE_FMT_HDL=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'cobattr.py')), r'REPLACE_COB_ATTR=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'cobfile.py')),r'REPLACE_COB_FILE=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'elfparser.py')),r'REPLACE_ELF_PARSER=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'coffparser.py')),r'REPLACE_COFF_PARSER=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'peparser.py')),r'REPLACE_PE_PARSER=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'obmaklib.py')),r'REPLACE_OBMAK_LIB=1')
+
     if len(sys.argv) > 2:
         for k in sys.argv[1:]:
             if not k.startswith('-'):
@@ -524,35 +568,18 @@ def debug_release():
             l = l.rstrip('\r\n')
             vernum = l
             break
-    strparser_c = get_import_file(strparser)
-    filehdl_c = get_import_file(filehdl)
-    fmthdl_c = get_import_file(fmthdl)
-    cobattr_c = get_import_file(cobattr)
-    cobfile_c = get_import_file(cobfile)
-    elfparser_c = get_import_file(elfparser)
-    peparser_c = get_import_file(peparser)
-    obmaklib_c = get_import_file(obmaklib)
     #logging.info('str_c\n%s'%(strparser_c))
     sarr = re.split('\.',vernum)
     if len(sarr) != 3:
         raise Exception('version (%s) not format x.x.x'%(vernum))
     VERSIONNUMBER = vernum
-    import_rets = fromat_ext_import_files(__file__,allincludes)
+    import_rets = fromat_ext_import_files(__file__,rlfiles.get_includes())
     logging.info('import_rets\n%s'%(import_rets))
-    repls = dict()
-    repls[r'VERSION_RELACE_STRING'] = VERSIONNUMBER
-    repls[r'debug_main'] = 'main'
-    repls[r'REPLACE_STR_PARSER=1'] = make_string_slash_ok(strparser_c)
-    repls[r'REPLACE_FILE_HDL=1']= make_string_slash_ok(filehdl_c)
-    repls[r'REPLACE_FMT_HDL=1']= make_string_slash_ok(fmthdl_c)
-    repls[r'REPLACE_COB_ATTR=1'] = make_string_slash_ok(cobattr_c)
-    repls[r'REPLACE_COB_FILE=1'] = make_string_slash_ok(cobfile_c)
-    repls[r'REPLACE_ELF_PARSER=1'] = make_string_slash_ok(elfparser_c)
-    repls[r'REPLACE_PE_PARSER=1'] = make_string_slash_ok(peparser_c)
-    repls[r'REPLACE_IMPORT_LIB=1'] = make_string_slash_ok(import_rets)
-    repls[r'REPLACE_OBMAK_LIB=1'] = make_string_slash_ok(obmaklib_c)
+    rlfiles.add_repls(r'VERSION_RELACE_STRING',VERSIONNUMBER)
+    rlfiles.add_repls(r'debug_main','main')
+    rlfiles.add_repls(r'REPLACE_IMPORT_LIB=1',make_string_slash_ok(import_rets))
     #logging.info('repls %s'%(repls.keys()))
-    disttools.release_file('__main__',tofile,[],[[r'##importdebugstart.*',r'##importdebugend.*']],[],repls)
+    disttools.release_file('__main__',tofile,[],[[r'##importdebugstart.*',r'##importdebugend.*']],[],rlfiles.get_repls())
     return
 
 def test_main():

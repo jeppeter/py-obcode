@@ -10,6 +10,8 @@ from filehdl import *
 from pyparser import *
 
 
+
+
 def make_string_slash_ok(s):
     sarr = re.split('\n', s)
     rets = ''
@@ -106,3 +108,25 @@ def fromat_ext_import_files(origfile,files):
     for m in allims:
         rets += '%s\n'%(format_import(m))
     return rets
+
+class ReleaseFiles(object):
+    def __init__(self, basefile=__file__):
+        self.__includes = []
+        self.__basefile = basefile
+        self.__repls = dict()
+        return
+    def add_python_file(self,path,rex):
+        c = get_import_file(path)
+        self.__repls[rex] = make_string_slash_ok(c)
+        self.__includes.append(path)
+        return
+
+    def add_repls(self,k,v):
+        self.__repls[k]= v
+        return
+
+    def get_repls(self):
+        return self.__repls
+
+    def get_includes(self):
+        return self.__includes
