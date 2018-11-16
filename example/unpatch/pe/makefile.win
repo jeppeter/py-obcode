@@ -84,6 +84,7 @@ main.exe:$(OBJECTS)
 
 unpatch.cpp:unpatch.json
 
+#	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h -D unpatch.json -o unpatch.cpp obunpatchcoff "$(CURDIR)\main.obj;print_out_a,print_out_b,print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c" -vvvv
 
 
 !IFDEF OB_PATCH

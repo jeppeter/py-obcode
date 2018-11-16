@@ -21,6 +21,9 @@ class CoffParser(object):
 		for k in self.__coff.relocs.keys():
 			self.__relocvalues[k] = []
 			self.__relocvalues[k] = sorted(self.__coff.relocs[k], key = lambda rel: rel.vaddr)
+			#logging.info('[%s] size [%s]'%(k,len(self.__relocvalues[k])))
+			#if len(self.__relocvalues[k]) > 0:
+			#	logging.info('[0].%s [-1].%s'%(self.__relocvalues[k][0], self.__relocvalues[k][-1]))
 		self.__data = []
 		if sys.version[0] == '3':
 			fin = open(fname,'rb')
@@ -62,16 +65,26 @@ class CoffParser(object):
 			return -1
 		for k in self.__symnames.keys():
 			sym = self._find_sym(name,self.__symnames[k])
-			if sym is not None:
-				return sym.value
-		return -1
+			if sym is not None:				
+				return sym
+		return None
 
 	def func_offset(self,name):
-		return self._func_off(name)
+		sym = self._func_off(name)
+		if sym is None:
+			return -1
+		sections = self.__coff.sections
+		idx = int(sym.sectnum)
+		assert(idx <= len(sections))
+		#logging.info('sections [%d] %s'%(idx,sections[(idx-1)]))
+		return sym.value + sections[(idx-1)].offdata
 
 
 	def func_vaddr(self,name):
-		return self._func_off(name)
+		sym = self._func_off(name)
+		if sym is None:
+			return -1
+		return sym.value
 
 	def func_size(self,name):
 		if self.__coff is None:
@@ -79,7 +92,7 @@ class CoffParser(object):
 		for k in self.__symnames.keys():
 			sym = self._find_sym(name,self.__symnames[k])
 			if sym is not None:
-				return sym.size
+				return sym.size 
 		return -1
 
 	def _is_in_rel(self,rel,vaddr):
@@ -130,7 +143,12 @@ class CoffParser(object):
 
 		if vaddr < findsym.value or vaddr >= (findsym.value + findsym.size):
 			return True
-		return self._find_rel_in(self.__relocvalues[k], vaddr)
+		#if len(self.__relocvalues[findk]) > 0:
+		#	logging.info('reloc [%s] len(%s) [%s] [%s]'%(findk, len(self.__relocvalues[findk]), self.__relocvalues[findk][0], self.__relocvalues[findk][-1]))
+		#else:
+		#	logging.info('reloc [%s] 0'%(findk))
+
+		return self._find_rel_in(self.__relocvalues[findk], vaddr)
 
 	def get_data(self):
 		return bytes_to_ints(self.__data)

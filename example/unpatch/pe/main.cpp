@@ -21,6 +21,42 @@ int print_out_a(void)
     return 0;
 }
 
+
+
+
+
+int print_out_b(void)
+{
+    int x = 3, b = 3, c = 3;
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    return 0;
+}
+
+int print_out_c(void)
+{
+    int x = 3, b = 3, c = 3;
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    return 0;
+}
+
 #if 0
 
 void dump_func(FILE* fp, void* funcaddr, int size)
@@ -68,40 +104,7 @@ void dump_func(FILE* fp, void* funcaddr, int size)
     return;
 }
 
-
 #endif
-
-int print_out_b(void)
-{
-    int x = 3, b = 3, c = 3;
-    OB_CODE(x, b, c);
-    OUTP("hello world x=%d b=%d c=%d", x, b, c);
-    OB_CODE(x, b, c);
-    OUTP("hello world x=%d b=%d c=%d", x, b, c);
-    OB_CODE(x, b, c);
-    OUTP("hello world x=%d b=%d c=%d", x, b, c);
-    OB_CODE(x, b, c);
-    OUTP("hello world x=%d b=%d c=%d", x, b, c);
-    OB_CODE(x, b, c);
-    OUTP("hello world x=%d b=%d c=%d", x, b, c);
-    return 0;
-}
-
-int print_out_c(void)
-{
-    int x = 3, b = 3, c = 3;
-    OB_CODE(x, b, c);
-    OUTP("hello world x=%d b=%d c=%d", x, b, c);
-    OB_CODE(x, b, c);
-    OUTP("hello world x=%d b=%d c=%d", x, b, c);
-    OB_CODE(x, b, c);
-    OUTP("hello world x=%d b=%d c=%d", x, b, c);
-    OB_CODE(x, b, c);
-    OUTP("hello world x=%d b=%d c=%d", x, b, c);
-    OB_CODE(x, b, c);
-    OUTP("hello world x=%d b=%d c=%d", x, b, c);
-    return 0;
-}
 
 
 

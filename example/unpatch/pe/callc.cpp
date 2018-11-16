@@ -4,6 +4,7 @@
 
 #define OUTP(...) do{fprintf(stdout,"[%s:%d] ",__FILE__,__LINE__); fprintf(stdout,__VA_ARGS__);fprintf(stdout,"\n");}while(0)
 
+#if 1
 int call_a(void)
 {
     int x = 3, b = 3, c = 3;
@@ -35,6 +36,7 @@ int call_b(void)
     OUTP("hello world x=%d b=%d c=%d", x, b, c);
     return 0;
 }
+#endif
 
 int call_c(void)
 {

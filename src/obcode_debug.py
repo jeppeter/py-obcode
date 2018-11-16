@@ -245,7 +245,7 @@ def object_one_file(objparser,odict,objfile,funcs,times,verbose):
     for f in funcs:
         foff = objparser.func_offset(f)
         fsize = objparser.func_size(f)
-        logging.info('foff [%d]'%(foff))
+        logging.info('foff [0x%x:%d]'%(foff,foff))
         if foff < 0 :
             raise Exception('can not find [%s]'%(f))
         fvaddr = objparser.func_vaddr(f)
