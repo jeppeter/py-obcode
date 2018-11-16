@@ -1,0 +1,92 @@
+CURDIR=$(MAKEDIR)
+TOPDIR=$(CURDIR)\..\..\..
+DYNAMICDIR=$(TOPDIR)\dynamiclib
+STATICDIR=$(TOPDIR)\staticlib
+
+CC      = cl.exe
+LD      = link.exe
+AR      = lib.exe
+RM      = del
+PYTHON  = python.exe
+CP      = copy /Y
+
+
+
+!IFDEF MAKEVERBOSE
+!IF $(MAKEVERBOSE) != 0
+QUIETCMD=
+NOLOGO_CFLAGS=
+NOLOGO_LDFLAGS=
+NOLOGO_MAKEFLAGS=
+GIT_VERBOSE=
+!ELSE
+QUIETCMD=@
+NOLOGO_CFLAGS=/nologo
+NOLOGO_LDFLAGS=/nologo
+NOLOGO_MAKEFLAGS=/NOLOGO
+GIT_VERBOSE=--quiet
+!ENDIF
+!ELSE
+QUIETCMD=@
+NOLOGO_CFLAGS=/nologo
+NOLOGO_LDFLAGS=/nologo
+NOLOGO_MAKEFLAGS=/NOLOGO
+GIT_VERBOSE=--quiet
+!ENDIF
+
+!IFDEF STATICLIB
+!IF $(STATICLIB) != 0
+STATIC_LIB_CFLAGS=/MT
+
+INC_LDFLAGS=
+
+!ELSE
+STATIC_LIB_CFLAGS=/MT
+INC_LDFLAGS =
+
+!ENDIF
+!ELSE
+STATIC_LIB_CFLAGS=/MT
+
+INC_LDFLAGS=
+!ENDIF
+
+INC_CFLAGS = /I"$(TOPDIR)\include"
+COM_CFLAGS = /Wall /wd"4820" /wd"4668" /wd"4127" /wd"4510" /wd"4512" /wd"4610" /wd"4710" /wd"5045"
+REL_CFLAGS = 
+DBG_CFLAGS = /Zi /Od 
+
+
+#INC_LDFLAGS = "$(TOPDIR)\winlib\winlib.lib" Advapi32.lib
+REL_LDFLAGS = 
+
+CFLAGS  =  $(NOLOGO_CFLAGS) $(STATIC_LIB_CFLAGS) $(INC_CFLAGS) $(COM_CFLAGS) $(REL_CFLAGS) $(DBG_CFLAGS)
+LDFLAGS = $(NOLOGO_LDFLAGS) $(INC_LDFLAGS) $(REL_LDFLAGS)
+
+SOURCES=main.cpp unpatch.cpp
+OBJECTS=$(SOURCES:.cpp=.obj)
+
+
+all:main.exe
+
+main.exe:$(OBJECTS)
+	$(QUIETCMD) echo "call static $(OBJECTS)"
+	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(OBJECTS)
+	$(QUIETCMD)echo "use static lib"
+
+.cpp.obj:
+	$(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $<
+
+unpatch.cpp:unpatch.json
+
+unpatch.json:main.obj
+	echo {} >unpatch.json
+	echo #include "main.h" >unpatch.cpp
+	echo int unpatch_handler(map_prot_func_t protfunc) { protfunc = protfunc;return 0;} >>unpatch.cpp
+
+
+
+
+clean:
+	$(QUIETCMD) $(RM) *.exe *.obj 2>NUL
+	$(QUIETCMD) $(RM) unpatch.cpp unpatch.json 2>NUL
