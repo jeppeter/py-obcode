@@ -1,0 +1,31 @@
+
+OBJECTS=main.o unpatch.o
+TOPDIR=$(shell readlink -f ../../.. )
+CURDIR=$(shell readlink -f .)
+
+all:main
+
+main:${OBJECTS}
+	gcc -Wall -o $@ ${OBJECTS}
+ifneq (${OB_PATCH},)
+	python ${TOPDIR}/obcode.py -D unpatch.json obpatchelf $@
+endif
+
+
+%.o:%.c
+	gcc -Wall -I${TOPDIR}/include -c $< -o $@
+
+unpatch.c:unpatch.json
+
+unpatch.json:main.o
+ifeq (${OB_PATCH},)
+	/bin/echo -e "#include \"main.h\"\nint unpatch_handler(map_prot_func_t protfunc){return 0;}" >unpatch.c
+	/bin/echo "{}" >unpatch.json
+else
+	python ${TOPDIR}/obcode.py --includefiles main.h -D unpatch.json -o unpatch.c obunpatchelf '${CURDIR}/main.o;print_out_a'
+endif
+
+clean:
+	rm -f ${OBJECTS} main_orig.o
+	rm -f unpatch.json unpatch.c
+	rm -f main

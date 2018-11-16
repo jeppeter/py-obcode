@@ -1,0 +1,75 @@
+CURDIR=$(MAKEDIR)
+TOPDIR=$(CURDIR)\..\..\..
+
+CC      = cl.exe
+LD      = link.exe
+AR      = lib.exe
+RM      = del
+PYTHON  = python.exe
+CP      = copy /Y
+
+
+
+QUIETCMD=@
+NOLOGO_CFLAGS=/nologo
+NOLOGO_LDFLAGS=/nologo
+NOLOGO_MAKEFLAGS=/NOLOGO
+GIT_VERBOSE=--quiet
+
+STATIC_LIB_CFLAGS=/MT
+INC_LDFLAGS=
+
+
+INC_CFLAGS = /I"$(TOPDIR)\include"
+COM_CFLAGS = /Wall /wd"4820" /wd"4668" /wd"4127" /wd"4510" /wd"4512" /wd"4610" /wd"4710" /wd"5045"
+REL_CFLAGS = 
+DBG_CFLAGS = /Zi /Od 
+
+
+REL_LDFLAGS = 
+
+CFLAGS  =  $(NOLOGO_CFLAGS) $(STATIC_LIB_CFLAGS) $(INC_CFLAGS) $(COM_CFLAGS) $(REL_CFLAGS) $(DBG_CFLAGS)
+LDFLAGS = $(NOLOGO_LDFLAGS) $(INC_LDFLAGS) $(REL_LDFLAGS)
+
+SOURCES=main.cpp unpatch.cpp
+OBJECTS=$(SOURCES:.cpp=.obj)
+
+
+all:main.exe
+
+!IFDEF OB_PATCH
+main.exe:$(OBJECTS)
+	$(QUIETCMD) echo "call static $(OBJECTS)"
+	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(OBJECTS)
+	$(QUIETCMD)echo "use static lib"
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py obpatchpe -D $(CURDIR)\unpatch.json $(CURDIR)\main.exe
+!ELSE
+main.exe:$(OBJECTS)
+	$(QUIETCMD) echo "call static $(OBJECTS)"
+	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(OBJECTS)
+	$(QUIETCMD)echo "use static lib"
+!ENDIF
+
+.cpp.obj:
+	$(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $<
+
+unpatch.cpp:unpatch.json
+
+#	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h -D unpatch.json -o unpatch.cpp obunpatchcoff "$(CURDIR)\main.obj;print_out_a,print_out_b,print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c" -vvvv
+
+
+!IFDEF OB_PATCH
+unpatch.json:main.obj
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h -D unpatch.json -o unpatch.cpp obunpatchcoff "$(CURDIR)\main.obj;print_out_a"
+!ELSE
+unpatch.json:main.obj
+	$(QUIETCMD)echo {} >unpatch.json
+	$(QUIETCMD)echo #include "main.h" >unpatch.cpp
+	$(QUIETCMD)echo int unpatch_handler(map_prot_func_t protfunc) { protfunc = protfunc;return 0;} >>unpatch.cpp
+!ENDIF
+
+
+
+clean:
+	$(QUIETCMD) $(RM) *.exe *.obj *.pdb 2>NUL
+	$(QUIETCMD) $(RM) unpatch.cpp unpatch.json 2>NUL

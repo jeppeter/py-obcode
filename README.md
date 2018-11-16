@@ -3,6 +3,7 @@
 >  this project is to obfuscated for the c code
 
 ## release history
+* Nov 16th 2018 release 0.2.4 to make the unpatch coding in the elf and pe format
 * Oct 29th 2018 release 0.2.2 to make OB_MIXED_STR OB_MIXED_STR_SPEC OB_MIXED_WSTR OB_MIXED_WSTR_SPEC ok
 * Oct 25th 2018 release 0.1.8 to make OB_CONSTANT_STR OB_CONSTANT_STR_SPEC OB_CONSTANT_WSTR OB_CONSTANT_WSTR_SPEC
 * Oct 24th 2018 release 0.1.6 to make new parse for parameter with parse_param function
@@ -568,3 +569,275 @@ gcc -Wall -o command /home/bt/sources/py-obcode/example/maklib/k4rFRfIHbT.o /hom
 ```
 
 > the output filename is random, so when you really run a little different
+
+## howto patch code and unpatch code
+
+> in pe format main.cpp
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include "main.h"
+
+#define OUTP(...) do{fprintf(stdout,"[%s:%d] ",__FILE__,__LINE__); fprintf(stdout,__VA_ARGS__);fprintf(stdout,"\n");}while(0)
+
+int print_out_a(void)
+{
+    int x = 1, b = 2, c = 3;
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    return 0;
+}
+
+
+OB_MAP_FUNCTION();
+
+int main(int argc, char* argv[])
+{
+    int ret;
+    argc =argc;
+    argv =argv;
+    ret = unpatch_handler(OB_MAP_FUNC);
+    if (ret < 0) {
+        OUTP("can not unpatch");
+        return ret;
+    }
+    //dump_func(stdout,&print_out_a,0x1f0);
+    print_out_a();
+    return 0;
+}
+```
+
+> main.h
+```c
+#ifndef __MAIN_H_B4A752BC7B8694C38FD413662A4302B4__
+#define __MAIN_H_B4A752BC7B8694C38FD413662A4302B4__
+
+#include <obcode.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int OB_FUNC unpatch_handler(map_prot_func_t protfunc);
+int print_out_a(void);
+
+#ifdef __cplusplus
+};
+#endif
+
+
+#endif /* __MAIN_H_B4A752BC7B8694C38FD413662A4302B4__ */
+```
+
+> makefile.win
+```makefile
+CURDIR=$(MAKEDIR)
+TOPDIR=$(CURDIR)\..\..\..
+
+CC      = cl.exe
+LD      = link.exe
+AR      = lib.exe
+RM      = del
+PYTHON  = python.exe
+CP      = copy /Y
+
+
+
+QUIETCMD=@
+NOLOGO_CFLAGS=/nologo
+NOLOGO_LDFLAGS=/nologo
+NOLOGO_MAKEFLAGS=/NOLOGO
+GIT_VERBOSE=--quiet
+
+STATIC_LIB_CFLAGS=/MT
+INC_LDFLAGS=
+
+
+INC_CFLAGS = /I"$(TOPDIR)\include"
+COM_CFLAGS = /Wall /wd"4820" /wd"4668" /wd"4127" /wd"4510" /wd"4512" /wd"4610" /wd"4710" /wd"5045"
+REL_CFLAGS = 
+DBG_CFLAGS = /Zi /Od 
+
+
+REL_LDFLAGS = 
+
+CFLAGS  =  $(NOLOGO_CFLAGS) $(STATIC_LIB_CFLAGS) $(INC_CFLAGS) $(COM_CFLAGS) $(REL_CFLAGS) $(DBG_CFLAGS)
+LDFLAGS = $(NOLOGO_LDFLAGS) $(INC_LDFLAGS) $(REL_LDFLAGS)
+
+SOURCES=main.cpp unpatch.cpp
+OBJECTS=$(SOURCES:.cpp=.obj)
+
+
+all:main.exe
+
+!IFDEF OB_PATCH
+main.exe:$(OBJECTS)
+    $(QUIETCMD) echo "call static $(OBJECTS)"
+    $(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(OBJECTS)
+    $(QUIETCMD)echo "use static lib"
+    $(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py obpatchpe -D $(CURDIR)\unpatch.json $(CURDIR)\main.exe
+!ELSE
+main.exe:$(OBJECTS)
+    $(QUIETCMD) echo "call static $(OBJECTS)"
+    $(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(OBJECTS)
+    $(QUIETCMD)echo "use static lib"
+!ENDIF
+
+.cpp.obj:
+    $(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $<
+
+unpatch.cpp:unpatch.json
+
+#   $(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h -D unpatch.json -o unpatch.cpp obunpatchcoff "$(CURDIR)\main.obj;print_out_a,print_out_b,print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c" -vvvv
+
+
+!IFDEF OB_PATCH
+unpatch.json:main.obj
+    $(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h -D unpatch.json -o unpatch.cpp obunpatchcoff "$(CURDIR)\main.obj;print_out_a"
+!ELSE
+unpatch.json:main.obj
+    $(QUIETCMD)echo {} >unpatch.json
+    $(QUIETCMD)echo #include "main.h" >unpatch.cpp
+    $(QUIETCMD)echo int unpatch_handler(map_prot_func_t protfunc) { protfunc = protfunc;return 0;} >>unpatch.cpp
+!ENDIF
+
+
+
+clean:
+    $(QUIETCMD) $(RM) *.exe *.obj *.pdb 2>NUL
+    $(QUIETCMD) $(RM) unpatch.cpp unpatch.json 2>NUL
+```
+
+> run command
+```shell
+nmake /f makefile.win OB_PATCH=1 all
+```
+
+> get the main.exe it will change the byte of the function in the print_out_a and will make unpatch_handler ok
+```shell
+.\main.exe
+[main.cpp:12] hello world x=1 b=2 c=3
+[main.cpp:14] hello world x=1 b=2 c=3
+[main.cpp:16] hello world x=1 b=2 c=3
+[main.cpp:18] hello world x=1 b=2 c=3
+[main.cpp:20] hello world x=1 b=2 c=3
+```
+
+> elf format main.c
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include "main.h"
+
+#define OUTP(...) do{fprintf(stdout,"[%s:%d] ",__FILE__,__LINE__); fprintf(stdout,__VA_ARGS__);fprintf(stdout,"\n");}while(0)
+
+int print_out_a(void)
+{
+    int x = 1, b = 2, c = 3;
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    OB_CODE(x, b, c);
+    OUTP("hello world x=%d b=%d c=%d", x, b, c);
+    return 0;
+}
+
+
+OB_MAP_FUNCTION();
+
+int main(int argc, char* argv[])
+{
+    int ret;
+    argc =argc;
+    argv =argv;
+    ret = unpatch_handler(OB_MAP_FUNC);
+    if (ret < 0) {
+        OUTP("can not unpatch");
+        return ret;
+    }
+    //dump_func(stdout,&print_out_a,0x1f0);
+    print_out_a();
+    return 0;
+}
+```
+
+> main.h
+```c
+#ifndef __MAIN_H_B4A752BC7B8694C38FD413662A4302B4__
+#define __MAIN_H_B4A752BC7B8694C38FD413662A4302B4__
+
+#include <obcode.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int OB_FUNC unpatch_handler(map_prot_func_t protfunc);
+int print_out_a(void);
+
+#ifdef __cplusplus
+};
+#endif
+
+
+#endif /* __MAIN_H_B4A752BC7B8694C38FD413662A4302B4__ */
+```
+
+> Makefile
+```makefile
+
+OBJECTS=main.o unpatch.o
+TOPDIR=$(shell readlink -f ../../.. )
+CURDIR=$(shell readlink -f .)
+
+all:main
+
+main:${OBJECTS}
+    gcc -Wall -o $@ ${OBJECTS}
+ifneq (${OB_PATCH},)
+    python ${TOPDIR}/obcode.py -D unpatch.json obpatchelf $@
+endif
+
+
+%.o:%.c
+    gcc -Wall -I${TOPDIR}/include -c $< -o $@
+
+unpatch.c:unpatch.json
+
+unpatch.json:main.o
+ifeq (${OB_PATCH},)
+    /bin/echo -e "#include \"main.h\"\nint unpatch_handler(map_prot_func_t protfunc){return 0;}" >unpatch.c
+    /bin/echo "{}" >unpatch.json
+else
+    python ${TOPDIR}/obcode.py --includefiles main.h -D unpatch.json -o unpatch.c obunpatchelf '${CURDIR}/main.o;print_out_a'
+endif
+
+clean:
+    rm -f ${OBJECTS} main_orig.o
+    rm -f unpatch.json unpatch.c
+    rm -f main
+```
+
+> run make it will change print_out_a function binary code and make unpatch_handler to unpatch
+> output 
+```shell
+./main
+[main.c:11] hello world x=1 b=2 c=3
+[main.c:13] hello world x=1 b=2 c=3
+[main.c:15] hello world x=1 b=2 c=3
+[main.c:17] hello world x=1 b=2 c=3
+[main.c:19] hello world x=1 b=2 c=3
+```
