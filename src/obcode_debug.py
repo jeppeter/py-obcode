@@ -465,24 +465,22 @@ def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,tim
     jsondump[objname][funcname][FORMAT_FUNC_CODE_KEY]= rets
     return jsondump
 
-def elf_one_file(odict,objfile,funcs,times,verbose):
-    elfparser = ElfParser(objfile)
+def object_one_file(objparser,odict,objfile,funcs,times,verbose):
     for funcname in funcs:
         nformatfunc = get_random_name(random.randint(5,20))
-        odict = format_ob_patch_functions(elfparser,odict,objfile,funcname,nformatfunc,times,verbose)
-
+        odict = format_ob_patch_functions(objparser,odict,objfile,funcname,nformatfunc,times,verbose)
 
     # now to give the change file
-    objdata = elfparser.get_data()
+    objdata = objparser.get_data()
     #logging.info('[%s] data\n%s'%(objfile,dump_ints(objdata)))
     logging.info('funcs %s'%(funcs))
     for f in funcs:
-        foff = elfparser.func_offset(f)
-        fsize = elfparser.func_size(f)
+        foff = objparser.func_offset(f)
+        fsize = objparser.func_size(f)
         logging.info('foff [%d]'%(foff))
         if foff < 0 :
             raise Exception('can not find [%s]'%(f))
-        fvaddr = elfparser.func_vaddr(f)
+        fvaddr = objparser.func_vaddr(f)
         assert(fvaddr >= 0)
         for off in odict[objfile][f][FORMAT_FUNC_XORS_KEY].keys():            
             if odict[objfile][f][FORMAT_FUNC_OFFSET_KEY][off] >= 2:
@@ -494,6 +492,11 @@ def elf_one_file(odict,objfile,funcs,times,verbose):
                  objdata[(foff + offi)] ^ odict[objfile][f][FORMAT_FUNC_XORS_KEY][off]))
                 objdata[(foff + offi)] = objdata[(foff + offi)] ^ odict[objfile][f][FORMAT_FUNC_XORS_KEY][off]
         odict[objfile][f][FUNC_DATA_KEY] = objdata[foff:(foff+fsize)]
+    return odict,objdata
+
+def elf_one_file(odict,objfile,funcs,times,verbose):
+    elfparser = ElfParser(objfile)
+    odict, objdata = object_one_file(elfparser,odict,objfile,funcs,times,verbose)
     elfparser.close()
     #logging.info('writeback [%s]\n%s'%(objfile,dump_ints(objdata)))
     write_file_ints(objdata,objfile)
