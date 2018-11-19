@@ -3,13 +3,13 @@ TOPDIR=$(shell readlink -f ../../../..)
 
 CFLAGS=-I${TOPDIR}/include -Wall
 
-all:main
+all:traceme
 
-main:main.o
+traceme:main.o
 	gcc ${CFLAGS} -o $@ $<
 
 %.o:%.c
 	gcc ${CFLAGS} -c $< -o $@
 
 clean:
-	rm -f main *.o
+	rm -f traceme *.o

@@ -6,16 +6,17 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <syscall.h>
 
 
-int catch_trace(int first)
+int catch_trace(int bfirst)
 {
 	int ret;
 	int tracenot=0;
 	int fd=-1;
 	char buf[4];
 	int v;
-	if (first) {
+	if (bfirst) {
 		fd = open((const char*)OB_MIXED_STR("/proc/sys/kernel/yama/ptrace_scope"), O_RDONLY);
 		if (fd >= 0) {
 			ret = read(fd,buf,sizeof(buf));
@@ -36,18 +37,18 @@ int catch_trace(int first)
 
 
 		if (tracenot == 0) {
-			ret = ptrace(PTRACE_TRACEME,0,1,0);
-			if (ret < 0) {
+			ret = syscall(SYS_ptrace,PTRACE_TRACEME,0,1,0);
+			if (ret != 0) {
 				return -1;
 			}			
 		}
-		ret = ptrace(PTRACE_TRACEME,0,1,0);
-		if (ret >= 0) {
+		ret = syscall(SYS_ptrace,PTRACE_TRACEME,0,1,0);
+		if (ret  == 0) {
 			return -1;
 		}
 	} else {
-		ret = ptrace(PTRACE_TRACEME,0,1,0);
-		if (ret >= 0) {
+		ret = syscall(SYS_ptrace,PTRACE_TRACEME,0,1,0);
+		if (ret  == 0) {
 			return -1;
 		}
 	}
