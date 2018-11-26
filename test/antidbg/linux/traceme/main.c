@@ -16,6 +16,8 @@ int catch_trace(int bfirst)
 	int fd=-1;
 	char buf[4];
 	int v;
+
+	asm volatile("push %rax;movq %fs:0x30, %rax; pop %rax");
 	if (bfirst) {
 		fd = open((const char*)OB_MIXED_STR("/proc/sys/kernel/yama/ptrace_scope"), O_RDONLY);
 		if (fd >= 0) {

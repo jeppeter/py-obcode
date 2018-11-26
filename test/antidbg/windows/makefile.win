@@ -1,0 +1,66 @@
+TOPDIR=..\..\..
+
+CC=cl.exe
+LD=link.exe
+AR=lib.exe
+RM=del.exe
+
+!ifdef AMD64_MODE
+ML=ml64.exe
+ARCH=x64
+!else
+ML=ml.exe
+ARCH=x86
+!endif
+
+LIB_CFILES=@antidbg_c.cpp @main.cpp
+LIB_ASMFILES=$(ARCH)\antidbg.asm
+!ifdef AMD64_MODE
+_INNERFILES=$(LIB_CFILES:@=x64\)
+LIB_OBJECTS=$(_INNERFILES:.cpp=.obj) $(LIB_ASMFILES:.asm=.obj)
+!else
+_INNERFILES=$(LIB_CFILES:@=x86\)
+LIB_OBJECTS=$(_INNERFILES:.cpp=.obj) $(LIB_ASMFILES:.asm=.obj)
+!endif
+LIB_EXE=$(ARCH)\antidbg.exe
+ARFLAGS=/WX /NOLOGO
+
+INC_CFLAGS="/I$(TOPDIR)\include"
+WD_CFLAGS=/wd"4820" /wd"4668" /wd"4710"
+REL_CLFAGS=/MT
+
+CFLAGS=$(INC_CFLAGS) $(WD_CFLAGS) $(REL_CLFAGS) /nologo /Wall
+LDFLAGS= /NOLOGO
+
+all:$(LIB_EXE)
+
+
+$(LIB_EXE):$(LIB_OBJECTS)
+	$(LD)  -out:$@ $(LDFLAGS) $(LIB_OBJECTS)
+
+
+
+
+!IFDEF AMD64_MODE
+x64\antidbg_c.obj:antidbg_c.cpp
+	$(CC) $(CFLAGS) -c -Fo$@ antidbg_c.cpp
+
+x64\main.obj:main.cpp
+	$(CC) $(CFLAGS) -c -Fo$@ main.cpp
+
+
+!ELSE
+x86\antidbg_c.obj:antidbg_c.cpp
+	$(CC) $(CFLAGS) -c -Fo$@ antidbg_c.cpp
+
+x86\main.obj:main.cpp
+	$(CC) $(CFLAGS) -c -Fo$@ main.cpp
+
+!ENDIF
+
+.asm.obj:
+	$(ML) /Fo$@ /c $<
+
+clean:
+	$(RM) $(LIB_OBJECTS) 2>NUL || echo "" >NUL
+	$(RM) $(LIB_EXE) 2>NUL || echo "" >NUL
