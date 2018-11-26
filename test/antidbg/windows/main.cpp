@@ -33,7 +33,7 @@ void usage(int ec, const char* fmt, ...)
     fprintf(fp, "[CMDS]\n");
     fprintf(fp, "\tisdbg                  to test bBeingDebugged in PEB\n");
     fprintf(fp, "\tisgflag                to test dwNtGlobalFlag in PEB\n");
-    //fprintf(fp,"\t\n");
+    fprintf(fp, "\tisremotedbg            to test CheckRemoteDebuggerPresent\n");
     //fprintf(fp,"\t\n");
     //fprintf(fp,"\t\n");
     //fprintf(fp,"\t\n");
@@ -61,6 +61,17 @@ int isgflags_cmd(int argc, char* argv[])
     return 0;
 }
 
+int isremotedbg_cmd(int argc,char* argv[])
+{
+    int ret;
+    argc = argc;
+    argv = argv;
+    ret = check_remote_debug();
+    fprintf(stdout, "isremotedbg [%s]\n", ret ? "true" : "false" );
+    return 0;
+}
+
+
 int main(int argc, char* argv[])
 {
     int ret = -1;
@@ -75,6 +86,8 @@ int main(int argc, char* argv[])
         ret = isdbg_cmd(argc, argv);
     } else if (strcmp(argv[1], "isgflag") == 0) {
         ret = isgflags_cmd(argc, argv);
+    } else if (strcmp(argv[1], "isremotedbg") == 0) {
+        ret = isremotedbg_cmd(argc, argv);
     } else {
         usage(3, "not support cmd[%s]", argv[1]);
     }

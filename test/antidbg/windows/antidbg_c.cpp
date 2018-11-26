@@ -20,3 +20,20 @@ int is_ntgflags_set()
 	}
 	return 0;
 }
+
+int check_remote_debug(void)
+{
+	HANDLE hcurproc=NULL;
+	BOOL bret;
+	BOOL bfound=FALSE;
+
+	hcurproc = GetCurrentProcess();
+	bret = CheckRemoteDebuggerPresent(hcurproc,&bfound);
+	if (!bret) {
+		return 1;
+	}
+	if (bfound) {
+		return 1;
+	}
+	return 0;
+}
