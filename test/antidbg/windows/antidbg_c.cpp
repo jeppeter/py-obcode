@@ -100,3 +100,46 @@ out:
 	hmod = NULL;
 	return ret;
 }
+
+int is_dr_debug(void)
+{
+	CONTEXT ctx;
+	HANDLE hthr = GetCurrentThread();
+	int i;
+	BOOL bret;
+	int ret = 1;
+	unsigned char* pc=(unsigned char*) &ctx;
+	for (i=0;i<sizeof(ctx);i++,pc++) {
+		*pc = 0x0;
+	}
+	ctx.ContextFlags = CONTEXT_DEBUG_REGISTERS;
+	bret = GetThreadContext(hthr,&ctx);
+	if (!bret) {
+		goto out;
+	}
+	if (ctx.Dr0 != 0) {
+		goto out;
+	}
+	if (ctx.Dr1 != 0) {
+		goto out;
+	}
+
+	if (ctx.Dr2 !=0) {
+		goto out;
+	}
+
+	if (ctx.Dr3 != 0) {
+		goto out;
+	}
+
+	if (ctx.Dr6 != 0) {
+		goto out;
+	}
+
+	if (ctx.Dr7 != 0) {
+		goto out;
+	}
+	ret = 0;
+out:
+	return ret;
+}

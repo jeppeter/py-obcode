@@ -25,12 +25,25 @@ LIB_OBJECTS=$(_INNERFILES:.cpp=.obj) $(LIB_ASMFILES:.asm=.obj)
 LIB_EXE=$(ARCH)\antidbg.exe
 ARFLAGS=/WX /NOLOGO
 
+!ifdef DBG_MODE
+DBG_CFLAGS= /Zi
+!else
+DBG_CFLAGS=
+!endif
+
 INC_CFLAGS="/I$(TOPDIR)\include"
 WD_CFLAGS=/wd"4820" /wd"4668" /wd"4710"
 REL_CLFAGS=/MT
 
-CFLAGS=$(INC_CFLAGS) $(WD_CFLAGS) $(REL_CLFAGS) /nologo /Wall
-LDFLAGS= /NOLOGO
+CFLAGS=$(INC_CFLAGS) $(DBG_CFLAGS) $(WD_CFLAGS) $(REL_CLFAGS) /nologo /Wall
+
+!ifdef DBG_MODE
+DBG_LDFLAGS=/DEBUG:full
+!else
+DBG_LDFLAGS=
+!endif
+
+LDFLAGS= /NOLOGO $(DBG_LDFLAGS)
 
 all:$(LIB_EXE)
 

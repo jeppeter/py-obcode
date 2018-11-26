@@ -128,6 +128,7 @@ int is_ntgflags_set(void);
 int check_remote_debug(void);
 int is_debugger_present(void);
 int is_querydbg(void);
+int is_dr_debug(void);
 
 #ifdef __cplusplus
 };
