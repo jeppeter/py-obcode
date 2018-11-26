@@ -37,3 +37,14 @@ int check_remote_debug(void)
 	}
 	return 0;
 }
+
+int is_debugger_present(void)
+{
+	BOOL bret;
+
+	bret = IsDebuggerPresent();
+	if (bret) {
+		return 1;
+	}
+	return 0;	
+}
