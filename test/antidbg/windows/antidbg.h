@@ -124,6 +124,7 @@ _PPEB get_peb_ptr(void);
 
 /*c functions*/
 int is_debug_present(void);
+int is_ntgflags_set(void);
 
 #ifdef __cplusplus
 };

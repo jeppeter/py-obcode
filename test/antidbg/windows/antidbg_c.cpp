@@ -6,8 +6,17 @@
 int is_debug_present()
 {
 	_PPEB peb = get_peb_ptr();
-	fprintf(stdout,"peb [%p]\n", peb);
 	if (peb->bBeingDebugged) {
+		return 1;
+	}
+	return 0;
+}
+
+int is_ntgflags_set()
+{
+	_PPEB peb = get_peb_ptr();
+	fprintf(stderr,"gflags [0x%lx]\n", peb->dwNtGlobalFlag);
+	if (peb->dwNtGlobalFlag & 0x70) {
 		return 1;
 	}
 	return 0;
