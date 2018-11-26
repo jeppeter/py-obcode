@@ -15,7 +15,6 @@ int is_debug_present()
 int is_ntgflags_set()
 {
 	_PPEB peb = get_peb_ptr();
-	fprintf(stderr,"gflags [0x%lx]\n", peb->dwNtGlobalFlag);
 	if (peb->dwNtGlobalFlag & 0x70) {
 		return 1;
 	}
