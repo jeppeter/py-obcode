@@ -35,7 +35,7 @@ void usage(int ec, const char* fmt, ...)
     fprintf(fp, "\tisgflag                to test dwNtGlobalFlag in PEB\n");
     fprintf(fp, "\tisremotedbg            to test CheckRemoteDebuggerPresent\n");
     fprintf(fp, "\tisdbgprt               to test IsDebugPresent\n");
-    //fprintf(fp,"\t\n");
+    fprintf(fp, "\tqrydbg                 to test queryinformation\n");
     //fprintf(fp,"\t\n");
     //fprintf(fp,"\t\n");
     //fprintf(fp,"\t\n");
@@ -84,6 +84,16 @@ int isdbgprt_cmd(int argc,char* argv[])
     return 0;
 }
 
+int qrydbg_cmd(int argc,char* argv[])
+{
+    int ret;
+    argc = argc;
+    argv = argv;
+    ret = is_querydbg();
+    fprintf(stdout, "qrydbg [%s]\n", ret ? "true" : "false" );
+    return 0;
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -103,6 +113,8 @@ int main(int argc, char* argv[])
         ret = isremotedbg_cmd(argc, argv);
     } else if (strcmp(argv[1], "isdbgprt") == 0) {
         ret = isdbgprt_cmd(argc, argv);
+    } else if (strcmp(argv[1], "qrydbg") == 0) {
+        ret = qrydbg_cmd(argc, argv);
     } else {
         usage(3, "not support cmd[%s]", argv[1]);
     }
