@@ -13,7 +13,7 @@ endif
 
 
 %.o:%.c
-	gcc -Wall -I${TOPDIR}/include -c $< -o $@
+	gcc -Wall -I${TOPDIR}/include -DOB_MMAP -c $< -o $@
 
 unpatch.c:unpatch.json
 

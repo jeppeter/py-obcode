@@ -3,6 +3,7 @@
 >  this project is to obfuscated for the c code
 
 ## release history
+* Nov 27th 2018 release 0.2.6 to fixup bug when used OB_MMAP to include OB_PATCH
 * Nov 16th 2018 release 0.2.4 to make the unpatch coding in the elf and pe format
 * Oct 29th 2018 release 0.2.2 to make OB_MIXED_STR OB_MIXED_STR_SPEC OB_MIXED_WSTR OB_MIXED_WSTR_SPEC ok
 * Oct 25th 2018 release 0.1.8 to make OB_CONSTANT_STR OB_CONSTANT_STR_SPEC OB_CONSTANT_WSTR OB_CONSTANT_WSTR_SPEC
@@ -662,7 +663,7 @@ INC_LDFLAGS=
 
 
 INC_CFLAGS = /I"$(TOPDIR)\include"
-COM_CFLAGS = /Wall /wd"4820" /wd"4668" /wd"4127" /wd"4510" /wd"4512" /wd"4610" /wd"4710" /wd"5045"
+COM_CFLAGS = /DOB_MMAP=1 /Wall /wd"4820" /wd"4668" /wd"4127" /wd"4510" /wd"4512" /wd"4610" /wd"4710" /wd"5045"
 REL_CFLAGS = 
 DBG_CFLAGS = /Zi /Od 
 
@@ -813,7 +814,7 @@ endif
 
 
 %.o:%.c
-    gcc -Wall -I${TOPDIR}/include -c $< -o $@
+    gcc -Wall -I${TOPDIR}/include -DOB_MMAP -c $< -o $@
 
 unpatch.c:unpatch.json
 

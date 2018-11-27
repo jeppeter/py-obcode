@@ -21,7 +21,7 @@ INC_LDFLAGS=
 
 
 INC_CFLAGS = /I"$(TOPDIR)\include"
-COM_CFLAGS = /Wall /wd"4820" /wd"4668" /wd"4127" /wd"4510" /wd"4512" /wd"4610" /wd"4710" /wd"5045"
+COM_CFLAGS = /DOB_MMAP=1 /Wall /wd"4820" /wd"4668" /wd"4127" /wd"4510" /wd"4512" /wd"4610" /wd"4710" /wd"5045"
 REL_CFLAGS = 
 DBG_CFLAGS = /Zi /Od 
 
