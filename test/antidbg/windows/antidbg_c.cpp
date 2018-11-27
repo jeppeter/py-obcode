@@ -159,3 +159,35 @@ int is_close_handle_exp(void)
 	}
 	return ret;
 }
+
+int is_single_step(void)
+{
+	int ret = 1;
+
+	__try
+	{
+		set_single_step();
+	}
+
+	__except(EXCEPTION_EXECUTE_HANDLER)
+	{
+		ret = 0;
+	}
+	return ret;
+}
+
+int is_int3(void)
+{
+	int ret = 1;
+
+	__try
+	{
+		set_int3();
+	}
+
+	__except(EXCEPTION_EXECUTE_HANDLER)
+	{
+		ret = 0;
+	}
+	return ret;
+}

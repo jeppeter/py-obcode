@@ -38,6 +38,10 @@ void usage(int ec, const char* fmt, ...)
     fprintf(fp, "\tqrydbg                 to test queryinformation\n");
     fprintf(fp, "\tisdr                   to test dr register\n");
     fprintf(fp, "\tisclosehandle          to test close handle exception\n");
+    fprintf(fp, "\tissstep                to test single step\n");
+    fprintf(fp, "\tisint3                 to test for isint3\n");
+    //fprintf(fp,"\t\n");
+    //fprintf(fp,"\t\n");
     //fprintf(fp,"\t\n");
     //fprintf(fp,"\t\n");
 
@@ -115,6 +119,26 @@ int isclosehdl_cmd(int argc,char* argv[])
     return 0;
 }
 
+int issstep_cmd(int argc,char* argv[])
+{
+    int ret;
+    argc = argc;
+    argv = argv;
+    ret = is_single_step();
+    fprintf(stdout, "issstep [%s]\n", ret ? "true" : "false" );
+    return 0;
+}
+
+int isint3_cmd(int argc,char* argv[])
+{
+    int ret;
+    argc = argc;
+    argv = argv;
+    ret = is_int3();
+    fprintf(stdout, "isint3 [%s]\n", ret ? "true" : "false" );
+    return 0;
+}
+
 int main(int argc, char* argv[])
 {
     int ret = -1;
@@ -139,6 +163,10 @@ int main(int argc, char* argv[])
         ret = isdr_cmd(argc, argv);
     } else if (strcmp(argv[1], "isclosehandle") == 0) {
         ret = isclosehdl_cmd(argc, argv);
+    } else if (strcmp(argv[1], "issstep") == 0) {
+        ret = issstep_cmd(argc, argv);
+    } else if (strcmp(argv[1], "isint3") == 0) {
+        ret = isint3_cmd(argc, argv);
     } else {
         usage(3, "not support cmd[%s]", argv[1]);
     }
