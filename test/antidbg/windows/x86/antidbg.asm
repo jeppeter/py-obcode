@@ -21,5 +21,10 @@ set_int3 PROC
 	ret
 set_int3 ENDP
 
+prefix_hop_int3 PROC
+	db 0f3h,064h,0cch
+	ret
+prefix_hop_int3 ENDP
+
 
 End

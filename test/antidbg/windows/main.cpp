@@ -40,7 +40,7 @@ void usage(int ec, const char* fmt, ...)
     fprintf(fp, "\tisclosehandle          to test close handle exception\n");
     fprintf(fp, "\tissstep                to test single step\n");
     fprintf(fp, "\tisint3                 to test for isint3\n");
-    //fprintf(fp,"\t\n");
+    fprintf(fp, "\tisphint3               to test prefix hop int3\n");
     //fprintf(fp,"\t\n");
     //fprintf(fp,"\t\n");
     //fprintf(fp,"\t\n");
@@ -139,6 +139,17 @@ int isint3_cmd(int argc,char* argv[])
     return 0;
 }
 
+
+int isphint3_cmd(int argc,char* argv[])
+{
+    int ret;
+    argc = argc;
+    argv = argv;
+    ret = is_prefix_hop_int3();
+    fprintf(stdout, "isphint3 [%s]\n", ret ? "true" : "false" );
+    return 0;
+}
+
 int main(int argc, char* argv[])
 {
     int ret = -1;
@@ -167,6 +178,8 @@ int main(int argc, char* argv[])
         ret = issstep_cmd(argc, argv);
     } else if (strcmp(argv[1], "isint3") == 0) {
         ret = isint3_cmd(argc, argv);
+    } else if (strcmp(argv[1], "isphint3") == 0) {
+        ret = isphint3_cmd(argc, argv);
     } else {
         usage(3, "not support cmd[%s]", argv[1]);
     }

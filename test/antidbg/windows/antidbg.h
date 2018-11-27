@@ -122,6 +122,7 @@ typedef struct __PEB // 65 elements, 0x210 bytes
 _PPEB get_peb_ptr(void);
 void set_single_step(void);
 void set_int3(void);
+void prefix_hop_int3(void);
 
 
 /*c functions*/
@@ -134,6 +135,7 @@ int is_dr_debug(void);
 int is_close_handle_exp(void);
 int is_single_step(void);
 int is_int3(void);
+int is_prefix_hop_int3(void);
 
 #ifdef __cplusplus
 };

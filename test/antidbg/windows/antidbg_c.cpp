@@ -191,3 +191,19 @@ int is_int3(void)
 	}
 	return ret;
 }
+
+int is_prefix_hop_int3(void)
+{
+	int ret = 1;
+
+	__try
+	{
+		prefix_hop_int3();
+	}
+
+	__except(EXCEPTION_EXECUTE_HANDLER)
+	{
+		ret = 0;
+	}
+	return ret;
+}
