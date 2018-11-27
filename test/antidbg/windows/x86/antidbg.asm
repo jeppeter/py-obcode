@@ -27,4 +27,10 @@ prefix_hop_int3 PROC
 prefix_hop_int3 ENDP
 
 
+kernel_break PROC
+	int 02dh
+	ret
+kernel_break ENDP
+
+
 End

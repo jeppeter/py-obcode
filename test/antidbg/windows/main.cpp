@@ -41,7 +41,7 @@ void usage(int ec, const char* fmt, ...)
     fprintf(fp, "\tissstep                to test single step\n");
     fprintf(fp, "\tisint3                 to test for isint3\n");
     fprintf(fp, "\tisphint3               to test prefix hop int3\n");
-    //fprintf(fp,"\t\n");
+    fprintf(fp, "\tiskb                   to test int 0x2d\n");
     //fprintf(fp,"\t\n");
     //fprintf(fp,"\t\n");
 
@@ -150,6 +150,17 @@ int isphint3_cmd(int argc,char* argv[])
     return 0;
 }
 
+int iskb_cmd(int argc,char* argv[])
+{
+    int ret;
+    argc = argc;
+    argv = argv;
+    ret = is_kernel_break();
+    fprintf(stdout, "iskb [%s]\n", ret ? "true" : "false" );
+    return 0;
+}
+
+
 int main(int argc, char* argv[])
 {
     int ret = -1;
@@ -180,6 +191,8 @@ int main(int argc, char* argv[])
         ret = isint3_cmd(argc, argv);
     } else if (strcmp(argv[1], "isphint3") == 0) {
         ret = isphint3_cmd(argc, argv);
+    } else if (strcmp(argv[1], "iskb") == 0) {
+        ret = iskb_cmd(argc, argv);
     } else {
         usage(3, "not support cmd[%s]", argv[1]);
     }

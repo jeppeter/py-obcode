@@ -207,3 +207,19 @@ int is_prefix_hop_int3(void)
 	}
 	return ret;
 }
+
+int is_kernel_break(void)
+{
+	int ret = 1;
+
+	__try
+	{
+		kernel_break();
+	}
+
+	__except(EXCEPTION_EXECUTE_HANDLER)
+	{
+		ret = 0;
+	}
+	return ret;
+}
