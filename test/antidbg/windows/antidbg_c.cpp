@@ -1,8 +1,8 @@
 #include <obcode.h>
 #include "antidbg.h"
-//#include <stdio.h>
+#include <stdio.h>
 
-//#define DBG_OUT(...)  do{fprintf(stderr,"[%s:%d] ",__FILE__,__LINE__); fprintf(stderr,__VA_ARGS__); fprintf(stderr,"\n");}while(0)
+#define DBG_OUT(...)  do{fprintf(stderr,"[%s:%d] ",__FILE__,__LINE__); fprintf(stderr,__VA_ARGS__); fprintf(stderr,"\n");}while(0)
 
 int is_debug_present()
 {
@@ -53,7 +53,7 @@ int is_debugger_present(void)
 #if _M_AMD64
 typedef NTSTATUS(*_NtQueryInformationProcess)(_In_ HANDLE, _In_  unsigned int, _Out_ PVOID, _In_ ULONG, _Out_ PULONG);
 #else
-typedef NTSTATUS(stdcall *_NtQueryInformationProcess)(_In_ HANDLE, _In_  unsigned int, _Out_ PVOID, _In_ ULONG, _Out_ PULONG);
+typedef NTSTATUS(__stdcall *_NtQueryInformationProcess)(_In_ HANDLE, _In_  unsigned int, _Out_ PVOID, _In_ ULONG, _Out_ PULONG);
 #endif
 
 
@@ -141,5 +141,21 @@ int is_dr_debug(void)
 	}
 	ret = 0;
 out:
+	return ret;
+}
+
+int is_close_handle_exp(void)
+{
+	HANDLE hd=(HANDLE) 0x32201121;
+	int ret = 0;
+
+	__try
+	{
+		CloseHandle(hd);
+	}
+	__except(EXCEPTION_EXECUTE_HANDLER)
+	{
+		ret = 1;
+	}
 	return ret;
 }

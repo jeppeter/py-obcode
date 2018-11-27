@@ -129,6 +129,7 @@ int check_remote_debug(void);
 int is_debugger_present(void);
 int is_querydbg(void);
 int is_dr_debug(void);
+int is_close_handle_exp(void);
 
 #ifdef __cplusplus
 };

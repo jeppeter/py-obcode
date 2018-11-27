@@ -77,3 +77,6 @@ x86\main.obj:main.cpp
 clean:
 	$(RM) $(LIB_OBJECTS) 2>NUL || echo "" >NUL
 	$(RM) $(LIB_EXE) 2>NUL || echo "" >NUL
+	$(RM) $(ARCH)\*.pdb 2>NUL || echo "" >NUL
+	$(RM) $(ARCH)\*.ilk 2>NUL || echo "" >NUL
+	$(RM) *.idb *.pdb 2>NUL  || echo "" >NUL

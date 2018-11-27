@@ -37,7 +37,7 @@ void usage(int ec, const char* fmt, ...)
     fprintf(fp, "\tisdbgprt               to test IsDebugPresent\n");
     fprintf(fp, "\tqrydbg                 to test queryinformation\n");
     fprintf(fp, "\tisdr                   to test dr register\n");
-    //fprintf(fp,"\t\n");
+    fprintf(fp, "\tisclosehandle          to test close handle exception\n");
     //fprintf(fp,"\t\n");
     //fprintf(fp,"\t\n");
 
@@ -105,6 +105,15 @@ int isdr_cmd(int argc,char* argv[])
     return 0;
 }
 
+int isclosehdl_cmd(int argc,char* argv[])
+{
+    int ret;
+    argc = argc;
+    argv = argv;
+    ret = is_close_handle_exp();
+    fprintf(stdout, "isclosehandle [%s]\n", ret ? "true" : "false" );
+    return 0;
+}
 
 int main(int argc, char* argv[])
 {
@@ -128,6 +137,8 @@ int main(int argc, char* argv[])
         ret = qrydbg_cmd(argc, argv);
     } else if (strcmp(argv[1], "isdr") == 0) {
         ret = isdr_cmd(argc, argv);
+    } else if (strcmp(argv[1], "isclosehandle") == 0) {
+        ret = isclosehdl_cmd(argc, argv);
     } else {
         usage(3, "not support cmd[%s]", argv[1]);
     }
