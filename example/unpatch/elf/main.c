@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "main.h"
+#include "unpatch.h"
+#include "callc.h"
 
 #define OUTP(...) do{fprintf(stdout,"[%s:%d] ",__FILE__,__LINE__); fprintf(stdout,__VA_ARGS__);fprintf(stdout,"\n");}while(0)
 
@@ -111,5 +113,8 @@ int main(int argc, char* argv[])
     print_out_a();
     print_out_b();
     print_out_c();
+    call_a();
+    call_b();
+    call_c();
     return 0;
 }

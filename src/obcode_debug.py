@@ -239,33 +239,42 @@ def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,tim
     jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_CODE_KEY]= rets
     return jsondump
 
-def object_one_file(objparser,odict,objfile,funcs,times,verbose):
-    for funcname in funcs:
-        nformatfunc = get_random_name(random.randint(5,20))
-        odict = format_ob_patch_functions(objparser,odict,objfile,funcname,nformatfunc,times,verbose)
+def object_one_file_func(objparser,odict,objfile,f,objdata, times,verbose):
+    if PATCH_FUNC_KEY in odict.keys() and objfile in odict[PATCH_FUNC_KEY].keys() and \
+        f in odict[PATCH_FUNC_KEY][objfile].keys():
+        return odict,objdata
+    if PATCH_FUNC_KEY not in odict.keys():
+        odict[PATCH_FUNC_KEY] = dict()
+    if objfile not in odict[PATCH_FUNC_KEY].keys():
+        odict[PATCH_FUNC_KEY][objfile] = dict()
+    if f not in odict[PATCH_FUNC_KEY][objfile].keys():
+        odict[PATCH_FUNC_KEY][objfile][f] = dict()
+    nformatfunc = get_random_name(random.randint(5,20))
+    odict = format_ob_patch_functions(objparser,odict,objfile,f,nformatfunc,times,verbose)
+    foff = objparser.func_offset(f)
+    fsize = objparser.func_size(f)
+    logging.info('foff [0x%x:%d]'%(foff,foff))
+    if foff < 0 :
+        raise Exception('can not find [%s]'%(f))
+    fvaddr = objparser.func_vaddr(f)
+    assert(fvaddr >= 0)
+    for off in odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY].keys():
+        if odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_OFFSET_KEY][off] >= 2:
+            # we change the xor data into
+            offi = int(off)
+            logging.info('[%s].[%s]foff [0x%x] + off [0x%x] [0x%02x] ^ [0x%02x] => [0x%02x]'%(objfile,f,\
+                foff, offi,objdata[(foff + offi)] ,\
+                odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][off], \
+                objdata[(foff + offi)] ^ odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][off]))
+            objdata[(foff + offi)] = objdata[(foff + offi)] ^ odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][off]
+    odict[PATCH_FUNC_KEY][objfile][f][FUNC_DATA_KEY] = objdata[foff:(foff+fsize)]
+    return odict,objdata
 
-    # now to give the change file
+
+def object_one_file(objparser,odict,objfile,funcs,times,verbose):
     objdata = objparser.get_data()
-    #logging.info('[%s] data\n%s'%(objfile,dump_ints(objdata)))
-    logging.info('funcs %s'%(funcs))
-    for f in funcs:
-        foff = objparser.func_offset(f)
-        fsize = objparser.func_size(f)
-        logging.info('foff [0x%x:%d]'%(foff,foff))
-        if foff < 0 :
-            raise Exception('can not find [%s]'%(f))
-        fvaddr = objparser.func_vaddr(f)
-        assert(fvaddr >= 0)
-        for off in odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY].keys():            
-            if odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_OFFSET_KEY][off] >= 2:
-                # we change the xor data into
-                offi = int(off)
-                logging.info('[%s].[%s]foff [0x%x] + off [0x%x] [0x%02x] ^ [0x%02x] => [0x%02x]'%(objfile,f,\
-                 foff, offi,objdata[(foff + offi)] ,\
-                 odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][off], \
-                 objdata[(foff + offi)] ^ odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][off]))
-                objdata[(foff + offi)] = objdata[(foff + offi)] ^ odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][off]
-        odict[PATCH_FUNC_KEY][objfile][f][FUNC_DATA_KEY] = objdata[foff:(foff+fsize)]
+    for funcname in funcs:
+        odict, objdata = object_one_file_func(objparser, odict,objfile,funcname,objdata,times,verbose)
     return odict,objdata
 
 def elf_one_file(odict,objfile,funcs,times,verbose):
@@ -311,9 +320,9 @@ def format_includes(args):
 def format_patch_funcions(args,odict,jdict,patchfuncname):
     rets = format_includes(args)
     if PATCH_FUNC_KEY in odict.keys():
-        for o in odict[PATCH_FUNC_KEY].keys():
+        for o in jdict.keys():
             rets += format_debug_line('format file [%s]'%(o),0,args.verbose)
-            for f in odict[PATCH_FUNC_KEY][o]:
+            for f in jdict[o]:
                 rets += format_line('',0)
                 rets += format_debug_line('format for function [%s]'%(f),0,args.verbose)
                 rets += odict[PATCH_FUNC_KEY][o][f][FORMAT_FUNC_CODE_KEY]
@@ -364,25 +373,31 @@ def write_patch_output(args,rets,odict):
 
 def patch_objects(objparser,args,odict):
     alldatas = objparser.get_data()
+    ofile = args.output
     if PATCH_FUNC_KEY in odict.keys():
-        for o in odict[PATCH_FUNC_KEY].keys():
-            for f in odict[PATCH_FUNC_KEY][o].keys():
-                rels = odict[PATCH_FUNC_KEY][o][f][FUNC_DATA_RELOC_KEY]
-                #logging.info('rels\n%s'%(dump_ints(rels)))
-                offsetk = odict[PATCH_FUNC_KEY][o][f][FORMAT_FUNC_OFFSET_KEY]
-                data = odict[PATCH_FUNC_KEY][o][f][FUNC_DATA_KEY]
-                reloff = objparser.get_text_file_off(data,rels,f)
-                xors = odict[PATCH_FUNC_KEY][o][f][FORMAT_FUNC_XORS_KEY]
-                for k in offsetk.keys():
-                    logging.info('xors[%s]=%d'%(k,offsetk[k]))
-                    if offsetk[k] <= 1:
-                        ki = int(k)
-                        logging.info('[%s].[%s] [+0x%x:%d] [0x%02x] = [0x%02x] ^ [0x%02x]'%( o, f,ki,ki,\
-                            alldatas[(reloff + ki)] ^ offsetk[k], alldatas[(reloff + ki)], \
-                            offsetk[k]))
-                        alldatas[(reloff + ki)] = alldatas[(reloff + ki)] ^ xors[k]
-                        xors[k] = 2
-                odict[PATCH_FUNC_KEY][o][f][FORMAT_FUNC_OFFSET_KEY] = offsetk
+        if ofile not in odict[PATCH_FUNC_KEY].keys():
+            odict[PATCH_FUNC_KEY][ofile] = dict()
+        for o in args.subnargs:
+            if o not in odict[PATCH_FUNC_KEY][ofile].keys() and o in odict[PATCH_FUNC_KEY].keys():
+                odict[PATCH_FUNC_KEY][ofile][o] = dict()
+                odict[PATCH_FUNC_KEY][ofile][o] = Utf8Encode(odict[PATCH_FUNC_KEY][o]).get_val()
+                for f in odict[PATCH_FUNC_KEY][ofile][o].keys():
+                    rels = odict[PATCH_FUNC_KEY][ofile][o][f][FUNC_DATA_RELOC_KEY]
+                    #logging.info('rels\n%s'%(dump_ints(rels)))
+                    offsetk = odict[PATCH_FUNC_KEY][ofile][o][f][FORMAT_FUNC_OFFSET_KEY]
+                    data = odict[PATCH_FUNC_KEY][ofile][o][f][FUNC_DATA_KEY]
+                    reloff = objparser.get_text_file_off(data,rels,f)
+                    xors = odict[PATCH_FUNC_KEY][ofile][o][f][FORMAT_FUNC_XORS_KEY]
+                    for k in offsetk.keys():
+                        logging.info('xors[%s]=%d'%(k,offsetk[k]))
+                        if offsetk[k] <= 1:
+                            ki = int(k)
+                            logging.info('[%s].[%s] [+0x%x:%d] [0x%02x] = [0x%02x] ^ [0x%02x]'%( o, f,ki,ki,\
+                                alldatas[(reloff + ki)] ^ offsetk[k], alldatas[(reloff + ki)], \
+                                offsetk[k]))
+                            alldatas[(reloff + ki)] = alldatas[(reloff + ki)] ^ xors[k]
+                            xors[k] = 2
+                    odict[PATCH_FUNC_KEY][ofile][o][f][FORMAT_FUNC_OFFSET_KEY] = offsetk
     return odict,alldatas
 
 
@@ -406,7 +421,9 @@ def obpatchelf_handler(args,parser):
     set_logging_level(args)
     if args.dump is None:
         raise Exception('no dump file get')
-    ofile = args.subnargs[0]
+    if args.output is None:
+        raise Exception('must set output')
+    ofile = args.output
     with open(args.dump,'r') as fin:
         odict = json.load(fin)
         odict = Utf8Encode(odict).get_val()
@@ -452,7 +469,9 @@ def obpatchpe_handler(args,parser):
     set_logging_level(args)
     if args.dump is None:
         raise Exception('no dump file get')
-    ofile = args.subnargs[0]
+    if args.output is None:
+        raise Exception('must set output')
+    ofile = args.output
     with open(args.dump,'r') as fin:
         odict = json.load(fin)
         odict = Utf8Encode(odict).get_val()
@@ -515,7 +534,7 @@ def main():
             "funcname" : "unpatch_handler"
         },
         "obpatchelf<obpatchelf_handler>##inputfile to patch elf functions##" : {
-            "$" : 1
+            "$" : "+"
         },
         "obunpatchcoff<obunpatchcoff_handler>##objfile:func1,func2 ... to format unpatch coff file with func1 func2##" : {
             "$" : "+",
@@ -523,7 +542,7 @@ def main():
             "funcname" : "unpatch_handler"
         },
         "obpatchpe<obpatchpe_handler>##inputfile to patch pe functions##" : {
-            "$" : 1
+            "$" : "+"
         },
         "obunfunc<obunfunc_handler>##funcs... to set obfuncs##" : {
             "$" : "+"

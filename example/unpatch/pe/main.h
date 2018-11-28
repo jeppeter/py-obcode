@@ -7,13 +7,9 @@
 extern "C" {
 #endif
 
-int OB_FUNC unpatch_handler(map_prot_func_t protfunc);
-int print_out_a(void);
-int print_out_b(void);
-int print_out_c(void);
-int call_a(void);
-int call_b(void);
-int call_c(void);
+int OB_FUNC print_out_a(void);
+int OB_FUNC print_out_b(void);
+int OB_FUNC print_out_c(void);
 
 #ifdef __cplusplus
 };

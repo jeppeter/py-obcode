@@ -1,0 +1,9 @@
+#ifndef __UNPATCH_H_5BC2873880CE6E814D0801012524DAA1__
+#define __UNPATCH_H_5BC2873880CE6E814D0801012524DAA1__
+
+#include <obcode.h>
+
+int OB_FUNC unpatch_handler(map_prot_func_t protfunc);
+
+
+#endif /* __UNPATCH_H_5BC2873880CE6E814D0801012524DAA1__ */

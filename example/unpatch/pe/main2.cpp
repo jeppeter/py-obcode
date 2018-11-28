@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "main.h"
+#include "main2.h"
 #include "unpatch.h"
 #include "callc.h"
 #include <Windows.h>
@@ -9,7 +9,7 @@ OB_INSERT();
 
 #define OUTP(...) do{fprintf(stdout,"[%s:%d] ",__FILE__,__LINE__); fprintf(stdout,__VA_ARGS__);fprintf(stdout,"\n");}while(0)
 
-int print_out_a(void)
+int ccprint_out_a(void)
 {
     int x = 1, b = 2, c = 3;
     OB_CODE(x, b, c);
@@ -29,7 +29,7 @@ int print_out_a(void)
 
 
 
-int print_out_b(void)
+int ccprint_out_b(void)
 {
     int x = 3, b = 3, c = 3;
     OB_CODE(x, b, c);
@@ -45,7 +45,7 @@ int print_out_b(void)
     return 0;
 }
 
-int print_out_c(void)
+int ccprint_out_c(void)
 {
     int x = 3, b = 3, c = 3;
     OB_CODE(x, b, c);
@@ -125,9 +125,9 @@ int main(int argc, char* argv[])
         return ret;
     }
     //dump_func(stdout,&print_out_a,0x1f0);
-    print_out_a();
-    print_out_b();
-    print_out_c();
+    ccprint_out_a();
+    ccprint_out_b();
+    ccprint_out_c();
     call_a();
     call_b();
     call_c();

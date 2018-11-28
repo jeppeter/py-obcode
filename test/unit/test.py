@@ -540,6 +540,11 @@ class obcode_test(unittest.TestCase):
         for l in cmdpack.run_cmd_output([cmdbin]):
             l = l.rstrip('\r\n')
             oblines.append(l)
+        ob2lines = []
+        cmdbin = os.path.join(exampledir,'main2')
+        for l in cmdpack.run_cmd_output([cmdbin]):
+            l = l.rstrip('\r\n')
+            ob2lines.append(l)
         # no patch mode
         cmds = ['make','-C',exampledir,'clean']
         subprocess.check_call(cmds,stdout=stdnull)
@@ -550,10 +555,15 @@ class obcode_test(unittest.TestCase):
         for l in cmdpack.run_cmd_output([cmdbin]):
             l = l.rstrip('\r\n')
             normlines.append(l)
+        cmdbin = os.path.join(exampledir,'main2')
+        norm2lines = []
+        for l in cmdpack.run_cmd_output([cmdbin]):
+            l = l.rstrip('\r\n')
+            norm2lines.append(l)
         cmds = ['make','-C',exampledir,'clean']
         subprocess.check_call(cmds,stdout=stdnull)
         self.assertEqual(normlines,oblines)
-
+        self.assertEqual(norm2lines, ob2lines)
         stdnull.close()
         stdnull = None
         return
@@ -581,6 +591,11 @@ class obcode_test(unittest.TestCase):
             for l in cmdpack.run_cmd_output([cmdbin]):
                 l = l.rstrip('\r\n')
                 oblines.append(l)
+            cmdbin = os.path.join(exampledir,'main2.exe')
+            ob2lines = []
+            for l in cmdpack.run_cmd_output([cmdbin]):
+                l = l.rstrip('\r\n')
+                ob2lines.append(l)
             # no patch mode
             cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','clean']
             subprocess.check_call(cmds,stdout=stdnull)
@@ -591,9 +606,15 @@ class obcode_test(unittest.TestCase):
             for l in cmdpack.run_cmd_output([cmdbin]):
                 l = l.rstrip('\r\n')
                 normlines.append(l)
+            cmdbin = os.path.join(exampledir,'main2.exe')
+            norm2lines = []
+            for l in cmdpack.run_cmd_output([cmdbin]):
+                l = l.rstrip('\r\n')
+                norm2lines.append(l)
             cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','clean']
             subprocess.check_call(cmds,stdout=stdnull)
             self.assertEqual(normlines,oblines)
+            self.assertEqual(norm2lines,ob2lines)
         finally:
             if stdnull is not None:
                 stdnull.close()
