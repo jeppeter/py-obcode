@@ -656,4 +656,25 @@ def format_tabs(tabs=0):
         rets += '    '
     return rets
 
+def quote_string(l):
+    rets = ''
+    if l is not None:
+        for c in l:
+            if c == '\\':
+                rets += '\\\\'
+            elif c == '"':
+                rets += '\\"'
+            elif c == '\r':
+                rets += '\\r'
+            elif c == '\n':
+                rets += '\\n'
+            elif c == '\t':
+                rets += '\\t'
+            elif c == '\b':
+                rets += '\\b'
+            else:
+                rets += c
+    return rets
+
+
 ##extractcode_end

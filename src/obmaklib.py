@@ -3,6 +3,7 @@
 import sys
 import os
 import shutil
+import re
 
 ##importdebugstart
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
@@ -237,16 +238,31 @@ def basename_handler(args,parser):
     sys.exit(0)
     return
 
+def format_one_obunfunc(args,s):
+    rets = ''
+    sarr = re.split(';',s)
+    if len(sarr) >= 3:
+        infile = sarr[0]
+        outfile = sarr[1]
+        funcs = re.split(',',sarr[2])
+        exob = ExtractOb(infile)
+        odict = exob.get_ob_funcs(funcs)
+        for f in funcs:
+            if len(rets) > 0:
+                rets += ','
+            else:
+                rets += '%s;'%(outfile)
+            rets += odict[f]
+    return rets
+
 def obunfunc_handler(args,parser):
     set_logging_level(args)
-    s = ''
-    exob = ExtractOb(args.input)
-    odcit = exob.get_ob_funcs(args.subnargs)
-    for k in args.subnargs:
-        if len(s) > 0:
-            s += args.splitchars
-        s += odcit[k]
-    sys.stdout.write('%s\n'%(s))
+    rets = ''
+    for s in args.subnargs:
+        if len(rets) > 0:
+            rets += ' '
+        rets += '\"%s\"'%(quote_string(format_one_obunfunc(args,s)))
+    sys.stdout.write('%s\n'%(rets))
     sys.exit(0)
     return
 ##extractcode_end

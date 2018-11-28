@@ -10,6 +10,7 @@ import cmdpack
 import unittest
 import re
 import json
+import shutil
 
 def read_file(infile=None):
     fin = sys.stdin
@@ -153,6 +154,10 @@ class _LoggerObject(object):
         self.error('can not call %s'%(funcname))
         return None
 
+def make_tempdir(prefix='prefix',basedir=None):
+    tmpd = tempfile.mkdtemp(prefix=prefix,dir=basedir)
+    return tmpd
+
 
 class obcode_test(unittest.TestCase):
     def setUp(self):
@@ -161,6 +166,8 @@ class obcode_test(unittest.TestCase):
             self.__logger = _LoggerObject('obcode')
         self.__tmp_files = []
         self.__tmp_descrs = []
+        self.__tmpd = []
+        self.__tmpd_descrs = []
         if 'MAKOB_FILE' in os.environ.keys():
             del os.environ['MAKOB_FILE']
         return
@@ -190,6 +197,16 @@ class obcode_test(unittest.TestCase):
             self.error('%s %s'%(description,filename))
         return
 
+    def __remove_dir_ok(self,dname,description=''):
+        ok = True
+        if 'OBCODE_TEST_RESERVED' in os.environ.keys():
+            ok = False
+        if dname is not None and ok:
+            shutil.rmtree(dname)
+        elif dname is not None:
+            self.error('%s %s'%(description,dname))
+        return
+
     def tearDown(self):
         if len(self.__tmp_files) > 0:
             idx = 0
@@ -201,6 +218,16 @@ class obcode_test(unittest.TestCase):
                 idx += 1                
         self.__tmp_files = []
         self.__tmp_descrs = []
+        if len(self.__tmpd) > 0:
+            idx = 0
+            assert(len(self.__tmpd) == len(self.__tmpd_descrs))
+            while idx < len(self.__tmpd):
+                c = self.__tmpd[idx]
+                d = self.__tmpd_descrs[idx]
+                self.__remove_dir_ok(c,d)
+                idx += 1
+        self.__tmpd = []
+        self.__tmpd_descrs = []
         return
 
     @classmethod
@@ -225,6 +252,12 @@ class obcode_test(unittest.TestCase):
         self.__tmp_files.append(tempf)
         self.__tmp_descrs.append(description)
         return tempf
+
+    def __make_tempd(self,description=''):
+        tmpd = make_tempdir()
+        self.__tmpd.append(tmpd)
+        self.__tmpd_descrs.append(description)
+        return tmpd
 
     def __compile_c_file(self,sfile,outfile=None,includedir=[],libs=[],libdir=None):
         cmds = []
@@ -566,6 +599,45 @@ class obcode_test(unittest.TestCase):
                 stdnull.close()
             stdnull = None
             os.chdir(origdir)
+        return
+
+    def test_A011(self):
+        if sys.platform == 'win32':
+            return
+        # now we should compare
+        topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'))
+        obcodepy = os.path.join(topdir,'obcode.py')
+        exampledir = os.path.join(topdir,'example','unpatch','obelf')
+        stdnull = open(os.devnull,'w')
+        tmpd = self.__make_tempd('obelf')
+
+        # patch mode
+        cmds = ['make','-C',exampledir,'OB_PATCH=1','clean']
+        subprocess.check_call(cmds,stdout=stdnull)
+        cmds = ['make','-C',exampledir,'OB_PATCH=1','all']
+        subprocess.check_call(cmds,stdout=stdnull)
+        cmdbin = os.path.join(exampledir,'main')
+        oblines = []
+        for l in cmdpack.run_cmd_output([cmdbin]):
+            l = l.rstrip('\r\n')
+            oblines.append(l)
+        # no patch mode
+        cmds = ['make','-C',exampledir,'clean']
+        subprocess.check_call(cmds,stdout=stdnull)
+        cmds = [sys.executable,obcodepy,'cob', exampledir, tmpd]
+        subprocess.check_call(cmds,stdout=stdnull)
+        cmds = ['make','-C',tmpd,'TOPDIR=%s'%(topdir),'OB_PATCH=1','all']
+        subprocess.check_call(cmds,stdout=stdnull)
+        cmdbin = os.path.join(tmpd,'main')
+        normlines = []
+        for l in cmdpack.run_cmd_output([cmdbin]):
+            l = l.rstrip('\r\n')
+            normlines.append(l)
+        cmds = ['make','-C',tmpd,'TOPDIR=%s'%(topdir),'clean']
+        subprocess.check_call(cmds,stdout=stdnull)
+        self.assertEqual(normlines,oblines)
+        stdnull.close()
+        stdnull = None
         return
 
 

@@ -473,13 +473,11 @@ def main():
     {
         "verbose|v" : "+",
         "version|V" : false,
-        "input|i" : null,
         "output|o" : null,
         "times|T" : 0,
         "dump|D" : null,
         "includes|I" : [],
         "includefiles" : [],
-        "splitchars|S" : ",",
         "cob<cob_handler>##srcdir dstdir to obfuscated code in c mode##" : {
             "handles" : ["\\\\.c$","\\\\.h$","\\\\.cpp$","\\\\.cxx$"],
             "filters" : ["\\\\.git$"],

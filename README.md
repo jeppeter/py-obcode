@@ -3,6 +3,7 @@
 >  this project is to obfuscated for the c code
 
 ## release history
+* Nov 28th 2018 release 0.2.8 to make get obunfunc with obcode.mak ok
 * Nov 27th 2018 release 0.2.6 to fixup bug when used OB_MMAP to include OB_PATCH
 * Nov 16th 2018 release 0.2.4 to make the unpatch coding in the elf and pe format
 * Oct 29th 2018 release 0.2.2 to make OB_MIXED_STR OB_MIXED_STR_SPEC OB_MIXED_WSTR OB_MIXED_WSTR_SPEC ok

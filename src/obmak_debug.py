@@ -3,6 +3,7 @@
 import sys
 import os
 import extargsparse
+import re
 
 ##importdebugstart
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
@@ -27,8 +28,6 @@ def main():
     {
         "verbose|v" : "+",
         "version|V" : false,
-        "input|i" : null,
-        "splitchars|S" : ",",
         "makob<makob_handler>##srcfile to give the other code file ,this need environment variable MAKOB_FILE to get the default (makob.json)##" : {
             "namemin" : 5,
             "namemax" : 20,
@@ -52,7 +51,7 @@ def main():
         "obuntrans<obuntrans_handler>##inputfile [outputfile] to trans file from MAKOB_FILE##" : {
             "$" : "+"
         },
-        "obunfunc<obunfunc_handler>##funcs... to set obfuncs##" : {
+        "obunfunc<obunfunc_handler>##inputfile;outfile;funcs...  to set obfuncs##" : {
             "$" : "+"
         }
     }
