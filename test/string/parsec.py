@@ -7,6 +7,7 @@ import os
 
 sys.path.append(os.path.join(os.path.abspath(os.path.dirname(__file__)),'..','..','src'))
 from strparser import *
+from extract_ob import *
 
 def set_logging_level(args):
     loglvl= logging.ERROR
@@ -134,10 +135,20 @@ def readint_handler(args,parser):
     return
 
 
+def obfunc_handler(args,parser):
+    set_logging_level(args)
+    exob = ExtractOb(args.input)
+    odict = exob.get_ob_funcs(args.subnargs)
+    for k in odict.keys():
+        sys.stdout.write('[%s]=[%s]\n'%(k,odict[k]))
+    sys.exit(0)
+    return
+
 def main():
     commandline='''
     {
         "verbose|v" : "+",
+        "input|i" : null,
         "string<string_handler>##str... to parse string handler##" : {
             "$" : "+"
         },
@@ -160,6 +171,9 @@ def main():
             "$" : 2
         },
         "readint<readint_handler>##files... to dump file int##" : {
+            "$" : "+"
+        },
+        "obfunc<obfunc_handler>##funcs... to get funcname##" : {
             "$" : "+"
         }
     }

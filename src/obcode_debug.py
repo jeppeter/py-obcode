@@ -21,6 +21,7 @@ from fmthdl import *
 from cobattr import *
 from cobfile import *
 from obmaklib import *
+from extract_ob import *
 ##importdebugend
 
 REPLACE_IMPORT_LIB=1
@@ -34,6 +35,7 @@ REPLACE_FMT_HDL=1
 REPLACE_COB_ATTR=1
 REPLACE_COB_FILE=1
 REPLACE_OBMAK_LIB=1
+REPLACE_EXTRACT_OB=1
 
 
 def handle_c_file(sfile,dfile,args,param):
@@ -459,16 +461,19 @@ def obpatchpe_handler(args,parser):
     return
 
 
+
 def main():
     commandline_fmt='''
     {
         "verbose|v" : "+",
         "version|V" : false,
+        "input|i" : null,
         "output|o" : null,
         "times|T" : 0,
         "dump|D" : null,
         "includes|I" : [],
         "includefiles" : [],
+        "splitchars|S" : ",",
         "cob<cob_handler>##srcdir dstdir to obfuscated code in c mode##" : {
             "handles" : ["\\\\.c$","\\\\.h$","\\\\.cpp$","\\\\.cxx$"],
             "filters" : ["\\\\.git$"],
@@ -515,6 +520,9 @@ def main():
         },
         "obpatchpe<obpatchpe_handler>##inputfile to patch pe functions##" : {
             "$" : 1
+        },
+        "obunfunc<obunfunc_handler>##funcs... to set obfuncs##" : {
+            "$" : "+"
         }
     }
     '''
@@ -554,6 +562,7 @@ def debug_release():
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'coffparser.py')),r'REPLACE_COFF_PARSER=1')
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'peparser.py')),r'REPLACE_PE_PARSER=1')
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'obmaklib.py')),r'REPLACE_OBMAK_LIB=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'extract_ob.py')),r'REPLACE_EXTRACT_OB=1')
 
     if len(sys.argv) > 2:
         for k in sys.argv[1:]:

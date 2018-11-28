@@ -7,6 +7,7 @@ import shutil
 ##importdebugstart
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from strparser import *
+from extract_ob import *
 ##importdebugend
 
 
@@ -232,6 +233,19 @@ def basename_handler(args,parser):
         if len(s) > 0:
             s += ' '
         s += rets
+    sys.stdout.write('%s\n'%(s))
+    sys.exit(0)
+    return
+
+def obunfunc_handler(args,parser):
+    set_logging_level(args)
+    s = ''
+    exob = ExtractOb(args.input)
+    odcit = exob.get_ob_funcs(args.subnargs)
+    for k in args.subnargs:
+        if len(s) > 0:
+            s += args.splitchars
+        s += odcit[k]
     sys.stdout.write('%s\n'%(s))
     sys.exit(0)
     return

@@ -9,6 +9,7 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from strparser import *
 from filehdl import *
 from fmthdl import *
+from extract_ob import *
 from obmaklib import *
 ##importdebugend
 
@@ -17,6 +18,7 @@ REPLACE_IMPORT_LIB=1
 REPLACE_STR_PARSER=1
 REPLACE_FILE_HDL=1
 REPLACE_FMT_HDL=1
+REPLACE_EXTRACT_OB=1
 REPLACE_OBMAK_LIB=1
 
 
@@ -25,6 +27,8 @@ def main():
     {
         "verbose|v" : "+",
         "version|V" : false,
+        "input|i" : null,
+        "splitchars|S" : ",",
         "makob<makob_handler>##srcfile to give the other code file ,this need environment variable MAKOB_FILE to get the default (makob.json)##" : {
             "namemin" : 5,
             "namemax" : 20,
@@ -46,6 +50,9 @@ def main():
             "$" : "*"
         },
         "obuntrans<obuntrans_handler>##inputfile [outputfile] to trans file from MAKOB_FILE##" : {
+            "$" : "+"
+        },
+        "obunfunc<obunfunc_handler>##funcs... to set obfuncs##" : {
             "$" : "+"
         }
     }
@@ -81,6 +88,7 @@ def debug_release():
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'fmthdl.py')),r'REPLACE_FMT_HDL=1')
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'filehdl.py')),r'REPLACE_FILE_HDL=1')
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'obmaklib.py')),r'REPLACE_OBMAK_LIB=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'extract_ob.py')),r'REPLACE_EXTRACT_OB=1')
     if len(sys.argv) > 2:
         for k in sys.argv[1:]:
             if not k.startswith('-'):
