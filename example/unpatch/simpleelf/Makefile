@@ -8,7 +8,7 @@ all:main
 main:${OBJECTS}
 	gcc -Wall -o $@ ${OBJECTS}
 ifneq (${OB_PATCH},)
-	python ${TOPDIR}/obcode.py -D unpatch.json obpatchelf $@
+	python ${TOPDIR}/obcode.py -D unpatch.json -o $@ obpatchelf  ${CURDIR}/main.o ${CURDIR}/unpatch.o
 endif
 
 
