@@ -127,4 +127,4 @@ main2_unpatch.cpp:main2.obj callc.obj
 
 clean:
 	$(QUIETCMD) $(RM) *.exe *.obj *.pdb 2>NUL
-	$(QUIETCMD) $(RM) main_unpatch.cpp unpatch.json 2>NUL
+	$(QUIETCMD) $(RM) main_unpatch.cpp main2_unpatch.cpp unpatch.json 2>NUL

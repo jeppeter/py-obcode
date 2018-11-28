@@ -642,6 +642,11 @@ class obcode_test(unittest.TestCase):
         for l in cmdpack.run_cmd_output([cmdbin]):
             l = l.rstrip('\r\n')
             oblines.append(l)
+        cmdbin = os.path.join(exampledir,'main2')
+        ob2lines = []
+        for l in cmdpack.run_cmd_output([cmdbin]):
+            l = l.rstrip('\r\n')
+            ob2lines.append(l)
         # no patch mode
         cmds = ['make','-C',exampledir,'clean']
         subprocess.check_call(cmds,stdout=stdnull)
@@ -654,9 +659,15 @@ class obcode_test(unittest.TestCase):
         for l in cmdpack.run_cmd_output([cmdbin]):
             l = l.rstrip('\r\n')
             normlines.append(l)
+        cmdbin = os.path.join(tmpd,'main2')
+        norm2lines = []
+        for l in cmdpack.run_cmd_output([cmdbin]):
+            l = l.rstrip('\r\n')
+            norm2lines.append(l)
         cmds = ['make','-C',tmpd,'TOPDIR=%s'%(topdir),'clean']
         subprocess.check_call(cmds,stdout=stdnull)
         self.assertEqual(normlines,oblines)
+        self.assertEqual(norm2lines,ob2lines)
         stdnull.close()
         stdnull = None
         return
