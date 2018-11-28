@@ -3,7 +3,7 @@
 >  this project is to obfuscated for the c code
 
 ## release history
-* Nov 28th 2018 release 0.2.8 to make get obunfunc with obcode.mak ok
+* Nov 28th 2018 release 0.3.0 to make get obunfunc with obcode.mak ok and make multiple object to handle for objects
 * Nov 27th 2018 release 0.2.6 to fixup bug when used OB_MMAP to include OB_PATCH
 * Nov 16th 2018 release 0.2.4 to make the unpatch coding in the elf and pe format
 * Oct 29th 2018 release 0.2.2 to make OB_MIXED_STR OB_MIXED_STR_SPEC OB_MIXED_WSTR OB_MIXED_WSTR_SPEC ok
@@ -685,7 +685,7 @@ main.exe:$(OBJECTS)
     $(QUIETCMD) echo "call static $(OBJECTS)"
     $(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(OBJECTS)
     $(QUIETCMD)echo "use static lib"
-    $(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py obpatchpe -D $(CURDIR)\unpatch.json $(CURDIR)\main.exe
+    $(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py -o $(CURDIR)\main.exe obpatchpe -D $(CURDIR)\unpatch.json  $(CURDIR)\main.obj $(CURDIR)\unpatch.obj
 !ELSE
 main.exe:$(OBJECTS)
     $(QUIETCMD) echo "call static $(OBJECTS)"
@@ -697,8 +697,6 @@ main.exe:$(OBJECTS)
     $(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $<
 
 unpatch.cpp:unpatch.json
-
-#   $(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h -D unpatch.json -o unpatch.cpp obunpatchcoff "$(CURDIR)\main.obj;print_out_a,print_out_b,print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c" -vvvv
 
 
 !IFDEF OB_PATCH
@@ -810,7 +808,7 @@ all:main
 main:${OBJECTS}
     gcc -Wall -o $@ ${OBJECTS}
 ifneq (${OB_PATCH},)
-    python ${TOPDIR}/obcode.py -D unpatch.json obpatchelf $@
+    python ${TOPDIR}/obcode.py -D unpatch.json -o $@ obpatchelf  ${CURDIR}/main.o ${CURDIR}/unpatch.o
 endif
 
 
