@@ -1,0 +1,140 @@
+CURDIR=$(MAKEDIR)
+TOPDIR=$(CURDIR)\..\..\..
+
+CC      = cl.exe
+LD      = link.exe
+AR      = lib.exe
+RM      = del
+PYTHON  = python.exe
+CP      = copy /Y
+
+
+
+!IFDEF MAKEVERBOSE
+!IF $(MAKEVERBOSE) != 0
+QUIETCMD=
+NOLOGO_CFLAGS=
+NOLOGO_LDFLAGS=
+NOLOGO_MAKEFLAGS=
+GIT_VERBOSE=
+!ELSE
+QUIETCMD=@
+NOLOGO_CFLAGS=/nologo
+NOLOGO_LDFLAGS=/nologo
+NOLOGO_MAKEFLAGS=/NOLOGO
+GIT_VERBOSE=--quiet
+!ENDIF
+!ELSE
+QUIETCMD=@
+NOLOGO_CFLAGS=/nologo
+NOLOGO_LDFLAGS=/nologo
+NOLOGO_MAKEFLAGS=/NOLOGO
+GIT_VERBOSE=--quiet
+!ENDIF
+
+!IFDEF STATICLIB
+!IF $(STATICLIB) != 0
+STATIC_LIB_CFLAGS=/MT
+
+INC_LDFLAGS=
+
+!ELSE
+STATIC_LIB_CFLAGS=/MT
+INC_LDFLAGS =
+
+!ENDIF
+!ELSE
+STATIC_LIB_CFLAGS=/MT
+
+INC_LDFLAGS=
+!ENDIF
+
+INC_CFLAGS = /I"$(TOPDIR)\include"
+COM_CFLAGS = /Wall /wd"4820" /wd"4668" /wd"4127" /wd"4510" /wd"4512" /wd"4610" /wd"4710" /wd"5045" 
+DLL_REL_CFLAGS = /DOB_MMAP=1 
+DBG_CFLAGS = /Zi /Od  
+REL_CFLAGS = /DOB_MMAP=1
+
+REL_LDFLAGS = 
+DLL_REL_LDFLAGS = /DLL
+
+DLL_CFLAGS  =  $(NOLOGO_CFLAGS) $(STATIC_LIB_CFLAGS) $(INC_CFLAGS) $(COM_CFLAGS) $(DLL_REL_CFLAGS) $(DBG_CFLAGS)
+CFLAGS  =  $(NOLOGO_CFLAGS) $(STATIC_LIB_CFLAGS) $(INC_CFLAGS) $(COM_CFLAGS) $(REL_CFLAGS) $(DBG_CFLAGS)
+LDFLAGS = $(NOLOGO_LDFLAGS) $(INC_LDFLAGS) $(REL_LDFLAGS)
+DLL_LDFLAGS = $(NOLOGO_LDFLAGS) $(INC_LDFLAGS) $(DLL_REL_LDFLAGS)
+
+main_SOURCES=$(CURDIR)\main.cpp
+main_OBJECTS=$(main_SOURCES:.cpp=.obj)
+
+somain1_SOURCES=$(CURDIR)\somain1.cpp $(CURDIR)\callc.cpp $(CURDIR)\somain1_unpatch.cpp
+somain1_OBJECTS=$(somain1_SOURCES:.cpp=.obj)
+
+somain2_SOURCES=$(CURDIR)\somain2.cpp $(CURDIR)\callc.cpp $(CURDIR)\somain2_unpatch.cpp
+somain2_OBJECTS=$(somain2_SOURCES:.cpp=.obj)
+
+
+all:$(CURDIR)\main.exe
+
+$(CURDIR)\main.exe:$(main_OBJECTS) $(CURDIR)\somain1.dll $(CURDIR)\somain2.dll
+	$(QUIETCMD) echo "call static $(main_OBJECTS)"
+	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(main_OBJECTS)
+	$(QUIETCMD)echo "use static lib"
+
+$(CURDIR)\main.obj:$(CURDIR)\main.cpp
+	$(QUIETCMD)$(CC) $(DLL_CFLAGS) -c -Fo$@ $(CURDIR)\main.cpp
+
+!IFDEF OB_PATCH
+# patch mode
+$(CURDIR)\somain1.dll:$(somain1_OBJECTS) $(CURDIR)\unpatch.json
+	$(QUIETCMD)$(LD) $(DLL_LDFLAGS) -dll -out:$@ $(somain1_OBJECTS)
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py -o $(CURDIR)\somain1.dll obpatchpe -D $(CURDIR)\unpatch.json $(CURDIR)\somain1.obj $(CURDIR)\callc.obj
+
+# patch mode
+$(CURDIR)\somain2.dll:$(somain2_OBJECTS) $(CURDIR)\unpatch.json
+	$(QUIETCMD)$(LD) $(DLL_LDFLAGS) -dll -out:$@ $(somain2_OBJECTS)
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py -o $(CURDIR)\somain2.dll obpatchpe -D $(CURDIR)\unpatch.json $(CURDIR)\somain2.obj $(CURDIR)\callc.obj
+
+
+!ELSE
+# not patch mode
+$(CURDIR)\somain1.dll:$(somain1_OBJECTS) $(CURDIR)\unpatch.json
+	$(QUIETCMD)$(LD) $(DLL_LDFLAGS) -dll -out:$@ $(somain1_OBJECTS)
+
+$(CURDIR)\somain2.dll:$(somain2_OBJECTS) $(CURDIR)\unpatch.json
+	$(QUIETCMD)$(LD) $(DLL_LDFLAGS) -dll -out:$@ $(somain2_OBJECTS)
+
+!ENDIF
+
+
+.cpp.obj:
+	$(QUIETCMD)$(CC) $(DLL_CFLAGS) -c -Fo$@ $<
+
+$(CURDIR)\unpatch.json:$(CURDIR)\somain1_unpatch.cpp $(CURDIR)\somain2_unpatch.cpp
+
+#	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h -D unpatch.json -o unpatch.cpp obunpatchcoff "$(CURDIR)\main.obj;print_out_a,print_out_b,print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c" -vvvv
+
+
+!IFDEF OB_PATCH
+$(CURDIR)\somain1_unpatch.cpp:$(CURDIR)\somain1.obj $(CURDIR)\callc.obj
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles somain1.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o somain1_unpatch.cpp obunpatchcoff "$(CURDIR)\somain1.obj;main1_print_out_a,main1_print_out_b,main1_print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c"
+!ELSE
+$(CURDIR)\somain1_unpatch.cpp:$(CURDIR)\somain1.obj $(CURDIR)\callc.obj
+	$(QUIETCMD)echo {} >unpatch.json
+	$(QUIETCMD)echo #include "unpatch.h" >somain1_unpatch.cpp
+	$(QUIETCMD)echo int unpatch_handler(map_prot_func_t protfunc) { protfunc = protfunc;return 0;} >>somain1_unpatch.cpp
+!ENDIF
+
+!IFDEF OB_PATCH
+$(CURDIR)\somain2_unpatch.cpp:$(CURDIR)\somain2.obj $(CURDIR)\callc.obj
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles somain2.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o somain2_unpatch.cpp obunpatchcoff "$(CURDIR)\somain2.obj;main2_print_out_a,main2_print_out_b,main2_print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c"
+!ELSE
+$(CURDIR)\somain2_unpatch.cpp:$(CURDIR)\somain2.obj $(CURDIR)\callc.obj
+	$(QUIETCMD)echo {} >unpatch.json
+	$(QUIETCMD)echo #include "unpatch.h" >somain2_unpatch.cpp
+	$(QUIETCMD)echo int unpatch_handler(map_prot_func_t protfunc) { protfunc = protfunc;return 0;} >>somain2_unpatch.cpp
+!ENDIF
+
+
+clean:
+	$(QUIETCMD) $(RM) $(CURDIR)\*.exe $(CURDIR)\*.obj $(CURDIR)\*.pdb $(CURDIR)\*.dll 2>NUL
+	$(QUIETCMD) $(RM) $(CURDIR)\somain1_unpatch.cpp $(CURDIR)\somain2_unpatch.cpp $(CURDIR)\unpatch.json 2>NUL

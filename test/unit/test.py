@@ -712,6 +712,50 @@ class obcode_test(unittest.TestCase):
         stdnull = None
         return
 
+    def test_A013(self):
+        if sys.platform != 'win32':
+            return
+        stdnull = None
+        # now we should compare
+        topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'))
+        obcodepy = os.path.join(topdir,'obcode.py')
+        exampledir = os.path.join(topdir,'example','unpatch','dllpe')
+        stdnull = open(os.devnull,'w')
+
+        # patch mode
+        origdir = os.getcwd()
+        os.chdir(exampledir)
+        try:
+            cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','OB_PATCH=1','clean']
+            subprocess.check_call(cmds,stdout=stdnull)
+            cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','OB_PATCH=1','all']
+            subprocess.check_call(cmds,stdout=stdnull)
+            cmdbin = os.path.join(exampledir,'main.exe')
+            oblines = []
+            for l in cmdpack.run_cmd_output([cmdbin]):
+                l = l.rstrip('\r\n')
+                oblines.append(l)
+            # no patch mode
+            cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','clean']
+            subprocess.check_call(cmds,stdout=stdnull)
+            cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','all']
+            subprocess.check_call(cmds,stdout=stdnull)
+            cmdbin = os.path.join(exampledir,'main.exe')
+            normlines = []
+            for l in cmdpack.run_cmd_output([cmdbin]):
+                l = l.rstrip('\r\n')
+                normlines.append(l)
+            cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','clean']
+            subprocess.check_call(cmds,stdout=stdnull)
+            self.assertEqual(normlines,oblines)
+        finally:
+            if stdnull is not None:
+                stdnull.close()
+            stdnull = None
+            os.chdir(origdir)
+        return
+
+
 def main():
     unittest.main()
     return
