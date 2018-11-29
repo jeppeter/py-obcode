@@ -53,12 +53,18 @@ typedef UINT32                              OB_ADDR;
 #error "not supported compilers"
 #endif
 
-#if defined(OB_MMAP)
 
 #define OB_MAP_EXEC                   1
 #define OB_MAP_READ                   2
 #define OB_MAP_WRITE                  4
 
+typedef int (*map_prot_func_t)(void* addr, int size, int prot);
+
+#define  OB_PAGE_ALIGN                     4096
+#define  OB_PAGE_MASK                      (OB_PAGE_ALIGN - 1)
+
+
+#if defined(OB_MMAP)
 
 #if defined(_MSC_VER)
 
@@ -131,14 +137,10 @@ int ux_map_prot(void* addr, int size, int prot)                                 
 #error "not supported compilers"
 #endif
 
-typedef int (*map_prot_func_t)(void* addr, int size, int prot);
 
-#define  OB_PAGE_ALIGN                     4096
-#define  OB_PAGE_MASK                      (OB_PAGE_ALIGN - 1)
 
 
 #endif
-
 
 
 #ifdef __cplusplus

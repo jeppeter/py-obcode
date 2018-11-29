@@ -361,6 +361,7 @@ class ElfParser(object):
 		idx = 0
 		jdx = 0
 		fidx = 0
+		matchmax = 0
 		while fidx < len(rels):
 			if rels[fidx] == 0:
 				break
@@ -376,7 +377,9 @@ class ElfParser(object):
 				while jdx < len(data):
 					if rels[jdx] == 0 and \
 						data[jdx] != sbyte[curidx]:
-						#logging.info('[%s].[+0x%x] [+0x%x] [0x%02x] != [0x%02x]'%(symname,jdx,curidx,data[jdx], sbyte[curidx]))
+						if jdx > matchmax:
+							logging.debug('[%s].[+0x%x] [+0x%x] [0x%02x] != [0x%02x]'%(symname,jdx,curidx,data[jdx], sbyte[curidx]))
+							matchmax = jdx
 						break
 					jdx += 1
 					curidx += 1
