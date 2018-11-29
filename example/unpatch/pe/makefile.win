@@ -67,6 +67,14 @@ main2_SOURCES=main2.cpp callc.cpp main2_unpatch.cpp
 main2_OBJECTS=$(main2_SOURCES:.cpp=.obj)
 
 
+!IF "$(PLATFORM)" == "X86"
+main_CLAUSE = "$(CURDIR)\main.obj;_print_out_a,_print_out_b,_print_out_c" "$(CURDIR)\callc.obj;_call_a,_call_b,_call_c"
+main2_CLAUSE = "$(CURDIR)\main2.obj;_ccprint_out_a,_ccprint_out_b,_ccprint_out_c" "$(CURDIR)\callc.obj;_call_a,_call_b,_call_c"
+!ELSE
+main_CLAUSE = "$(CURDIR)\main.obj;print_out_a,print_out_b,print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c"
+main2_CLAUSE = "$(CURDIR)\main2.obj;ccprint_out_a,ccprint_out_b,ccprint_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c"
+!ENDIF
+
 all:main.exe main2.exe
 
 !IFDEF OB_PATCH
@@ -106,7 +114,7 @@ unpatch.json:main_unpatch.cpp main2_unpatch.cpp
 
 !IFDEF OB_PATCH
 main_unpatch.cpp:main.obj callc.obj
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o main_unpatch.cpp obunpatchcoff "$(CURDIR)\main.obj;print_out_a,print_out_b,print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c"
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o main_unpatch.cpp obunpatchcoff $(main_CLAUSE)
 !ELSE
 main_unpatch.cpp:main.obj callc.obj
 	$(QUIETCMD)echo {} >unpatch.json
@@ -116,7 +124,7 @@ main_unpatch.cpp:main.obj callc.obj
 
 !IFDEF OB_PATCH
 main2_unpatch.cpp:main2.obj callc.obj
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main2.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o main2_unpatch.cpp obunpatchcoff "$(CURDIR)\main2.obj;ccprint_out_a,ccprint_out_b,ccprint_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c"
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main2.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o main2_unpatch.cpp obunpatchcoff $(main2_CLAUSE)
 !ELSE
 main2_unpatch.cpp:main2.obj callc.obj
 	$(QUIETCMD)echo {} >unpatch.json

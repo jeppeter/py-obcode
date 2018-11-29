@@ -9,7 +9,7 @@ typedef struct __thread_arg{
 	int m_c;
 } thread_arg_t,*pthread_arg_t;
 
-DWORD thread_func(void* arg)
+DWORD WINAPI thread_func(void* arg)
 {
 	DWORD dret=0;
 	pthread_arg_t pargs = (pthread_arg_t)arg;
