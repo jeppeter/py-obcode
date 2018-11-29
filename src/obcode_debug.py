@@ -317,8 +317,9 @@ def format_includes(args):
         rets += format_line('#include "%s"'%(s),0)
     return rets
 
-def format_patch_funcions(args,odict,jdict,patchfuncname):
+def format_patch_funcions(args,odict,jdict,patchfuncname,prefix='prefix'):
     rets = format_includes(args)
+    staticvarname = '%s_%s'%(prefix,get_random_name(20))
     if PATCH_FUNC_KEY in odict.keys():
         for o in jdict.keys():
             rets += format_debug_line('format file [%s]'%(o),0,args.verbose)
@@ -334,6 +335,11 @@ def format_patch_funcions(args,odict,jdict,patchfuncname):
     for o in jdict.keys():
         if retout == 0:
             rets += format_line('int ret;',1)
+            rets += format_line('static int %s=0;'%(staticvarname),1)
+            rets += format_line('',1)
+            rets += format_line('if (%s > 0) {'%(staticvarname), 1)
+            rets += format_line('return 0;',2)
+            rets += format_line('}',1)
             retout = 1
         for f in jdict[o]:
             rets += format_line('',1)
@@ -342,6 +348,7 @@ def format_patch_funcions(args,odict,jdict,patchfuncname):
             rets += format_line('if (ret < 0) {', 1)
             rets += format_line('return ret;',2)
             rets += format_line('}',1)
+    rets += format_line('%s=1;'%(staticvarname), 1)
     rets += format_line('return 0;',1)
     rets += format_line('}',0)
     return rets
