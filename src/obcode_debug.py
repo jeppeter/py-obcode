@@ -166,14 +166,17 @@ def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,tim
     data = []
     data = objparser.get_data()
     for i in range(funcsize):
-        if objparser.is_in_reloc((funcvaddr + i), realf):
-            funcdata.append(-1)
-        else:
+        val = objparser.is_in_reloc((funcvaddr + i), realf)
+        if val == 0:
             funcdata.append(0)
             validbytes += 1
+        elif val == 1:
+            funcdata.append(-1)
+        elif val > 1:
+            funcdata.append(-10)
     if times == 0:
         # now to get the funcsize
-        ftimes = int(validbytes / 2)
+        ftimes = int(times / 2)
     if ftimes >= validbytes:
         ftimes = validbytes - 1
 
@@ -234,6 +237,9 @@ def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,tim
             xoroff = random.randint(0,funcsize - 1)
             if xornum == 0 :
                 continue
+            if funcdata[xoroff] < -1:
+                # it is forbid to set the value ,so we do not use it
+                continue
             if funcdata[xoroff] > 0 or  (xoroff in  jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_OFFSET_KEY].keys() \
                 and jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_OFFSET_KEY][xoroff] > 0):
                 continue
@@ -245,7 +251,7 @@ def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,tim
                 rets += format_debug_line('%s[0x%x:%d] = ? ^ 0x%x = ?'%(funcname, xoroff, xoroff, xornum), 1, debuglevel)
             rets += format_line('pcurptr = (pbaseptr + %d);'%(xoroff),1)
             #rets += format_debug_line('printf("patch [%%p] [0x%%02x] = [0x%%02x] ^ [0x%02x]\\n", pcurptr, (*pcurptr ^ 0x%x), *pcurptr);'%(xornum,xornum),1,debuglevel)
-            #rets += format_line('printf("patch [%%p] [0x%%02x] = [0x%%02x] ^ [0x%02x]\\n", pcurptr, (*pcurptr ^ 0x%x), *pcurptr);'%(xornum,xornum),1)
+            #rets += format_line('printf("[%%s:%%d] patch [%s].[+0x%x:%d] [%%p] [0x%%02x] = [0x%%02x] ^ [0x%02x]\\n",__FILE__,__LINE__, pcurptr, (*pcurptr ^ 0x%x), *pcurptr);'%(funcname,xoroff,xoroff,xornum,xornum),1)
             rets += format_line('*pcurptr ^= %d;'%(xornum),1)
             logging.info('[%s].[%s] +[0x%x:%d] xornum [0x%x:%d] funcdata[%d]'%(objname,funcname,xoroff,xoroff,xornum,xornum,funcdata[xoroff]))
             jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_XORS_KEY][xoroff] = xornum

@@ -333,22 +333,22 @@ class ElfParser(object):
 		funcinfo = self.__find_funcinfo(name)
 		if funcinfo is None:
 			logging.warn('find [%s] none'%(name))
-			return False
+			return 0
 		try:
 			secidx = int(funcinfo.secidx)
 		except:
 			logging.warn('get %s'%(funcinfo))
-			return False
+			return 0
 		# now to get the function sections
 		for nidx, section in enumerate(self.__elffile.iter_sections()):
 			if nidx == secidx:
 				relinfo = self.__find_relocinfo(vaddr,'.rel%s'%(section.name))
 				if relinfo is not None:
-					return True
+					return 1
 				relinfo = self.__find_relocinfo(vaddr,'.rela%s'%(section.name))
 				if relinfo is not None:
-					return True
-		return False
+					return 1
+		return 0
 
 	def get_data(self):
 		return bytes_to_ints(self.__data)

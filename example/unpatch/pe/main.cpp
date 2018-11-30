@@ -7,7 +7,6 @@
 
 OB_INSERT();
 
-#define OUTP(...) do{fprintf(stdout,"[%s:%d] ",__FILE__,__LINE__); fprintf(stdout,__VA_ARGS__);fprintf(stdout,"\n");}while(0)
 
 int print_out_a(void)
 {

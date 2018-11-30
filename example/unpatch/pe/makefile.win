@@ -121,10 +121,10 @@ unpatch.json:main_unpatch.cpp main2_unpatch.cpp
 
 !IFDEF OB_PATCH
 main_unpatch.cpp:main.obj callc.obj
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py -vvvv --times 2 --includefiles main.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o main_unpatch.cpp obunpatchcoff $(main_CLAUSE)
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py -vvvv --times 3 --includefiles main.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o main_unpatch.cpp obunpatchcoff $(main_CLAUSE)
 
 main2_unpatch.cpp:main2.obj callc.obj
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py -vvvv --times 2 --includefiles main2.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o main2_unpatch.cpp obunpatchcoff $(main2_CLAUSE)
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py -vvvv --times 3 --includefiles main2.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o main2_unpatch.cpp obunpatchcoff $(main2_CLAUSE)
 
 !ELSE
 main_unpatch.cpp:main.obj callc.obj

@@ -8,6 +8,9 @@
 extern "C" {
 #endif /* __cplusplus*/
 
+#define OUTP(...) do{fprintf(stdout,"[%s:%d] ",__FILE__,__LINE__); fflush(stdout);fprintf(stdout,__VA_ARGS__); fflush(stdout);fprintf(stdout,"\n"); fflush(stdout);}while(0)
+
+
 int OB_FUNC call_a(void);
 int OB_FUNC call_b(void);
 int OB_FUNC call_c(void);

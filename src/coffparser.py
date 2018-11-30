@@ -109,11 +109,11 @@ class CoffParser(object):
 		while minidx < maxidx:
 			curidx = int((minidx + maxidx) /2)
 			if self._is_in_rel(reltbl[curidx],vaddr):
-				return True
+				return reltbl[curidx]
 			elif self._is_in_rel(reltbl[minidx],vaddr):
-				return True
+				return reltbl[minidx]
 			elif self._is_in_rel(reltbl[maxidx], vaddr):
-				return True
+				return reltbl[maxidx]
 			if vaddr < reltbl[curidx].vaddr:
 				maxidx = curidx
 			else:
@@ -121,15 +121,22 @@ class CoffParser(object):
 			if (minidx+1) >= maxidx:
 				break
 		if self._is_in_rel(reltbl[minidx],vaddr):
-			return True
+			return reltbl[minidx]
 		elif self._is_in_rel(reltbl[maxidx], vaddr):
+			return reltbl[maxidx]
+		return None
+
+	def _is_forbid_rel(self,relinfo):
+		if self.__coff.header.id != 0x14c:
+			return False
+		if relinfo.type == IMAGE_REL_I386_DIR32:
 			return True
 		return False
 
 
 	def is_in_reloc(self,vaddr,name):
 		if self.__coff is None:
-			return True
+			return 2
 		findsym = None
 		findk = None
 		for k in self.__symnames.keys():
@@ -139,16 +146,21 @@ class CoffParser(object):
 				findk = k
 				break
 		if findsym is None:
-			return True
+			return 0
 
 		if vaddr < findsym.value or vaddr >= (findsym.value + findsym.size):
-			return True
+			return 2
 		#if len(self.__relocvalues[findk]) > 0:
 		#	logging.info('reloc [%s] len(%s) [%s] [%s]'%(findk, len(self.__relocvalues[findk]), self.__relocvalues[findk][0], self.__relocvalues[findk][-1]))
 		#else:
 		#	logging.info('reloc [%s] 0'%(findk))
 
-		return self._find_rel_in(self.__relocvalues[findk], vaddr)
+		relinfo = self._find_rel_in(self.__relocvalues[findk], vaddr)
+		if relinfo is None:
+			return 0
+		if self._is_forbid_rel(relinfo):
+			return 2
+		return 1
 
 	def get_data(self):
 		return bytes_to_ints(self.__data)
