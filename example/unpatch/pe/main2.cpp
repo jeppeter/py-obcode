@@ -61,54 +61,7 @@ int ccprint_out_c(void)
     return 0;
 }
 
-#if 0
 
-void dump_func(FILE* fp, void* funcaddr, int size)
-{
-    int i;
-    unsigned char* ptr = (unsigned char*)funcaddr;
-    unsigned char* plast = ptr;
-    fprintf(fp,"addr [%p] size[0x%x:%d]\n", funcaddr, size,size);
-    for (i = 0; i < size; i++) {
-        if ((i % 16) == 0) {
-            if (i > 0) {
-                fprintf(fp, "    ");
-                while (plast != ptr) {
-                    if (*plast >= ' ' && *plast <= '~') {
-                        fprintf(fp, "%c", *plast);
-                    } else {
-                        fprintf(fp, ".");
-                    }
-                    plast ++;
-                }
-                fprintf(fp, "\n");
-            }
-            fprintf(fp, "[%p][0x%08x]", ptr,i);
-        }
-        fprintf(fp, " 0x%02x", *ptr);
-        ptr ++;
-    }
-
-    if (ptr != plast) {
-        while ((i % 16)) {
-            fprintf(fp, "     ");
-            i ++;
-        }
-        fprintf(fp, "    ");
-        while (plast != ptr) {
-            if (*plast >= ' ' && *plast <= '~') {
-                fprintf(fp, "%c", *plast);
-            } else {
-                fprintf(fp, ".");
-            }
-            plast ++;
-        }
-        fprintf(fp, "\n");
-    }
-    return;
-}
-
-#endif
 
 
 
@@ -124,7 +77,12 @@ int main(int argc, char* argv[])
         OUTP("can not unpatch");
         return ret;
     }
-    //dump_func(stdout,&print_out_a,0x1f0);
+    dump_func(stdout,get_func_call((unsigned char*)&ccprint_out_a),0x1f0,"ccprint_out_a");
+    dump_func(stdout,get_func_call((unsigned char*)&ccprint_out_b),0x1f0,"ccprint_out_b");
+    dump_func(stdout,get_func_call((unsigned char*)&ccprint_out_c),0x1f0,"ccprint_out_c");
+    dump_func(stdout,get_func_call((unsigned char*)&call_a),0x1f0,"call_a");
+    dump_func(stdout,get_func_call((unsigned char*)&call_b),0x1f0,"call_b");
+    dump_func(stdout,get_func_call((unsigned char*)&call_c),0x1f0,"call_c");
     ccprint_out_a();
     ccprint_out_b();
     ccprint_out_c();

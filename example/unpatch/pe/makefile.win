@@ -52,13 +52,15 @@ INC_LDFLAGS=
 INC_CFLAGS = /I"$(TOPDIR)\include"
 COM_CFLAGS = /Wall /wd"4820" /wd"4668" /wd"4127" /wd"4510" /wd"4512" /wd"4610" /wd"4710" /wd"5045" 
 REL_CFLAGS = /DOB_MMAP=1
-DBG_CFLAGS = /Zi /Od  
+DBG_CFLAGS = /Z7 /Od  
+#DBG_CFLAGS = /Zi /Od  
 
 
 REL_LDFLAGS = 
 
 CFLAGS  =  $(NOLOGO_CFLAGS) $(STATIC_LIB_CFLAGS) $(INC_CFLAGS) $(COM_CFLAGS) $(REL_CFLAGS) $(DBG_CFLAGS)
-LDFLAGS = $(NOLOGO_LDFLAGS) $(INC_LDFLAGS) $(REL_LDFLAGS)
+LDFLAGS = $(NOLOGO_LDFLAGS) $(INC_LDFLAGS) $(REL_LDFLAGS) -DEBUG
+#LDFLAGS = $(NOLOGO_LDFLAGS) $(INC_LDFLAGS) $(REL_LDFLAGS)
 
 main_SOURCES=main.cpp callc.cpp main_unpatch.cpp
 main_OBJECTS=$(main_SOURCES:.cpp=.obj)
@@ -66,16 +68,18 @@ main_OBJECTS=$(main_SOURCES:.cpp=.obj)
 main2_SOURCES=main2.cpp callc.cpp main2_unpatch.cpp
 main2_OBJECTS=$(main2_SOURCES:.cpp=.obj)
 
+getfunc_SOURCES=getfunc.cpp
+getfunc_OBJECTS=$(getfunc_SOURCES:.cpp=.obj)
 
 !IF "$(PLATFORM)" == "X86"
-main_CLAUSE = "$(CURDIR)\main.obj;_print_out_a,_print_out_b,_print_out_c" "$(CURDIR)\callc.obj;_call_a,_call_b,_call_c"
-main2_CLAUSE = "$(CURDIR)\main2.obj;_ccprint_out_a,_ccprint_out_b,_ccprint_out_c" "$(CURDIR)\callc.obj;_call_a,_call_b,_call_c"
+main_CLAUSE = "$(CURDIR)\main.obj;print_out_a,print_out_b,print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c" "win32;"
+main2_CLAUSE = "$(CURDIR)\main2.obj;ccprint_out_a,ccprint_out_b,ccprint_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c" "win32;"
 !ELSE
 main_CLAUSE = "$(CURDIR)\main.obj;print_out_a,print_out_b,print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c"
 main2_CLAUSE = "$(CURDIR)\main2.obj;ccprint_out_a,ccprint_out_b,ccprint_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c"
 !ENDIF
 
-all:main.exe main2.exe
+all:main.exe main2.exe getfunc.exe
 
 !IFDEF OB_PATCH
 main.exe:$(main_OBJECTS) unpatch.json
@@ -89,6 +93,9 @@ main.exe:$(main_OBJECTS) unpatch.json
 	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(main_OBJECTS)
 	$(QUIETCMD)echo "use static lib"
 !ENDIF
+
+getfunc.exe:$(getfunc_OBJECTS)
+	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(getfunc_OBJECTS)
 
 !IFDEF OB_PATCH
 main2.exe:$(main2_OBJECTS) unpatch.json
@@ -114,25 +121,25 @@ unpatch.json:main_unpatch.cpp main2_unpatch.cpp
 
 !IFDEF OB_PATCH
 main_unpatch.cpp:main.obj callc.obj
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o main_unpatch.cpp obunpatchcoff $(main_CLAUSE)
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py -vvvv --times 2 --includefiles main.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o main_unpatch.cpp obunpatchcoff $(main_CLAUSE)
+
+main2_unpatch.cpp:main2.obj callc.obj
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py -vvvv --times 2 --includefiles main2.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o main2_unpatch.cpp obunpatchcoff $(main2_CLAUSE)
+
 !ELSE
 main_unpatch.cpp:main.obj callc.obj
 	$(QUIETCMD)echo {} >unpatch.json
 	$(QUIETCMD)echo #include "unpatch.h" >main_unpatch.cpp
 	$(QUIETCMD)echo int unpatch_handler(map_prot_func_t protfunc) { protfunc = protfunc;return 0;} >>main_unpatch.cpp
-!ENDIF
 
-!IFDEF OB_PATCH
-main2_unpatch.cpp:main2.obj callc.obj
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main2.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o main2_unpatch.cpp obunpatchcoff $(main2_CLAUSE)
-!ELSE
 main2_unpatch.cpp:main2.obj callc.obj
 	$(QUIETCMD)echo {} >unpatch.json
 	$(QUIETCMD)echo #include "unpatch.h" >main2_unpatch.cpp
 	$(QUIETCMD)echo int unpatch_handler(map_prot_func_t protfunc) { protfunc = protfunc;return 0;} >>main2_unpatch.cpp
+
 !ENDIF
 
 
 clean:
-	$(QUIETCMD) $(RM) *.exe *.obj *.pdb 2>NUL
+	$(QUIETCMD) $(RM) *.exe *.obj *.ilk *.pdb 2>NUL
 	$(QUIETCMD) $(RM) main_unpatch.cpp main2_unpatch.cpp unpatch.json 2>NUL
