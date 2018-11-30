@@ -263,6 +263,9 @@ def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,tim
         rets += format_line('return -1;',3)
         rets += format_line('}',2)
         rets += format_line('}',1)
+    else:
+        rets += format_line('mapfunc = mapfunc;',1)
+
 
     rets += format_line('return 0;',1)
     rets += format_line('}',0)

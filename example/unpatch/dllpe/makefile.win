@@ -72,6 +72,13 @@ somain1_OBJECTS=$(somain1_SOURCES:.cpp=.obj)
 somain2_SOURCES=$(CURDIR)\somain2.cpp $(CURDIR)\callc.cpp $(CURDIR)\somain2_unpatch.cpp
 somain2_OBJECTS=$(somain2_SOURCES:.cpp=.obj)
 
+!IF "$(PLATFORM)" == "X86"
+somain1_CLAUSE = "$(CURDIR)\somain1.obj;main1_print_out_a,main1_print_out_b,main1_print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c"  "win32;"
+somain2_CLAUSE = "$(CURDIR)\somain2.obj;main2_print_out_a,main2_print_out_b,main2_print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c"  "win32;"
+!ELSE
+somain1_CLAUSE = "$(CURDIR)\somain1.obj;main1_print_out_a,main1_print_out_b,main1_print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c"
+somain2_CLAUSE = "$(CURDIR)\somain2.obj;main2_print_out_a,main2_print_out_b,main2_print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c"
+!ENDIF
 
 all:$(CURDIR)\main.exe
 
@@ -116,7 +123,7 @@ $(CURDIR)\unpatch.json:$(CURDIR)\somain1_unpatch.cpp $(CURDIR)\somain2_unpatch.c
 
 !IFDEF OB_PATCH
 $(CURDIR)\somain1_unpatch.cpp:$(CURDIR)\somain1.obj $(CURDIR)\callc.obj
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles somain1.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o somain1_unpatch.cpp obunpatchcoff "$(CURDIR)\somain1.obj;main1_print_out_a,main1_print_out_b,main1_print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c"
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles somain1.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o somain1_unpatch.cpp obunpatchcoff $(somain1_CLAUSE)
 !ELSE
 $(CURDIR)\somain1_unpatch.cpp:$(CURDIR)\somain1.obj $(CURDIR)\callc.obj
 	$(QUIETCMD)echo {} >unpatch.json
@@ -126,7 +133,7 @@ $(CURDIR)\somain1_unpatch.cpp:$(CURDIR)\somain1.obj $(CURDIR)\callc.obj
 
 !IFDEF OB_PATCH
 $(CURDIR)\somain2_unpatch.cpp:$(CURDIR)\somain2.obj $(CURDIR)\callc.obj
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles somain2.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o somain2_unpatch.cpp obunpatchcoff "$(CURDIR)\somain2.obj;main2_print_out_a,main2_print_out_b,main2_print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c"
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles somain2.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o somain2_unpatch.cpp obunpatchcoff $(somain2_CLAUSE)
 !ELSE
 $(CURDIR)\somain2_unpatch.cpp:$(CURDIR)\somain2.obj $(CURDIR)\callc.obj
 	$(QUIETCMD)echo {} >unpatch.json

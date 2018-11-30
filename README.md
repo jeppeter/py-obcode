@@ -666,17 +666,22 @@ INC_LDFLAGS=
 INC_CFLAGS = /I"$(TOPDIR)\include"
 COM_CFLAGS = /DOB_MMAP=1 /Wall /wd"4820" /wd"4668" /wd"4127" /wd"4510" /wd"4512" /wd"4610" /wd"4710" /wd"5045"
 REL_CFLAGS = 
-DBG_CFLAGS = /Zi /Od 
+DBG_CFLAGS = /Z7 /Od 
 
 
 REL_LDFLAGS = 
 
 CFLAGS  =  $(NOLOGO_CFLAGS) $(STATIC_LIB_CFLAGS) $(INC_CFLAGS) $(COM_CFLAGS) $(REL_CFLAGS) $(DBG_CFLAGS)
-LDFLAGS = $(NOLOGO_LDFLAGS) $(INC_LDFLAGS) $(REL_LDFLAGS)
+LDFLAGS = $(NOLOGO_LDFLAGS) $(INC_LDFLAGS) $(REL_LDFLAGS) -DEBUG
 
 SOURCES=main.cpp unpatch.cpp
 OBJECTS=$(SOURCES:.cpp=.obj)
 
+!IF "$(PLATFORM)" == "X86"
+main_CLAUSE= "$(CURDIR)\main.obj;print_out_a" "win32;"
+!ELSE
+main_CLAUSE= "$(CURDIR)\main.obj;print_out_a"
+!ENDIF
 
 all:main.exe
 
@@ -701,7 +706,7 @@ unpatch.cpp:unpatch.json
 
 !IFDEF OB_PATCH
 unpatch.json:main.obj
-    $(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h -D unpatch.json -o unpatch.cpp obunpatchcoff "$(CURDIR)\main.obj;print_out_a"
+    $(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h -D unpatch.json -o unpatch.cpp obunpatchcoff  $(main_CLAUSE)
 !ELSE
 unpatch.json:main.obj
     $(QUIETCMD)echo {} >unpatch.json

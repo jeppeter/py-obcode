@@ -129,7 +129,7 @@ class CoffParser(object):
 	def _is_forbid_rel(self,relinfo):
 		if self.__coff.header.id != 0x14c:
 			return False
-		if relinfo.type == IMAGE_REL_I386_DIR32:
+		if relinfo.type == coff.IMAGE_REL_I386_DIR32:
 			return True
 		return False
 

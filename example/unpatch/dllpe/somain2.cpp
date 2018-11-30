@@ -46,7 +46,7 @@ int main2_print_out_c(void)
 OB_MAP_FUNCTION()
 
 
-BOOL DllMain(HINSTANCE hinst,DWORD reason,LPVOID lpReserved)
+BOOL WINAPI DllMain(HINSTANCE hinst,DWORD reason,LPVOID lpReserved)
 {
 	int ret=0;
 
