@@ -20,15 +20,11 @@ all:${CURDIR}/main ${CURDIR}/main2
 
 ${CURDIR}/main:${main_OBJECTS}
 	gcc -Wall -o $@ ${main_OBJECTS}
-ifneq (${OB_PATCH},)
-	python ${TOPDIR}/obcode.py -D ${CURDIR}/unpatch.json -o $@ obpatchelf ${CURDIR}/main.o ${CURDIR}/main_unpatch.o ${CURDIR}/callc.o
-endif
+	@$(call ELF_PATCH,'dump${COLON}${CURDIR}/unpatch.json' 'output${COLON}${CURDIR}/main' ${CURDIR}/main.o ${CURDIR}/main_unpatch.o ${CURDIR}/callc.o)
 
 ${CURDIR}/main2:${main2_OBJECTS}
 	gcc -Wall -o $@ ${main2_OBJECTS}
-ifneq (${OB_PATCH},)
-	python ${TOPDIR}/obcode.py -D ${CURDIR}/unpatch.json -o $@ obpatchelf ${CURDIR}/main2.o ${CURDIR}/main2_unpatch.o ${CURDIR}/callc.o
-endif
+	@$(call ELF_PATCH,'dump${COLON}${CURDIR}/unpatch.json' 'output${COLON}${CURDIR}/main2' ${CURDIR}/main2.o ${CURDIR}/main2_unpatch.o ${CURDIR}/callc.o)
 
 
 ${CURDIR}/%.o:${CURDIR}/%.c
@@ -37,24 +33,12 @@ ${CURDIR}/%.o:${CURDIR}/%.c
 ${CURDIR}/unpatch.json:${CURDIR}/main_unpatch.c ${CURDIR}/main2_unpatch.c
 
 ${CURDIR}/main_unpatch.c:${CURDIR}/main.o ${CURDIR}/callc.o
-	cp ${CURDIR}/main.o ${CURDIR}/main_orig.o	
-ifeq (${OB_PATCH},)
-	/bin/echo -e "#include \"unpatch.h\"\nint unpatch_handler(map_prot_func_t protfunc){return 0;}" >${CURDIR}/main_unpatch.c
-	/bin/echo "{}" >${CURDIR}/unpatch.json
-else
-	/bin/echo ${main_FORMAT_CLAUSE}
-	python ${TOPDIR}/obcode.py --includefiles main.h --includefiles unpatch.h --includefiles callc.h -D ${CURDIR}/unpatch.json -o ${CURDIR}/main_unpatch.c obunpatchelf ${main_FORMAT_CLAUSE}
-endif
+	cp ${CURDIR}/main.o ${CURDIR}/main_orig.o
+	@$(call ELF_UNPATCH,'includefiles${COLON}main.h${COMMA}unpatch.h${COMMA}callc.h' 'dump${COLON}${CURDIR}/unpatch.json' 'output${COLON}${CURDIR}/main_unpatch.c' ${main_FORMAT_CLAUSE})
 
 ${CURDIR}/main2_unpatch.c:${CURDIR}/main2.o ${CURDIR}/callc.o
 	cp ${CURDIR}/main2.o ${CURDIR}/main2_orig.o	
-ifeq (${OB_PATCH},)
-	/bin/echo -e "#include \"unpatch.h\"\nint unpatch_handler(map_prot_func_t protfunc){return 0;}" >${CURDIR}/main2_unpatch.c
-	/bin/echo "{}" >${CURDIR}/unpatch.json
-else
-	/bin/echo ${main2_FORMAT_CLAUSE}
-	python ${TOPDIR}/obcode.py --includefiles main2.h --includefiles unpatch.h --includefiles callc.h -D ${CURDIR}/unpatch.json -o ${CURDIR}/main2_unpatch.c obunpatchelf ${main2_FORMAT_CLAUSE}
-endif
+	@$(call ELF_UNPATCH,'includefiles${COLON}main2.h${COMMA}unpatch.h${COMMA}callc.h' 'dump${COLON}${CURDIR}/unpatch.json' 'output${COLON}${CURDIR}/main2_unpatch.c' ${main2_FORMAT_CLAUSE})
 
 
 clean:

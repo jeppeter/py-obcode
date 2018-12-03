@@ -387,6 +387,7 @@ def obunpatchelf_handler(args,parser):
 
 def obpatchelf_handler(args,parser):
     set_logging_level(args)
+    jdict, args = get_jdict(args)
     if args.dump is None:
         raise Exception('no dump file get')
     if args.output is None:

@@ -2,14 +2,16 @@
 OBJECTS=main.o unpatch.o
 TOPDIR=$(shell readlink -f ../../.. )
 CURDIR=$(shell readlink -f .)
+include ${TOPDIR}/obcode.mak
+
+COLON=;
+COMMA=,
 
 all:main
 
 main:${OBJECTS}
 	gcc -Wall -o $@ ${OBJECTS}
-ifneq (${OB_PATCH},)
-	python ${TOPDIR}/obcode.py -D unpatch.json -o $@ obpatchelf  ${CURDIR}/main.o ${CURDIR}/unpatch.o
-endif
+	@$(call ELF_PATCH,'dump${COLON}unpatch.json' 'output${COLON}main' ${CURDIR}/main.o ${CURDIR}/unpatch.o)
 
 
 %.o:%.c
@@ -18,12 +20,7 @@ endif
 unpatch.c:unpatch.json
 
 unpatch.json:main.o
-ifeq (${OB_PATCH},)
-	/bin/echo -e "#include \"main.h\"\nint unpatch_handler(map_prot_func_t protfunc){return 0;}" >unpatch.c
-	/bin/echo "{}" >unpatch.json
-else
-	python ${TOPDIR}/obcode.py --includefiles main.h -D unpatch.json -o unpatch.c obunpatchelf '${CURDIR}/main.o;print_out_a'
-endif
+	@$(call ELF_UNPATCH,'includefiles${COLON}main.h' 'dump${COLON}unpatch.json' 'output${COLON}unpatch.c' '${CURDIR}/main.o${COLON}print_out_a')
 
 clean:
 	rm -f ${OBJECTS} main_orig.o

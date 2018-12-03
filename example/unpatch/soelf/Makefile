@@ -2,7 +2,7 @@ ifeq (${TOPDIR},)
 TOPDIR=$(shell readlink -f ../../..)
 endif
 
-include ${TOPDIR}/obcode.mak
+-include ${TOPDIR}/obcode.mak
 
 CURDIR=$(shell readlink -f .)
 INCLUDE_FLAGS=-I${TOPDIR}/include
@@ -23,16 +23,12 @@ ${CURDIR}/main.o:${CURDIR}/main.c
 
 ${CURDIR}/somain1.so:${CURDIR}/somain1.o ${CURDIR}/callc.o ${CURDIR}/somain1_unpatch.o ${CURDIR}/unpatch.json
 	gcc -Wall -shared -o $@ ${CURDIR}/somain1.o ${CURDIR}/callc.o ${CURDIR}/somain1_unpatch.o
-ifneq (${OB_PATCH},)
-	python ${TOPDIR}/obcode.py -D ${CURDIR}/unpatch.json -o $@ obpatchelf ${CURDIR}/somain1.o ${CURDIR}/somain1_unpatch.o ${CURDIR}/callc.o
-endif
+	@$(call ELF_PATCH,'dump${COLON}${CURDIR}/unpatch.json' 'output${COLON}${CURDIR}/somain1.so' ${CURDIR}/somain1.o ${CURDIR}/somain1_unpatch.o ${CURDIR}/callc.o)
 
 
 ${CURDIR}/somain2.so:${CURDIR}/somain2.o ${CURDIR}/callc.o ${CURDIR}/somain2_unpatch.o ${CURDIR}/unpatch.json
 	gcc -Wall  -shared -o $@ ${CURDIR}/somain2.o ${CURDIR}/callc.o ${CURDIR}/somain2_unpatch.o
-ifneq (${OB_PATCH},)
-	python ${TOPDIR}/obcode.py -D ${CURDIR}/unpatch.json -o $@ obpatchelf ${CURDIR}/somain2.o ${CURDIR}/somain2_unpatch.o ${CURDIR}/callc.o
-endif
+	@$(call ELF_PATCH,'dump${COLON}${CURDIR}/unpatch.json' 'output${COLON}${CURDIR}/somain2.so' ${CURDIR}/somain2.o ${CURDIR}/somain2_unpatch.o ${CURDIR}/callc.o)
 
 ${CURDIR}/%.o:${CURDIR}/%.c
 	gcc -Wall ${INCLUDE_FLAGS} -DOB_MMAP -fPIC -shared -c $< -o $@
@@ -40,21 +36,10 @@ ${CURDIR}/%.o:${CURDIR}/%.c
 ${CURDIR}/unpatch.json: ${CURDIR}/somain1_unpatch.c ${CURDIR}/somain2_unpatch.c
 
 ${CURDIR}/somain1_unpatch.c:${CURDIR}/somain1.o ${CURDIR}/callc.o
-ifeq (${OB_PATCH},)
-	/bin/echo -e "#include \"unpatch.h\"\n int unpatch_handler(map_prot_func_t protfunc) {return 0;}" >$@
-	/bin/echo "{}" >${CURDIR}/unpatch.json
-else
-	python ${TOPDIR}/obcode.py --includefiles somain1.h --includefiles unpatch.h --includefiles callc.h -D ${CURDIR}/unpatch.json -o ${CURDIR}/somain1_unpatch.c obunpatchelf ${somain1_FORMAT_CLAUSE}
-endif
+	@$(call ELF_UNPATCH,'includefiles${COLON}somain1.h${COMMA}unpatch.h${COMMA}callc.h' 'dump${COLON}${CURDIR}/unpatch.json' 'output${COLON}${CURDIR}/somain1_unpatch.c'  ${somain1_FORMAT_CLAUSE})
 
 ${CURDIR}/somain2_unpatch.c:${CURDIR}/somain2.o ${CURDIR}/callc.o
-ifeq (${OB_PATCH},)
-	/bin/echo -e "#include \"unpatch.h\"\n int unpatch_handler(map_prot_func_t protfunc) {return 0;}" >$@
-	/bin/echo "{}" >${CURDIR}/unpatch.json
-else
-	python ${TOPDIR}/obcode.py --includefiles somain2.h --includefiles unpatch.h --includefiles callc.h -D ${CURDIR}/unpatch.json -o ${CURDIR}/somain2_unpatch.c obunpatchelf ${somain2_FORMAT_CLAUSE}
-endif
-
+	@$(call ELF_UNPATCH,'includefiles${COLON}somain2.h${COMMA}unpatch.h${COMMA}callc.h' 'dump${COLON}${CURDIR}/unpatch.json' 'output${COLON}${CURDIR}/somain2_unpatch.c'  ${somain2_FORMAT_CLAUSE})
 
 clean:
 	rm -f ${CURDIR}/main ${CURDIR}/somain2.so ${CURDIR}/somain1.so
