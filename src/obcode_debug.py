@@ -202,6 +202,13 @@ def main():
         },
         "obunfunc<obunfunc_handler>##funcs... to set obfuncs##" : {
             "$" : "+"
+        },
+        "obunpatchelfforge<obunpatchelfforge_handler>##objfilename:func1,func2 ... to format unpatch elf file with func1 func2##" : {
+            "$" : "+",
+            "loglvl" : 3
+        },
+        "obpatchelfforge<obpatchelfforge_handler>##inputfile to no handle##" : {
+            "$" : "+"
         }
     }
     '''
