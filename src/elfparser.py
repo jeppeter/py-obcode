@@ -348,13 +348,13 @@ class ElfParser(object):
 			if nidx == secidx:
 				relinfo = self.__find_relocinfo(vaddr,'.rel%s'%(section.name))
 				if relinfo is not None:
-					#if (relinfo.type & 0xffff) == ENUM_RELOC_TYPE_x64['R_X86_64_GOTPCREL']:
-					#	return OBJ_RELOC_FORBID
+					if (relinfo.type & 0xffff) == ENUM_RELOC_TYPE_x64['R_X86_64_GOTPCREL']:
+						return OBJ_RELOC_FORBID
 					return OBJ_RELOC_ON
 				relinfo = self.__find_relocinfo(vaddr,'.rela%s'%(section.name))
 				if relinfo is not None:
-					#if (relinfo.type & 0xffff) == ENUM_RELOC_TYPE_x64['R_X86_64_GOTPCREL']:
-					#	return OBJ_RELOC_FORBID
+					if (relinfo.type & 0xffff) == ENUM_RELOC_TYPE_x64['R_X86_64_GOTPCREL']:
+						return OBJ_RELOC_FORBID
 					return OBJ_RELOC_ON
 		return OBJ_RELOC_NONE
 
