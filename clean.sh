@@ -11,3 +11,6 @@ rm -rf $script_dir/__pycache__
 rm -rf $script_dir/src/__pycache__
 rm -f $script_dir/obcode.mak
 rm -f $script_dir/obmak.py
+rm -f $script_dir/obmak.py.touched
+rm -f $script_dir/obpatch.py
+rm -f $script_dir/obpatch.py.touched

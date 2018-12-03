@@ -233,6 +233,18 @@ def get_jdict(args):
             sarr = re.split(';',a)
             if len(sarr) > 1 and len(sarr[1]) > 0:
                 args.verbose = int(sarr[1])
+        elif a.startswith('output;'):
+            sarr = re.split(';',a)
+            if len(sarr) > 1 and len(sarr[1]) > 0:
+                args.output = sarr[1]
+        elif a.startswith('dump;'):
+            sarr = re.split(';',a)
+            if len(sarr) > 1 and len(sarr[1]) > 0:
+                args.dump = sarr[1]
+        elif a.startswith('unpatchfunc;'):
+            sarr = re.split(';',a)
+            if len(sarr) > 1 and len(sarr[1]) > 0:
+                args.unpatchfunc = sarr[1]
         else:
             sarr = re.split(';',a)
             if len(sarr) < 2:
@@ -368,7 +380,7 @@ def obunpatchelf_handler(args,parser):
         logging.info('f [%s] funcs %s'%(f,jdict[f]))
         elf_one_file(odict,f,jdict[f],args.times,args.obunpatchelf_loglvl)
 
-    rets = format_patch_funcions(args,odict,jdict,args.obunpatchelf_funcname)
+    rets = format_patch_funcions(args,odict,jdict,args.unpatchfunc)
     write_patch_output(args,rets,odict)
     sys.exit(0)
     return
@@ -415,7 +427,7 @@ def obunpatchcoff_handler(args,parser):
         logging.info('f [%s] funcs %s'%(f,jdict[f]))
         coff_one_file(odict,f,jdict[f],args.times,args.obunpatchcoff_loglvl,args.win32)
 
-    rets = format_patch_funcions(args,odict,jdict,args.obunpatchcoff_funcname)
+    rets = format_patch_funcions(args,odict,jdict,args.unpatchfunc)
     write_patch_output(args,rets,odict)
     sys.exit(0)
     return
@@ -440,4 +452,25 @@ def obpatchpe_handler(args,parser):
         write_file_direct(json.dumps(odict,sort_keys=True,indent=4), fout)
     sys.exit(0)
     return
+
+def obpatchelfforge_handler(args,parser):
+    set_logging_level(args)
+    sys.exit(0)
+    return
+
+def obunpatchelfforge_handler(args,parser):
+    set_logging_level(args)
+    jdict , args = get_jdict(args)
+    odict = dict()
+    rets = ''
+    rets += format_includes(args)
+    rets += format_line('int %s(map_prot_func_t mapfunc)'%(args.unpatchfunc),0)
+    rets += format_line('{',0)
+    rets += format_line('mapfunc = mapfunc;', 1)
+    rets += format_line('return 0;',1)
+    rets += format_line('}',0)
+    write_patch_output(args,rets,odict)
+    sys.exit(0)
+    return
+
 ##extractcode_end

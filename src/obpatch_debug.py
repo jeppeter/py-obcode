@@ -1,9 +1,10 @@
 #! /usr/bin/env python
 
+import logging
 import sys
 import os
-import extargsparse
 import re
+import extargsparse
 
 ##importdebugstart
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
@@ -11,8 +12,12 @@ from strparser import *
 from filehdl import *
 from fmthdl import *
 from extract_ob import *
-from obmaklib import *
+from objparser import *
+from elfparser import *
+from coffparser import *
+from obpatchlib import *
 ##importdebugend
+
 
 REPLACE_IMPORT_LIB=1
 
@@ -20,7 +25,10 @@ REPLACE_STR_PARSER=1
 REPLACE_FILE_HDL=1
 REPLACE_FMT_HDL=1
 REPLACE_EXTRACT_OB=1
-REPLACE_OBMAK_LIB=1
+REPLACE_OBJ_PARSER=1
+REPLACE_ELF_PARSER=1
+REPLACE_COFF_PARSER=1
+REPLACE_OB_PATCH_LIB=1
 
 
 def main():
@@ -28,31 +36,35 @@ def main():
     {
         "verbose|v" : "+",
         "version|V" : false,
-        "makob<makob_handler>##srcfile to give the other code file ,this need environment variable MAKOB_FILE to get the default (makob.json)##" : {
-            "namemin" : 5,
-            "namemax" : 20,
+        "output|o" : null,
+        "times|T" : 0,
+        "dump|D" : null,
+        "includes|I" : [],
+        "includefiles" : [],
+        "unpatchfunc|U" : "unpatch_handler",
+        "obunpatchelf<obunpatchelf_handler>##objfilename:func1,func2 ... to format unpatch elf file with func1 func2##" : {
+            "$" : "+",
+            "loglvl" : 3
+        },
+        "obpatchelf<obpatchelf_handler>##inputfile to patch elf functions##" : {
             "$" : "+"
         },
-        "unmakob<unmakob_handler>##dstfile to give the origin ,this need environment variable MAKOB_FILE to get the default (makob.json)##" : {
-            "short" : false,
+        "obunpatchcoff<obunpatchcoff_handler>##objfile:func1,func2 ... to format unpatch coff file with func1 func2##" : {
+            "$" : "+",
+            "loglvl" : 3
+        },
+        "obpatchpe<obpatchpe_handler>##inputfile to patch pe functions##" : {
             "$" : "+"
         },
-        "basename<basename_handler>##to make basename##" : {
+        "obunfunc<obunfunc_handler>##funcs... to set obfuncs##" : {
             "$" : "+"
         },
-        "obtrans<obtrans_handler>##translate the srcdir to dstdir in makob file##" : {
-            "srcdir" : "",
-            "dstdir" : "",
-            "$" : "+"
+        "obunpatchelfforge<obunpatchelfforge_handler>##objfilename:func1,func2 ... to format unpatch elf file with func1 func2##" : {
+        	"$" : "+",
+        	"loglvl" : 3
         },
-        "oblist<oblist_handler>##to list files ob files##" : {
-            "$" : "*"
-        },
-        "obuntrans<obuntrans_handler>##inputfile [outputfile] to trans file from MAKOB_FILE##" : {
-            "$" : "+"
-        },
-        "obunfunc<obunfunc_handler>##inputfile;outfile;funcs...  to set obfuncs##" : {
-            "$" : "+"
+        "obpatchelfforge<obpatchelfforge_handler>##inputfile to no handle##" : {
+        	"$" : "+"
         }
     }
     '''
@@ -80,14 +92,17 @@ def debug_release():
             logging.root.handlers = []
         logging.basicConfig(level=loglvl,format='%(asctime)s:%(filename)s:%(funcName)s:%(lineno)d\t%(message)s')
     topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
-    tofile= os.path.abspath(os.path.join(topdir,'obmak.py'))
+    tofile= os.path.abspath(os.path.join(topdir,'obpatch.py'))
     curdir = os.path.abspath(os.path.dirname(__file__))
     rlfiles = ReleaseFiles(__file__)
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'strparser.py')),r'REPLACE_STR_PARSER=1')
-    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'fmthdl.py')),r'REPLACE_FMT_HDL=1')
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'filehdl.py')),r'REPLACE_FILE_HDL=1')
-    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'obmaklib.py')),r'REPLACE_OBMAK_LIB=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'fmthdl.py')),r'REPLACE_FMT_HDL=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'obpatchlib.py')),r'REPLACE_OB_PATCH_LIB=1')
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'extract_ob.py')),r'REPLACE_EXTRACT_OB=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'objparser.py')),r'REPLACE_OBJ_PARSER=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'elfparser.py')),r'REPLACE_ELF_PARSER=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'coffparser.py')),r'REPLACE_COFF_PARSER=1')
     if len(sys.argv) > 2:
         for k in sys.argv[1:]:
             if not k.startswith('-'):
@@ -101,7 +116,6 @@ def debug_release():
             l = l.rstrip('\r\n')
             vernum = l
             break
-    #logging.info('str_c\n%s'%(strparser_c))
     sarr = re.split('\.',vernum)
     if len(sarr) != 3:
         raise Exception('version (%s) not format x.x.x'%(vernum))

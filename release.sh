@@ -46,12 +46,21 @@ wait_file_until()
 
 rm -f $script_dir/obcode.py.touched 
 rm -f $script_dir/obcode.py
+rm -f $script_dir/obmak.py.touched 
+rm -f $script_dir/obmak.py
+rm -f $script_dir/obpatch.py.touched 
+rm -f $script_dir/obpatch.py
+
+
 
 $PYTHON $script_dir/src/obcode_debug.py --release
 wait_file_until "$script_dir/obcode.py.touched"
 $PYTHON $script_dir/src/obmak_debug.py --release
 wait_file_until "$script_dir/obmak.py.touched"
-$PYTHON -m insertcode -p '%PYTHON_OBCODE_STR%' -i $script_dir/src/obcode.mak.tmpl -o $script_dir/obcode.mak makepython $script_dir/obmak.py
+$PYTHON $script_dir/src/obpatch_debug.py --release
+wait_file_until "$script_dir/obpatch.py.touched"
+
+$PYTHON -m insertcode -p '%PYTHON_OBCODE_STR%' -i $script_dir/src/obcode.mak.tmpl makepython  $script_dir/obmak.py | $PYTHON -m insertcode -p '%PYTHON_OBPATCH_STR%' -o $script_dir/obcode.mak makepython $script_dir/obpatch.py
 
 if [ $? -ne 0 ]
 	then

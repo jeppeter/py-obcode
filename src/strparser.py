@@ -3,6 +3,7 @@
 import sys
 import logging
 import random
+import time
 
 
 ##extractcode_start
@@ -16,6 +17,7 @@ def set_logging_level(args):
     if logging.root is not None and len(logging.root.handlers) > 0:
         logging.root.handlers = []
     logging.basicConfig(level=loglvl,format='%(asctime)s:%(filename)s:%(funcName)s:%(lineno)d\t%(message)s')
+    random.seed(time.time())
     return
 
 

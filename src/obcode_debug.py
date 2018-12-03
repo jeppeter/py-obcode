@@ -154,6 +154,7 @@ def main():
         "dump|D" : null,
         "includes|I" : [],
         "includefiles" : [],
+        "unpatchfunc|U" : "unpatch_handler",
         "cob<cob_handler>##srcdir dstdir to obfuscated code in c mode##" : {
             "handles" : ["\\\\.c$","\\\\.h$","\\\\.cpp$","\\\\.cxx$"],
             "filters" : ["\\\\.git$"],
@@ -187,16 +188,14 @@ def main():
         },
         "obunpatchelf<obunpatchelf_handler>##objfilename:func1,func2 ... to format unpatch elf file with func1 func2##" : {
             "$" : "+",
-            "loglvl" : 3,
-            "funcname" : "unpatch_handler"
+            "loglvl" : 3
         },
         "obpatchelf<obpatchelf_handler>##inputfile to patch elf functions##" : {
             "$" : "+"
         },
         "obunpatchcoff<obunpatchcoff_handler>##objfile:func1,func2 ... to format unpatch coff file with func1 func2##" : {
             "$" : "+",
-            "loglvl" : 3,
-            "funcname" : "unpatch_handler"
+            "loglvl" : 3
         },
         "obpatchpe<obpatchpe_handler>##inputfile to patch pe functions##" : {
             "$" : "+"
