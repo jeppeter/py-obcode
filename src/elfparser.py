@@ -70,11 +70,15 @@ class FuncInfo(object):
 		return True
 
 class RelocInfo(object):
-	def __init__(self,name,vaddr,typestr,secidx):
+	def __init__(self,name,vaddr,typestr,secidx,is64=False):
 		self.__name = name
-		self.__vaddr = vaddr
 		self.__type =  typestr
-		self.__size = 4
+		if (self.__type & 0xffff) == ENUM_RELOC_TYPE_x64['R_X86_64_GOTPCREL'] and is64:
+			self.__vaddr = (vaddr - 3)
+			self.__size = 7
+		else:
+			self.__vaddr = vaddr
+			self.__size = 4
 		self.__secidx = secidx
 		self.__hash = vaddr
 		return
@@ -220,7 +224,7 @@ class ElfParser(object):
 					else:
 						symbol_name = symbol.name
 					name = symbol_name
-				relinfo = RelocInfo(name,vaddr,typeval, section.name)
+				relinfo = RelocInfo(name,vaddr,typeval, section.name, self.__elffile.get_machine_arch() == 'x64')
 				hv = '%x'%(relinfo.hash)
 				inserted = False
 				if section.name in ndict.keys():
@@ -344,9 +348,13 @@ class ElfParser(object):
 			if nidx == secidx:
 				relinfo = self.__find_relocinfo(vaddr,'.rel%s'%(section.name))
 				if relinfo is not None:
+					if (relinfo.type & 0xffff) == ENUM_RELOC_TYPE_x64['R_X86_64_GOTPCREL']:
+						return OBJ_RELOC_FORBID
 					return OBJ_RELOC_ON
 				relinfo = self.__find_relocinfo(vaddr,'.rela%s'%(section.name))
 				if relinfo is not None:
+					if (relinfo.type & 0xffff) == ENUM_RELOC_TYPE_x64['R_X86_64_GOTPCREL']:
+						return OBJ_RELOC_FORBID
 					return OBJ_RELOC_ON
 		return OBJ_RELOC_NONE
 
@@ -391,5 +399,14 @@ class ElfParser(object):
 		if retoff < 0:
 			raise Exception('can not find [%s] code\nrels\n%s\ndata\n%s\n'%(symname, dump_ints(rels), dump_ints(data)))
 		return retoff
+
+	def dump_structure(self,fout):
+		self.__parse_elf_relocinfo()
+		for k in self.__relocinfo.keys():
+			relinfos = self.__relocinfo[k]
+			fout.write('k [%s]\n'%(k))
+			for rel in relinfos:
+				fout.write('    %s\n'%(rel))
+		return
 
 ##extractcode_end

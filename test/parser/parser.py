@@ -128,6 +128,13 @@ def coffsym_handler(args,parser):
 	sys.exit(0)
 	return
 
+def elfdump_handler(args,parser):
+	set_logging_level(args)
+	for f in args.subnargs:
+		elfparser = ElfParser(f)
+		elfparser.dump_structure(sys.stdout)
+	sys.exit(0)
+	return
 
 def main():
 	commandline='''
@@ -146,6 +153,9 @@ def main():
 			"$" : "+"
 		},
 		"coffsym<coffsym_handler>##cofffile symbol... to extract symbol offset and get size##" : {
+			"$" : "+"
+		},
+		"elfdump<elfdump_handler>##elffile ... to dump elffile ##" : {
 			"$" : "+"
 		}
 	}
