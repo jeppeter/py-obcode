@@ -3,6 +3,7 @@
 >  this project is to obfuscated for the c code
 
 ## release history
+* Dec 3rd 2018  release 0.3.4 to add OB_ELF_PATCH and OB_ELF_UNPATCH macro into obcode.mak.tmpl
 * Nov 30th 2018 release 0.3.2 to make x86 and x64 linux windows all ok
 * Nov 28th 2018 release 0.3.0 to make get obunfunc with obcode.mak ok and make multiple object to handle for objects
 * Nov 27th 2018 release 0.2.6 to fixup bug when used OB_MMAP to include OB_PATCH
@@ -805,17 +806,20 @@ int print_out_a(void);
 > Makefile
 ```makefile
 
+
 OBJECTS=main.o unpatch.o
 TOPDIR=$(shell readlink -f ../../.. )
 CURDIR=$(shell readlink -f .)
+include ${TOPDIR}/obcode.mak
+
+COLON=;
+COMMA=,
 
 all:main
 
 main:${OBJECTS}
     gcc -Wall -o $@ ${OBJECTS}
-ifneq (${OB_PATCH},)
-    python ${TOPDIR}/obcode.py -D unpatch.json -o $@ obpatchelf  ${CURDIR}/main.o ${CURDIR}/unpatch.o
-endif
+    @$(call ELF_PATCH,'dump${COLON}unpatch.json' 'output${COLON}main' ${CURDIR}/main.o ${CURDIR}/unpatch.o)
 
 
 %.o:%.c
@@ -824,12 +828,7 @@ endif
 unpatch.c:unpatch.json
 
 unpatch.json:main.o
-ifeq (${OB_PATCH},)
-    /bin/echo -e "#include \"main.h\"\nint unpatch_handler(map_prot_func_t protfunc){return 0;}" >unpatch.c
-    /bin/echo "{}" >unpatch.json
-else
-    python ${TOPDIR}/obcode.py --includefiles main.h -D unpatch.json -o unpatch.c obunpatchelf '${CURDIR}/main.o;print_out_a'
-endif
+    @$(call ELF_UNPATCH,'includefiles${COLON}main.h' 'dump${COLON}unpatch.json' 'output${COLON}unpatch.c' '${CURDIR}/main.o${COLON}print_out_a')
 
 clean:
     rm -f ${OBJECTS} main_orig.o

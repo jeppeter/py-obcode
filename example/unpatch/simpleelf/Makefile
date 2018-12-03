@@ -11,7 +11,7 @@ all:main
 
 main:${OBJECTS}
 	gcc -Wall -o $@ ${OBJECTS}
-	@$(call ELF_PATCH,'dump${COLON}unpatch.json' 'output${COLON}main' ${CURDIR}/main.o ${CURDIR}/unpatch.o)
+	@$(call OB_ELF_PATCH,'dump${COLON}unpatch.json' 'output${COLON}main' ${CURDIR}/main.o ${CURDIR}/unpatch.o)
 
 
 %.o:%.c
@@ -20,7 +20,7 @@ main:${OBJECTS}
 unpatch.c:unpatch.json
 
 unpatch.json:main.o
-	@$(call ELF_UNPATCH,'includefiles${COLON}main.h' 'dump${COLON}unpatch.json' 'output${COLON}unpatch.c' '${CURDIR}/main.o${COLON}print_out_a')
+	@$(call OB_ELF_UNPATCH,'includefiles${COLON}main.h' 'dump${COLON}unpatch.json' 'output${COLON}unpatch.c' '${CURDIR}/main.o${COLON}print_out_a')
 
 clean:
 	rm -f ${OBJECTS} main_orig.o

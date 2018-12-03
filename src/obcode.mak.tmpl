@@ -61,21 +61,21 @@ endif
 
 ifeq (${OB_PATCH},)
 
-define ELF_PATCH
+define OB_ELF_PATCH
 ${PYTHON} -c "import sys;c='%PYTHON_OBPATCH_STR%';exec(c);"  ${OB_VERBOSE} obpatchelfforge $(1)
 endef
 
-define ELF_UNPATCH
+define OB_ELF_UNPATCH
 ${PYTHON} -c "import sys;c='%PYTHON_OBPATCH_STR%';exec(c);"  ${OB_VERBOSE} obunpatchelfforge $(1)
 endef
 
 else
 
-define ELF_PATCH
+define OB_ELF_PATCH
 ${PYTHON} -c "import sys;c='%PYTHON_OBPATCH_STR%';exec(c);"  ${OB_VERBOSE} obpatchelf $(1)
 endef
 
-define ELF_UNPATCH
+define OB_ELF_UNPATCH
 ${PYTHON} -c "import sys;c='%PYTHON_OBPATCH_STR%';exec(c);"  ${OB_VERBOSE} obunpatchelf $(1)
 endef
 
