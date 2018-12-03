@@ -361,8 +361,8 @@ def patch_objects(objparser,args,odict):
                         if offsetk[k] <= 1:
                             ki = int(k)
                             logging.info('[%s].[%s] [+0x%x:%d] [0x%02x] = [0x%02x] ^ [0x%02x]'%( o, f,ki,ki,\
-                                alldatas[(reloff + ki)] ^ offsetk[k], alldatas[(reloff + ki)], \
-                                offsetk[k]))
+                                alldatas[(reloff + ki)] ^ xors[k], alldatas[(reloff + ki)], \
+                                xors[k]))
                             alldatas[(reloff + ki)] = alldatas[(reloff + ki)] ^ xors[k]
                             xors[k] = 2
                     odict[PATCH_FUNC_KEY][ofile][o][f][FORMAT_FUNC_OFFSET_KEY] = offsetk
