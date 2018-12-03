@@ -150,9 +150,12 @@ FUNC_DATA_KEY='funcdata'
 FUNC_DATA_RELOC_KEY='relocs'
 PATCH_FUNC_KEY='patchfunc'
 WIN32_MODE_KEY='win32mode'
+GET_FUNC_ADDR='getfuncaddr'
+FUNC_ADDR_NAME='funcaddrname'
+FUNC_ADDR_CODE='funcaddrcode'
 
 
-def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,times,debuglevel=0,win32mode=False):
+def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,times, getfunccall,debuglevel=0,win32mode=False):
     global PATCH_FUNC_KEY
     rets = ''
     ftimes = times
@@ -184,24 +187,6 @@ def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,tim
     if ftimes >= validbytes:
         ftimes = validbytes - 1
 
-    getfunccall = '%s'%(get_random_name(20))
-    rets += format_debug_line('get function [%s] address in win32 mode'%(funcname), 0, debuglevel)
-    rets += format_line('unsigned char* %s(unsigned char* p)'%(getfunccall), 0)
-    rets += format_line('{',0)
-    rets += format_line('unsigned char* pretp = p;',1)
-    rets += format_line('signed int* pjmp;',1)
-    rets += format_line('',1)
-    rets += format_line('if (*pretp == 0xe9){',1)
-    rets += format_line('pjmp = (signed int*)(pretp + 1);',2)
-    rets += format_line('pretp += sizeof(*pjmp) + 1;', 2)
-    rets += format_line('pretp += (*pjmp);',2)
-    rets += format_line('}',1)
-    rets += format_line('',1)
-    rets += format_line('return pretp;',1)
-    rets += format_line('}',0)
-    rets += format_line('',0)
-
-
     rets += format_line('int %s(map_prot_func_t mapfunc)'%(formatname), 0)
     rets += format_line('{', 0)
     if PATCH_FUNC_KEY not in jsondump.keys():
@@ -218,10 +203,7 @@ def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,tim
     jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_NAME_KEY] = formatname
     jsondump[PATCH_FUNC_KEY][objname][funcname][FUNC_DATA_RELOC_KEY] = []
     for i in range(funcsize):
-        if objparser.is_in_reloc((funcvaddr+i), realf):
-            jsondump[PATCH_FUNC_KEY][objname][funcname][FUNC_DATA_RELOC_KEY].append(1)
-        else:
-            jsondump[PATCH_FUNC_KEY][objname][funcname][FUNC_DATA_RELOC_KEY].append(0)
+        jsondump[PATCH_FUNC_KEY][objname][funcname][FUNC_DATA_RELOC_KEY].append(objparser.is_in_reloc((funcvaddr+i), realf))
 
 
     if ftimes > 0:
@@ -276,6 +258,27 @@ def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,tim
     jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_CODE_KEY]= rets
     return jsondump
 
+def format_get_func_addr(debuglevel=0):
+    funcallname = get_random_name(20)
+    rets = ''
+
+    rets += format_line('',0)
+    rets += format_debug_line('get function address in win32 mode', 0, debuglevel)
+    rets += format_line('unsigned char* %s(unsigned char* p)'%(funcallname), 0)
+    rets += format_line('{',0)
+    rets += format_line('unsigned char* pretp = p;',1)
+    rets += format_line('signed int* pjmp;',1)
+    rets += format_line('',1)
+    rets += format_line('if (*pretp == 0xe9){',1)
+    rets += format_line('pjmp = (signed int*)(pretp + 1);',2)
+    rets += format_line('pretp += sizeof(*pjmp) + 1;', 2)
+    rets += format_line('pretp += (*pjmp);',2)
+    rets += format_line('}',1)
+    rets += format_line('',1)
+    rets += format_line('return pretp;',1)
+    rets += format_line('}',0)
+    return rets , funcallname
+
 def object_one_file_func(objparser,odict,objfile,f,objdata, times,verbose,win32mode=False):    
     if PATCH_FUNC_KEY in odict.keys() and objfile in odict[PATCH_FUNC_KEY].keys() and \
         f in odict[PATCH_FUNC_KEY][objfile].keys():
@@ -286,8 +289,13 @@ def object_one_file_func(objparser,odict,objfile,f,objdata, times,verbose,win32m
         odict[PATCH_FUNC_KEY][objfile] = dict()
     if f not in odict[PATCH_FUNC_KEY][objfile].keys():
         odict[PATCH_FUNC_KEY][objfile][f] = dict()
+    if GET_FUNC_ADDR not in odict[PATCH_FUNC_KEY].keys():
+        odict[PATCH_FUNC_KEY][GET_FUNC_ADDR] = dict()
+        code , name = format_get_func_addr(verbose)
+        odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_NAME] = name
+        odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_CODE] = code
     nformatfunc = get_random_name(random.randint(5,20))
-    odict = format_ob_patch_functions(objparser,odict,objfile,f,nformatfunc,times,verbose,win32mode)
+    odict = format_ob_patch_functions(objparser,odict,objfile,f,nformatfunc,times, odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_NAME],verbose,win32mode)
     realf = f
     if win32mode:
         realf = '_%s'%(f)
@@ -377,7 +385,9 @@ def format_includes(args):
 
 def format_patch_funcions(args,odict,jdict,patchfuncname,prefix='prefix'):
     rets = format_includes(args)
-    staticvarname = '%s_%s'%(prefix,get_random_name(20))
+    if PATCH_FUNC_KEY in odict.keys() and \
+        GET_FUNC_ADDR in odict[PATCH_FUNC_KEY].keys():
+        rets += odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_CODE]
     if PATCH_FUNC_KEY in odict.keys():
         for o in jdict.keys():
             rets += format_debug_line('format file [%s]'%(o),0,args.verbose)
@@ -386,6 +396,7 @@ def format_patch_funcions(args,odict,jdict,patchfuncname,prefix='prefix'):
                 rets += format_debug_line('format for function [%s]'%(f),0,args.verbose)
                 rets += odict[PATCH_FUNC_KEY][o][f][FORMAT_FUNC_CODE_KEY]
 
+    staticvarname = '%s_%s'%(prefix,get_random_name(20))
     rets += format_line('',0)
     rets += format_line('int %s(map_prot_func_t mapfunc)'%(patchfuncname),0)
     rets += format_line('{',0)

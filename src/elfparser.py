@@ -375,7 +375,7 @@ class ElfParser(object):
 				curidx = idx + fidx + 1
 				jdx += 1
 				while jdx < len(data):
-					if rels[jdx] == 0 and \
+					if rels[jdx] == OBJ_RELOC_NONE and \
 						data[jdx] != sbyte[curidx]:
 						if jdx > matchmax:
 							logging.debug('[%s].[+0x%x] [+0x%x] [0x%02x] != [0x%02x]'%(symname,jdx,curidx,data[jdx], sbyte[curidx]))
