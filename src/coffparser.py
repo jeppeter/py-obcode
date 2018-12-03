@@ -3,6 +3,10 @@
 import coff
 import logging
 import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+from objparser import *
 
 
 ##extractcode_start
@@ -136,7 +140,7 @@ class CoffParser(object):
 
 	def is_in_reloc(self,vaddr,name):
 		if self.__coff is None:
-			return 2
+			return OBJ_RELOC_FORBID
 		findsym = None
 		findk = None
 		for k in self.__symnames.keys():
@@ -146,10 +150,10 @@ class CoffParser(object):
 				findk = k
 				break
 		if findsym is None:
-			return 0
+			return OBJ_RELOC_NONE
 
 		if vaddr < findsym.value or vaddr >= (findsym.value + findsym.size):
-			return 2
+			return OBJ_RELOC_FORBID
 		#if len(self.__relocvalues[findk]) > 0:
 		#	logging.info('reloc [%s] len(%s) [%s] [%s]'%(findk, len(self.__relocvalues[findk]), self.__relocvalues[findk][0], self.__relocvalues[findk][-1]))
 		#else:
@@ -157,10 +161,10 @@ class CoffParser(object):
 
 		relinfo = self._find_rel_in(self.__relocvalues[findk], vaddr)
 		if relinfo is None:
-			return 0
+			return OBJ_RELOC_NONE
 		if self._is_forbid_rel(relinfo):
-			return 2
-		return 1
+			return OBJ_RELOC_FORBID
+		return OBJ_RELOC_ON
 
 	def get_data(self):
 		return bytes_to_ints(self.__data)

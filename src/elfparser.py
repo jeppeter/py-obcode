@@ -10,7 +10,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from strparser import *
-
+from objparser import *
 
 
 ##extractcode_start
@@ -333,22 +333,22 @@ class ElfParser(object):
 		funcinfo = self.__find_funcinfo(name)
 		if funcinfo is None:
 			logging.warn('find [%s] none'%(name))
-			return 0
+			return OBJ_RELOC_NONE
 		try:
 			secidx = int(funcinfo.secidx)
 		except:
 			logging.warn('get %s'%(funcinfo))
-			return 0
+			return OBJ_RELOC_NONE
 		# now to get the function sections
 		for nidx, section in enumerate(self.__elffile.iter_sections()):
 			if nidx == secidx:
 				relinfo = self.__find_relocinfo(vaddr,'.rel%s'%(section.name))
 				if relinfo is not None:
-					return 1
+					return OBJ_RELOC_ON
 				relinfo = self.__find_relocinfo(vaddr,'.rela%s'%(section.name))
 				if relinfo is not None:
-					return 1
-		return 0
+					return OBJ_RELOC_ON
+		return OBJ_RELOC_NONE
 
 	def get_data(self):
 		return bytes_to_ints(self.__data)

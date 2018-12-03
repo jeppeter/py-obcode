@@ -14,6 +14,7 @@ import json
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from strparser import *
 from filehdl import *
+from objparser import *
 from elfparser import *
 from coffparser import *
 from peparser import *
@@ -28,6 +29,7 @@ REPLACE_IMPORT_LIB=1
 
 REPLACE_STR_PARSER=1
 REPLACE_FILE_HDL=1
+REPLACE_OBJ_PARSER=1
 REPLACE_ELF_PARSER=1
 REPLACE_COFF_PARSER=1
 REPLACE_PE_PARSER=1
@@ -167,13 +169,15 @@ def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,tim
     data = objparser.get_data()
     for i in range(funcsize):
         val = objparser.is_in_reloc((funcvaddr + i), realf)
-        if val == 0:
+        if val == OBJ_RELOC_NONE:
             funcdata.append(0)
             validbytes += 1
-        elif val == 1:
+        elif val == OBJ_RELOC_ON:
             funcdata.append(-1)
-        elif val > 1:
+        elif val == OBJ_RELOC_FORBID:
             funcdata.append(-10)
+        else:
+            raise Exception('not valid value [%d]'%(val))
     if times == 0:
         # now to get the funcsize
         ftimes = int(times / 2)
@@ -656,6 +660,7 @@ def debug_release():
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'peparser.py')),r'REPLACE_PE_PARSER=1')
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'obmaklib.py')),r'REPLACE_OBMAK_LIB=1')
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'extract_ob.py')),r'REPLACE_EXTRACT_OB=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'objparser.py')),r'REPLACE_OBJ_PARSER=1')
 
     if len(sys.argv) > 2:
         for k in sys.argv[1:]:
