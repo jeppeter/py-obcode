@@ -29,7 +29,6 @@ def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,tim
     rets = ''
     ftimes = times
     realf = funcname
-    getfunccall = None
     if win32mode:
         realf = '_%s'%(funcname)
     funcsize = objparser.func_size(realf)
@@ -52,7 +51,7 @@ def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,tim
             raise Exception('not valid value [%d]'%(val))
     if times == 0:
         # now to get the funcsize
-        ftimes = int(times / 2)
+        ftimes = int(funcsize / 2)
     if ftimes >= validbytes:
         ftimes = validbytes - 1
 
@@ -158,13 +157,15 @@ def object_one_file_func(objparser,odict,objfile,f,objdata, times,verbose,win32m
         odict[PATCH_FUNC_KEY][objfile] = dict()
     if f not in odict[PATCH_FUNC_KEY][objfile].keys():
         odict[PATCH_FUNC_KEY][objfile][f] = dict()
+    getfunccall = None
     if GET_FUNC_ADDR not in odict[PATCH_FUNC_KEY].keys():
         odict[PATCH_FUNC_KEY][GET_FUNC_ADDR] = dict()
         code , name = format_get_func_addr(verbose)
         odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_NAME] = name
         odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_CODE] = code
+    getfunccall = odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_NAME]
     nformatfunc = get_random_name(random.randint(5,20))
-    odict = format_ob_patch_functions(objparser,odict,objfile,f,nformatfunc,times, odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_NAME],verbose,win32mode)
+    odict = format_ob_patch_functions(objparser,odict,objfile,f,nformatfunc,times, getfunccall,verbose,win32mode)
     realf = f
     if win32mode:
         realf = '_%s'%(f)
@@ -238,7 +239,7 @@ def get_jdict(args):
                 continue
             carr = re.split(',',sarr[1])
             jdict[sarr[0]] = carr
-    return jdict
+    return jdict , args
 
 def get_odict(args,force):
     if args.dump is None or (not os.path.exists(args.dump) and not force):
@@ -360,7 +361,7 @@ def obunpatchelf_handler(args,parser):
     set_logging_level(args)
     if len(args.subnargs) < 1:
         raise Exception('obunpackelf objectfile functions')
-    jdict = get_jdict(args)
+    jdict , args = get_jdict(args)
     odict = get_odict(args,False)
 
     for f in jdict.keys():
@@ -407,7 +408,7 @@ def obunpatchcoff_handler(args,parser):
     set_logging_level(args)
     if len(args.subnargs) < 1:
         raise Exception('obunpackelf objectfile functions')
-    jdict = get_jdict(args)
+    jdict ,args = get_jdict(args)
     odict = get_odict(args,False)
 
     for f in jdict.keys():
