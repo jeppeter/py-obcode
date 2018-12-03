@@ -214,21 +214,31 @@ def get_jdict(args):
     for a in args.subnargs:
         if a.startswith('includefiles;'):
             sarr = re.split(';',a)
-            if len(sarr) > 1:
-                includefiles.extend(sarr[1:])
+            if len(sarr) > 1 and len(sarr[1]) > 0:
+                sarr = re.split(',', sarr[1])
+                if args.includefiles is None:
+                    args.includefiles = []
+                args.includefiles.extend(sarr)
         elif a.startswith('includes;'):
             sarr = re.split(';',a)
-            if len(sarr) > 1:
-                includes.extend(sarr[1:])
+            if len(sarr) > 1 and len(sarr[1]) > 0:
+                sarr = re.split(',', sarr[1])
+                if args.includes is None:
+                    args.includes = []
+                args.includes.extend(sarr)
         elif a.startswith('win32;'):
-            win32 = True
+            args.win32 = True
+        elif a.startswith('verbose;'):
+            sarr = re.split(';',a)
+            if len(sarr) > 1 and len(sarr[1]) > 0:
+                args.verbose = int(sarr[1])
         else:
             sarr = re.split(';',a)
             if len(sarr) < 2:
                 continue
             carr = re.split(',',sarr[1])
             jdict[sarr[0]] = carr
-    return jdict,includefiles,includes,win32
+    return jdict
 
 def get_odict(args,force):
     if args.dump is None or (not os.path.exists(args.dump) and not force):
@@ -350,11 +360,7 @@ def obunpatchelf_handler(args,parser):
     set_logging_level(args)
     if len(args.subnargs) < 1:
         raise Exception('obunpackelf objectfile functions')
-    jdict,includefiles,includes,win32 = get_jdict(args)
-    args.includefiles.extend(includefiles)
-    args.includes.extend(includes)
-    if win32:
-        args.win32 = True
+    jdict = get_jdict(args)
     odict = get_odict(args,False)
 
     for f in jdict.keys():
@@ -401,11 +407,7 @@ def obunpatchcoff_handler(args,parser):
     set_logging_level(args)
     if len(args.subnargs) < 1:
         raise Exception('obunpackelf objectfile functions')
-    jdict, includefiles, includes, win32 = get_jdict(args)
-    args.includefiles.extend(includefiles)
-    args.includes.extend(includes)
-    if win32 :
-        args.win32 = True
+    jdict = get_jdict(args)
     odict = get_odict(args,False)
 
     for f in jdict.keys():
