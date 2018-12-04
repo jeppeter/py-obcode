@@ -3,6 +3,7 @@
 >  this project is to obfuscated for the c code
 
 ## release history
+* Dec 4th 2018  release 0.3.6 to fixup bug when fixup the efi format loading
 * Dec 3rd 2018  release 0.3.4 to add OB_ELF_PATCH and OB_ELF_UNPATCH macro into obcode.mak.tmpl
 * Nov 30th 2018 release 0.3.2 to make x86 and x64 linux windows all ok
 * Nov 28th 2018 release 0.3.0 to make get obunfunc with obcode.mak ok and make multiple object to handle for objects

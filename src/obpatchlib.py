@@ -176,15 +176,15 @@ def object_one_file_func(objparser,odict,objfile,f,objdata, times,verbose,win32m
         raise Exception('can not find [%s]'%(realf))
     fvaddr = objparser.func_vaddr(realf)
     assert(fvaddr >= 0)
-    for off in odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY].keys():
-        if odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_OFFSET_KEY][off] >= 2:
+    for offi in odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY].keys():
+        if odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_OFFSET_KEY][offi] >= 2:
             # we change the xor data into
-            offi = int(off)
+            #offi = off
             logging.info('[%s].[%s]foff [0x%x] + off [0x%x] [0x%02x] ^ [0x%02x] => [0x%02x]'%(objfile,f,\
                 foff, offi,objdata[(foff + offi)] ,\
-                odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][off], \
-                objdata[(foff + offi)] ^ odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][off]))
-            objdata[(foff + offi)] = objdata[(foff + offi)] ^ odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][off]
+                odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][offi], \
+                objdata[(foff + offi)] ^ odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][offi]))
+            objdata[(foff + offi)] = objdata[(foff + offi)] ^ odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][offi]
     odict[PATCH_FUNC_KEY][objfile][f][FUNC_DATA_KEY] = objdata[foff:(foff+fsize)]
     if win32mode:
         odict[PATCH_FUNC_KEY][objfile][f][WIN32_MODE_KEY] = True
@@ -358,13 +358,14 @@ def patch_objects(objparser,args,odict):
                     xors = odict[PATCH_FUNC_KEY][ofile][o][f][FORMAT_FUNC_XORS_KEY]
                     for k in offsetk.keys():
                         logging.info('xors[%s]=%d'%(k,offsetk[k]))
-                        if offsetk[k] <= 1:
+                        if offsetk[k] <= 1 and offsetk[k] >= 0:
+                            assert(k in xors.keys())
                             ki = int(k)
                             logging.info('[%s].[%s] [+0x%x:%d] [0x%02x] = [0x%02x] ^ [0x%02x]'%( o, f,ki,ki,\
                                 alldatas[(reloff + ki)] ^ xors[k], alldatas[(reloff + ki)], \
                                 xors[k]))
                             alldatas[(reloff + ki)] = alldatas[(reloff + ki)] ^ xors[k]
-                            xors[k] = 2
+                            offsetk[k] = 2
                     odict[PATCH_FUNC_KEY][ofile][o][f][FORMAT_FUNC_OFFSET_KEY] = offsetk
                     odict[PATCH_FUNC_KEY][ofile][o][f][FUNC_DATA_KEY] = alldatas[reloff:(reloff + len(data))]
     return odict,alldatas
@@ -375,7 +376,10 @@ def _log_patch_function(args,odict,fname,funcname):
     xors = odict[FORMAT_FUNC_XORS_KEY]
     i = 0
     lasti = 0
-    rets += 'format [%s].[%s]'%(fname,funcname)
+    xorlen = 0
+    for k in xors.keys():
+        xorlen += 1
+    rets += 'format [%s].[%s] data[%d] xors[%d]'%(fname,funcname,len(data),xorlen)
     while i < len(data):
         if (i % 16) == 0:
             if i > 0:
@@ -390,18 +394,18 @@ def _log_patch_function(args,odict,fname,funcname):
                     else:
                         rets += '.'
                     lasti += 1
-                rets += '\n'
-            rets += '0x%08x:'%(i)
+            rets += '\n0x%08x:'%(i)
         idx = '%d'%(i)
         if idx in xors.keys():
-            rets += ' 0x%02x[0x%02x]'%(data[i] ^ xors[idx], data[i])
+            rets += ' 0x%02x[0x%02x][0x%02x]'%(data[i] ^ xors[idx], data[i], xors[idx])
         else:
-            rets += ' 0x%02x      '%(data[i])
+            rets += ' 0x%02x'%(data[i])
+            rets += ' '* 12
         i += 1
 
     if i != lasti:
         while (i%16) != 0:
-            rets += ' '* 11
+            rets += ' '* 17
             i += 1
         rets += '    '
         while lasti < len(data):
