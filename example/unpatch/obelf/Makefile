@@ -10,12 +10,14 @@ COLON=;
 main_OBJECTS_BASE=main.o main_unpatch.o callc.o
 main_OBJECTS=$(patsubst %,${CURDIR}/%,${main_OBJECTS_BASE})
 #main_FORMAT_CLAUSE=$(call UNOB_FUNC, '${CURDIR}/main.h${COLON}${CURDIR}/main.o${COLON}print_out_a${COMMA}print_out_b${COMMA}print_out_c' '${CURDIR}/callc.h${COLON}${CURDIR}/callc.o${COLON}call_a${COMMA}call_b${COMMA}call_c')
-main_FORMAT_CLAUSE=$(call UNOB_FUNC, '${CURDIR}/callc.h${COLON}${CURDIR}/callc.o${COLON}call_a')
+#main_FORMAT_CLAUSE=$(call UNOB_FUNC, '${CURDIR}/callc.h${COLON}${CURDIR}/callc.o${COLON}call_a')
+main_FORMAT_CLAUSE=$(call UNOB_FUNC, '${CURDIR}/main.h${COLON}${CURDIR}/main.o${COLON}print_out_a')
 
 main2_OBJECTS_BASE=main2.o main2_unpatch.o callc.o
 main2_OBJECTS=$(patsubst %,${CURDIR}/%,${main2_OBJECTS_BASE})
 #main2_FORMAT_CLAUSE=$(call UNOB_FUNC, '${CURDIR}/main2.h${COLON}${CURDIR}/main2.o${COLON}ccprint_out_a${COMMA}ccprint_out_b${COMMA}ccprint_out_c' '${CURDIR}/callc.h${COLON}${CURDIR}/callc.o${COLON}call_a${COMMA}call_b${COMMA}call_c')
-main2_FORMAT_CLAUSE=$(call UNOB_FUNC, '${CURDIR}/callc.h${COLON}${CURDIR}/callc.o${COLON}call_a')
+#main2_FORMAT_CLAUSE=$(call UNOB_FUNC, '${CURDIR}/callc.h${COLON}${CURDIR}/callc.o${COLON}call_a')
+main2_FORMAT_CLAUSE=$(call UNOB_FUNC, '${CURDIR}/main2.h${COLON}${CURDIR}/main2.o${COLON}ccprint_out_a')
 
 ifeq (${CNT},)
 CNT=0
