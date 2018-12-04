@@ -15,6 +15,9 @@ main2_OBJECTS_BASE=main2.o main2_unpatch.o callc.o
 main2_OBJECTS=$(patsubst %,${CURDIR}/%,${main2_OBJECTS_BASE})
 main2_FORMAT_CLAUSE=$(call UNOB_FUNC, '${CURDIR}/main2.h${COLON}${CURDIR}/main2.o${COLON}ccprint_out_a${COMMA}ccprint_out_b${COMMA}ccprint_out_c' '${CURDIR}/callc.h${COLON}${CURDIR}/callc.o${COLON}call_a${COMMA}call_b${COMMA}call_c')
 
+ifeq (${CNT},)
+CNT=0
+endif
 
 all:${CURDIR}/main ${CURDIR}/main2
 
@@ -34,11 +37,11 @@ ${CURDIR}/unpatch.json:${CURDIR}/main_unpatch.c ${CURDIR}/main2_unpatch.c
 
 ${CURDIR}/main_unpatch.c:${CURDIR}/main.o ${CURDIR}/callc.o
 	cp ${CURDIR}/main.o ${CURDIR}/main_orig.o
-	@$(call OB_ELF_UNPATCH,'includefiles${COLON}main.h${COMMA}unpatch.h${COMMA}callc.h' 'dump${COLON}${CURDIR}/unpatch.json' 'output${COLON}${CURDIR}/main_unpatch.c' ${main_FORMAT_CLAUSE})
+	@$(call OB_ELF_UNPATCH, --times ${CNT} 'includefiles${COLON}main.h${COMMA}unpatch.h${COMMA}callc.h' 'dump${COLON}${CURDIR}/unpatch.json' 'output${COLON}${CURDIR}/main_unpatch.c' ${main_FORMAT_CLAUSE})
 
 ${CURDIR}/main2_unpatch.c:${CURDIR}/main2.o ${CURDIR}/callc.o
 	cp ${CURDIR}/main2.o ${CURDIR}/main2_orig.o	
-	@$(call OB_ELF_UNPATCH,'includefiles${COLON}main2.h${COMMA}unpatch.h${COMMA}callc.h' 'dump${COLON}${CURDIR}/unpatch.json' 'output${COLON}${CURDIR}/main2_unpatch.c' ${main2_FORMAT_CLAUSE})
+	@$(call OB_ELF_UNPATCH, --times ${CNT} 'includefiles${COLON}main2.h${COMMA}unpatch.h${COMMA}callc.h' 'dump${COLON}${CURDIR}/unpatch.json' 'output${COLON}${CURDIR}/main2_unpatch.c' ${main2_FORMAT_CLAUSE})
 
 
 clean:
