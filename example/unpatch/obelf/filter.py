@@ -110,13 +110,13 @@ def filterfunc_handler(args,parser):
 	return
 
 
-def filterset_handler(args,parser):
-	set_logging_level(args)
+def get_setted(lines,vals):
+	outs = ''
 	filterpos = []
 	filterexpr = dict()
 	exprkeys = []
 	curkeys = []
-	for a in args.subnargs:
+	for a in vals:
 		try:
 			if a.startswith('x') or a.startswith('X'):
 				iv = int(a[1:],16)
@@ -137,12 +137,10 @@ def filterset_handler(args,parser):
 					curkeys.append(pos)
 		except:
 			pass
-	ins = read_file(args.input)
-	sarr = re.split('\n', ins)
 	lineno = 0
 	expri = 0
 	outs = ''
-	for l in sarr:
+	for l in lines:
 		lineno += 1
 		l = l.rstrip('\r\n')
 		curprint = False
@@ -168,6 +166,34 @@ def filterset_handler(args,parser):
 					expri += 1
 		if curprint:
 			outs += '[%d].[%s]\n'%(lineno, l)
+	return outs
+
+def filterset_handler(args,parser):
+	set_logging_level(args)
+	ins = read_file(args.input)
+	sarr = re.split('\n', ins)
+	outs = get_setted(sarr,args.subnargs)
+	write_file(outs,args.output)
+	sys.exit(0)
+	return
+
+def notsetted_handler(args,parser):
+	set_logging_level(args)
+	ins = read_file(args.input)
+	sarr = re.split('\n', ins)
+	toval = int(args.subnargs[0])
+	fromval = 0
+	if len(args.subnargs) > 1:
+		fromval = int(args.subnargs[1])
+
+	i = fromval
+	outs = ''
+	while i < toval:
+		vals = ['%d'%(i)]
+		repls = get_setted(sarr,vals)
+		if len(repls) == 0:
+			outs += '[0x%x:%d] not setted\n'%(i,i)
+		i += 1		
 	write_file(outs,args.output)
 	sys.exit(0)
 	return
@@ -186,6 +212,9 @@ def main():
 			"$" : 1
 		},
 		"filterset<filterset_handler>" : {
+			"$" : "+"
+		},
+		"notsetted<notsetted_handler>" : {
 			"$" : "+"
 		}
 	}
