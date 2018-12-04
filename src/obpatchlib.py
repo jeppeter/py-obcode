@@ -366,7 +366,67 @@ def patch_objects(objparser,args,odict):
                             alldatas[(reloff + ki)] = alldatas[(reloff + ki)] ^ xors[k]
                             xors[k] = 2
                     odict[PATCH_FUNC_KEY][ofile][o][f][FORMAT_FUNC_OFFSET_KEY] = offsetk
+                    odict[PATCH_FUNC_KEY][ofile][o][f][FUNC_DATA_KEY] = alldatas[reloff:(reloff + len(data))]
     return odict,alldatas
+
+def _log_patch_function(args,odict,fname,funcname):
+    rets = ''
+    data = odict[FUNC_DATA_KEY]
+    xors = odict[FORMAT_FUNC_XORS_KEY]
+    i = 0
+    lasti = 0
+    rets += 'format [%s].[%s]'%(fname,funcname)
+    while i < len(data):
+        if (i % 16) == 0:
+            if i > 0:
+                rets += ' ' * 4
+                while lasti < i:
+                    curval = data[lasti]
+                    idx = '%d'%(lasti)
+                    if idx in xors.keys():
+                        curval = data[lasti] ^ xors[idx]
+                    if curval >= ord(' ') and curval <= ord('~'):
+                        rets += '%c'%(chr(curval))
+                    else:
+                        rets += '.'
+                    lasti += 1
+                rets += '\n'
+            rets += '0x%08x:'%(i)
+        idx = '%d'%(i)
+        if idx in xors.keys():
+            rets += ' 0x%02x[0x%02x]'%(data[i] ^ xors[idx], data[i])
+        else:
+            rets += ' 0x%02x      '%(data[i])
+        i += 1
+
+    if i != lasti:
+        while (i%16) != 0:
+            rets += ' '* 11
+            i += 1
+        rets += '    '
+        while lasti < len(data):
+            curval = data[lasti]
+            idx = '%d'%(lasti)
+            if idx in xors.keys():
+                curval = data[lasti] ^ xors[idx]
+            if curval >= ord(' ') and curval <= ord('~'):
+                rets += '%c'%(chr(curval))
+            else:
+                rets += '.'
+            lasti += 1
+        rets += '\n'
+    return rets
+
+def log_patch(args,odict,fname):
+    rets = ''
+    if PATCH_FUNC_KEY in odict.keys():
+        if fname in odict[PATCH_FUNC_KEY].keys():
+            for f in odict[PATCH_FUNC_KEY][fname].keys():
+                for func in odict[PATCH_FUNC_KEY][fname][f].keys():
+                    if len(rets) > 0:
+                        rets += '\n'
+                    rets += _log_patch_function(args,odict[PATCH_FUNC_KEY][fname][f][func],fname,func)
+    return rets
 
 
 def obunpatchelf_handler(args,parser):
@@ -403,7 +463,7 @@ def obpatchelf_handler(args,parser):
     write_file_ints(alldatas,ofile)
     with open(args.dump,'w+b') as fout:
         write_file_direct(json.dumps(odict,sort_keys=True,indent=4), fout)
-
+    logging.info('log patch\n%s'%(log_patch(args,odict,args.output)))
     sys.exit(0)
     return
 
@@ -451,6 +511,7 @@ def obpatchpe_handler(args,parser):
     write_file_ints(alldatas,ofile)
     with open(args.dump,'w+b') as fout:
         write_file_direct(json.dumps(odict,sort_keys=True,indent=4), fout)
+    logging.info('log patch\n%s'%(log_patch(args,odict,args.output)))
     sys.exit(0)
     return
 
