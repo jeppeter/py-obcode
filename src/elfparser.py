@@ -386,7 +386,7 @@ class ElfParser(object):
 			if sbyte[(idx+fidx)] == data[(jdx)]:
 				curidx = idx + fidx + 1
 				jdx += 1
-				while jdx < len(data):
+				while jdx < len(data) and curidx < len(sbyte):
 					if rels[jdx] == OBJ_RELOC_NONE and \
 						data[jdx] != sbyte[curidx]:
 						if jdx > matchmax:

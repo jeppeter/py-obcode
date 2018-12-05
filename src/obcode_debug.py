@@ -146,31 +146,22 @@ REUNPATCH_HANDLER_KEY='reunpatchhandle'
 
 def obj_reunpatch_one_function(objparser, alldatas,args,odict,fname,funcname):
     relocs = odict[PATCH_FUNC_KEY][fname][funcname][FUNC_DATA_RELOC_KEY]
-    win32mode = odict[PATCH_FUNC_KEY][fname]
+    win32mode = odict[PATCH_FUNC_KEY][fname][funcname][WIN32_MODE_KEY]
     realf = funcname
     if win32mode:
         realf = '_%s'%(funcname)
+    logging.info('[%s].[%s] realname [%s] [%s]'%(fname,funcname, realf, win32mode))
     funcsize = objparser.func_size(realf)
     if funcsize != len(relocs):
-        raise Exception('[%s].[%s] funcsize [%d] != relocs[%d]'%(fname, funcname,funcsize, len(relocs)))
+        raise Exception('[%s].[%s] funcsize [%d] != relocs[%d]'%(fname, realf,funcsize, len(relocs)))
     idx = 0
-    funcaddr = objparser.func_addr(realf)
+    funcaddr = objparser.func_vaddr(realf)
     while idx < len(relocs):
-        getval = objparser.is_in_reloc(funcaddr + idx)
+        getval = objparser.is_in_reloc((funcaddr + idx),realf)
         if getval != relocs[idx]:
-            raise Exception('[%s].[%s].[%d] reloc[%d] != stored relocs[%d]'%(fname,funcname, idx,getval, relocs[idx]))
+            raise Exception('[%s].[%s].[%d] reloc[%d] != stored relocs[%d]'%(fname,realf, idx,getval, relocs[idx]))
         idx += 1
-    funcoffs = odict[PATCH_FUNC_KEY][fname][funcname][FORMAT_FUNC_OFFSET_KEY]    
-    xors = odict[PATCH_FUNC_KEY][fname][funcname][FORMAT_FUNC_XORS_KEY]
-    funcoff = objparser.func_offset(realf)
-    for offk in funcoffs.keys():
-        off = int(offk)
-        if funcoffs[offk] >= 2:
-            # this is to change the value
-            assert(offk in xors.keys())
-            alldatas[(funcoff+off)] = alldatas[(funcoff + off)] ^ xors[offk]
-    odict[PATCH_FUNC_KEY][fname][funcname][FUNC_DATA_KEY] = alldatas[(funcoff):(funcoff+funcsize)]
-    return odict,alldatas
+    return unpatch_one_file_func(objparser,odict,fname,funcname,alldatas,win32mode)
 
 
 def obj_reunpatch_one_file(objparser,alldatas,args,odict,fname):
@@ -180,17 +171,9 @@ def obj_reunpatch_one_file(objparser,alldatas,args,odict,fname):
         raise Exception('no [%s] in [%s]'%(fname,PATCH_FUNC_KEY))
     for f in odict[PATCH_FUNC_KEY][fname].keys():
         if REUNPATCH_HANDLER_KEY not in odict[PATCH_FUNC_KEY][fname][f].keys():
-            odict, alldatas = obj_reunpatch_one_function(objparser,args,odict,fname,f)
+            odict, alldatas = obj_reunpatch_one_function(objparser,alldatas,args,odict,fname,f)
             odict[PATCH_FUNC_KEY][fname][f][REUNPATCH_HANDLER_KEY] = True
     return odict,alldatas
-
-def output_patch_formats(args, odict,fname):
-    rets = ''
-    for f in odict[PATCH_FUNC_KEY][fname].keys():
-        if len(rets) > 0:
-            rets += format_line('',0)
-        rets += odict[PATCH_FUNC_KEY][fname][f][FORMAT_FUNC_CODE_KEY]
-    return rets
 
 
 
@@ -203,58 +186,81 @@ def obj_reunpatch_files(objclsname,args,odict,fnames):
         write_file_ints(alldatas, fname)
     return odict
 
-def obj_reunpatch(objclsname,patchfuncname,args,odict,files):
+def obj_reunpatch(objclsname,patchfuncname,args,odict,files,prefix='prefix'):
     rets = ''
     odict = obj_reunpatch_files(objclsname,args,odict,files)
-    # now formats
-    rets += format_includes(args)
-    rets += ''
-
-    if  PATCH_FUNC_KEY in odict.keys() and GET_FUNC_ADDR in odict[PATCH_FUNC_KEY].keys() \
-        and FUNC_ADDR_CODE in odict[PATCH_FUNC_KEY][GET_FUNC_ADDR].keys():
-        rets += odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_CODE]
-
-    # now to give the coding
-    for f in files:
-        rets += format_line('',0)
-        rets += output_patch_formats(args,odict,f)
-
-    rets += format_line('',0)
-    rets += output_patch_function(args,patchfuncname,odict,files)
+    rets += format_patch_funcions(args,odict,files,patchfuncname,prefix)
     return rets,odict
 
 
-def obj_repatch_one_file(objparser,alldatas,args,odict,f):
+def obj_repatch_files(objclsname,args,odict,ofile,objs):
     if PATCH_FUNC_KEY not in odict.keys():
         raise Exception('[%s] not in json'%(PATCH_FUNC_KEY))
-    if f not in odict[PATCH_FUNC_KEY].keys():
-        raise Exception('[%s] not in [%s]'%(f,PATCH_FUNC_KEY))
-    
-
-def obj_repatch(clsname,args,odict,fnames):
-    for f in fnames:
-        objparser = call_object_parser(clsname, f)
-        alldatas = objparser.get_data()
-        odict,alldatas = obj_repatch_one_file(objparser,alldatas,args,odict,f)
-        objparser.close()
-        write_file_ints(alldatas,f)
+    odict = patch_objects_class(objclsname,args,ofile,objs,odict,True)
     return odict
+
+
 
 
 def obreunpatchelf_handler(args,parser):
     set_logging_level(args)
-    odict = get_odict(args,False)
     jdict, args= get_jdict(args)
+    odict = get_odict(args,False)
     files = []
     for f in jdict.keys():
         files.append(f)
-    rets , odict = obj_reunpatch('PEParser',args.unpatchfunc,args,odict,files)
+    rets , odict = obj_reunpatch('ElfParser',args.unpatchfunc,args,odict,files,'prefix')
+    logging.debug('rets\n%s'%(rets))
     write_patch_output(args,rets,odict)
     sys.exit(0)
     return
 
 def obrepatchelf_handler(args,parser):
     set_logging_level(args)
+    jdict, args = get_jdict(args)
+    odict = get_odict(args,False)
+    if args.output is None:
+        raise Exception('output is None')
+    if args.dump is None:
+        raise Exception('dump is None')
+    files = []
+    for f in jdict.keys():
+        files.append(f)
+    odict = obj_repatch_files('ElfParser',args,odict,args.output,files)
+    with open(args.dump,'w+b') as fout:
+        write_file_direct(json.dumps(odict,sort_keys=True,indent=4), fout)
+    logging.info('log patch\n%s'%(log_patch(args,odict,args.output)))    
+    sys.exit(0)
+    return
+
+
+def obreunpatchcoff_handler(args,parser):
+    set_logging_level(args)
+    jdict, args= get_jdict(args)
+    odict = get_odict(args,False)
+    files = []
+    for f in jdict.keys():
+        files.append(f)
+    rets , odict = obj_reunpatch('CoffParser',args.unpatchfunc,args,odict,files,'prefix')
+    write_patch_output(args,rets,odict)
+    sys.exit(0)
+    return
+
+def obrepatchpe_handler(args,parser):
+    set_logging_level(args)
+    jdict, args = get_jdict(args)
+    odict = get_odict(args,False)
+    if args.output is None:
+        raise Exception('output is None')
+    if args.dump is None:
+        raise Exception('dump is None')
+    files = []
+    for f in jdict.keys():
+        files.append(f)
+    odict = obj_repatch_files('PEParser',args,odict,args.output,files)
+    with open(args.dump,'w+b') as fout:
+        write_file_direct(json.dumps(odict,sort_keys=True,indent=4), fout)
+    logging.info('log patch\n%s'%(log_patch(args,odict,args.output)))    
     sys.exit(0)
     return
 
@@ -331,8 +337,13 @@ def main():
         },
         "obrepatchelf<obrepatchelf_handler>##objfiles ... to replay patchelf##" : {
             "$" : "+"
+        },
+        "obreunpatchcoff<obreunpatchcoff_handler>##objfiles ... to replay unpatchelf##" : {
+            "$" : "+"
+        },
+        "obrepatchpe<obrepatchpe_handler>##objfiles ... to replay patchelf##" : {
+            "$" : "+"
         }
-
     }
     '''
     commandline = commandline_fmt%(format_cob_config(4))

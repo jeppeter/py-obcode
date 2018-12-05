@@ -178,12 +178,12 @@ def unpatch_one_file_func(objparser,odict,objfile,f,objdata,win32mode=False):
     for offi in odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY].keys():
         if odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_OFFSET_KEY][offi] >= 2:
             # we change the xor data into
-            #offi = off
+            off = int(offi)
             logging.info('[%s].[%s]foff [0x%x] + off [0x%x] [0x%02x] ^ [0x%02x] => [0x%02x]'%(objfile,f,\
-                foff, offi,objdata[(foff + offi)] ,\
+                foff, off,objdata[(foff + off)] ,\
                 odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][offi], \
-                objdata[(foff + offi)] ^ odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][offi]))
-            objdata[(foff + offi)] = objdata[(foff + offi)] ^ odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][offi]
+                objdata[(foff + off)] ^ odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][offi]))
+            objdata[(foff + off)] = objdata[(foff + off)] ^ odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][offi]
     odict[PATCH_FUNC_KEY][objfile][f][FUNC_DATA_KEY] = objdata[foff:(foff+fsize)]
     return odict,objdata
 
@@ -373,6 +373,9 @@ def patch_objects(objparser,args,ofile,objs,odict,alldatas,force=False):
         if ofile not in odict[PATCH_FUNC_KEY].keys():
             odict[PATCH_FUNC_KEY][ofile] = dict()
         for o in objs:
+            if o not in odict[PATCH_FUNC_KEY].keys():
+                logging.warn('[%s] not handled'%(o))
+                continue
             if force or (o not in odict[PATCH_FUNC_KEY][ofile].keys() and o in odict[PATCH_FUNC_KEY].keys()):
                 odict[PATCH_FUNC_KEY][ofile][o] = dict()
                 odict[PATCH_FUNC_KEY][ofile][o] = Utf8Encode(odict[PATCH_FUNC_KEY][o]).get_val()

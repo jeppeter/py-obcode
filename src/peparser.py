@@ -59,7 +59,7 @@ class PEParser(object):
 			if sbyte[(idx+fidx)] == data[(jdx)]:
 				curidx = idx + fidx + 1
 				jdx += 1
-				while jdx < len(data):
+				while jdx < len(data) and curidx < len(sbyte):
 					if rels[jdx] == 0 and \
 						data[jdx] != sbyte[curidx]:
 						#logging.info('[%s].[+0x%x] [+0x%x] [0x%02x] != [0x%02x]'%(symname,jdx,curidx,data[jdx], sbyte[curidx]))
