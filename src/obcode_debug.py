@@ -192,12 +192,6 @@ def output_patch_formats(args, odict,fname):
         rets += odict[PATCH_FUNC_KEY][fname][f][FORMAT_FUNC_CODE_KEY]
     return rets
 
-def call_object_parser(clsname,f):
-    m = __import__(__name__)
-    cls_ = getattr(m,objclsname)
-    if cls_ is None:
-        raise Exception('cannot find [%s]'%(objclsname))
-    return cls_(f)
 
 
 def obj_reunpatch_files(objclsname,args,odict,fnames):

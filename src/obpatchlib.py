@@ -24,9 +24,7 @@ FUNC_ADDR_NAME='funcaddrname'
 FUNC_ADDR_CODE='funcaddrcode'
 
 
-def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,times, getfunccall,debuglevel=0,win32mode=False):
-    global PATCH_FUNC_KEY
-    rets = ''
+def format_ob_patch_func_xors(objparser,jsondump,objname,funcname,formatname,times,win32mode):
     ftimes = times
     realf = funcname
     if win32mode:
@@ -55,8 +53,6 @@ def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,tim
     if ftimes >= validbytes:
         ftimes = validbytes - 1
 
-    rets += format_line('int %s(map_prot_func_t mapfunc)'%(formatname), 0)
-    rets += format_line('{', 0)
     if PATCH_FUNC_KEY not in jsondump.keys():
         jsondump[PATCH_FUNC_KEY] = dict()
     if objname not in jsondump[PATCH_FUNC_KEY].keys():
@@ -73,19 +69,8 @@ def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,tim
     for i in range(funcsize):
         jsondump[PATCH_FUNC_KEY][objname][funcname][FUNC_DATA_RELOC_KEY].append(objparser.is_in_reloc((funcvaddr+i), realf))
 
-
     if ftimes > 0:
         i = 0
-        rets += format_line('unsigned char* pbaseptr=(unsigned char*)%s((unsigned char*)%s);'%(getfunccall,funcname),1)
-        rets += format_line('unsigned char* pcurptr;',1)
-        rets += format_line('int ret;',1)
-        rets += format_line('',1)
-        rets += format_line('if (mapfunc != NULL){',1)
-        rets += format_line('ret = mapfunc(pbaseptr,%d,OB_MAP_READ|OB_MAP_EXEC|OB_MAP_WRITE);'%(funcsize),2)
-        rets += format_line('if (ret < 0) {',2)
-        rets += format_line('return -1;',3)
-        rets += format_line('}',2)
-        rets += format_line('}',1)
         while i < ftimes:
             xornum = random.randint(0,255)
             xoroff = random.randint(0,funcsize - 1)
@@ -98,6 +83,44 @@ def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,tim
                 and jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_OFFSET_KEY][xoroff] > 0):
                 continue
             funcdata[xoroff] += 2
+            jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_XORS_KEY][xoroff] = xornum
+            jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_OFFSET_KEY][xoroff] = funcdata[xoroff]
+            i += 1
+    return jsondump
+
+def format_ob_patch_func_code(objparser,jsondump,objname,funcname,formatname,getfunccall,debuglevel=0,win32mode=False):
+    rets = ''
+    realf = funcname
+    if win32mode:
+        realf = '_%s'%(funcname)
+
+    offsetk = jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_OFFSET_KEY]
+    xors = jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_XORS_KEY]
+    funcsize = objparser.func_size(realf)
+
+    ftimes = 0    
+    for k in offsetk.keys():
+        assert(k in xors.keys())
+        ftimes += 1
+    rets += format_line('int %s(map_prot_func_t mapfunc)'%(formatname), 0)
+    rets += format_line('{', 0)
+
+    if ftimes > 0:
+        data = objparser.get_data()
+        rets += format_line('unsigned char* pbaseptr=(unsigned char*)%s((unsigned char*)%s);'%(getfunccall,funcname),1)
+        rets += format_line('unsigned char* pcurptr;',1)
+        rets += format_line('int ret;',1)
+        rets += format_line('',1)
+        rets += format_line('if (mapfunc != NULL){',1)
+        rets += format_line('ret = mapfunc(pbaseptr,%d,OB_MAP_READ|OB_MAP_EXEC|OB_MAP_WRITE);'%(funcsize),2)
+        rets += format_line('if (ret < 0) {',2)
+        rets += format_line('return -1;',3)
+        rets += format_line('}',2)
+        rets += format_line('}',1)
+        funcdata = jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_OFFSET_KEY]
+        funcoff = objparser.func_offset(realf)
+        for xoroff in offsetk.keys():
+            xornum = xors[xoroff]
             rets += format_line('',1)
             if funcdata[xoroff] >= 2:
                 rets += format_debug_line('%s[0x%x:%d] = 0x%x ^ 0x%x = 0x%x'%(funcname, xoroff, xoroff, data[funcoff + xoroff],xornum, (data[funcoff + xoroff]^xornum)), 1, debuglevel)
@@ -108,23 +131,18 @@ def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,tim
             #rets += format_line('printf("[%%s:%%d] patch [%s].[+0x%x:%d] [%%p] [0x%%02x] = [0x%%02x] ^ [0x%02x]\\n",__FILE__,__LINE__, pcurptr, (*pcurptr ^ 0x%x), *pcurptr);'%(funcname,xoroff,xoroff,xornum,xornum),1)
             rets += format_line('*pcurptr ^= %d;'%(xornum),1)
             logging.info('[%s].[%s] +[0x%x:%d] xornum [0x%x:%d] funcdata[%d]'%(objname,funcname,xoroff,xoroff,xornum,xornum,funcdata[xoroff]))
-            jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_XORS_KEY][xoroff] = xornum
-            jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_OFFSET_KEY][xoroff] = funcdata[xoroff]
-            i += 1
-        rets += format_line('if (mapfunc != NULL){',1)
-        rets += format_line('ret = mapfunc(pbaseptr,%d,OB_MAP_READ|OB_MAP_EXEC);'%(funcsize),2)
-        rets += format_line('if (ret < 0) {',2)
-        rets += format_line('return -1;',3)
-        rets += format_line('}',2)
-        rets += format_line('}',1)
     else:
-        rets += format_line('mapfunc = mapfunc;',1)
-
-
+        rets += format_line('mapfunc = mapfunc;', 1)
     rets += format_line('return 0;',1)
     rets += format_line('}',0)
     jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_CODE_KEY]= rets
     return jsondump
+
+def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,times, getfunccall,debuglevel=0,win32mode=False):
+    jsondump = format_ob_patch_func_xors(objparser,jsondump,objname,funcname,formatname,times,win32mode)
+    jsondump = format_ob_patch_func_code(objparser,jsondump,objname,funcname,formatname,getfunccall,debuglevel,win32mode)
+    return jsondump
+
 
 def format_get_func_addr(debuglevel=0):
     funcallname = get_random_name(20)
@@ -147,25 +165,7 @@ def format_get_func_addr(debuglevel=0):
     rets += format_line('}',0)
     return rets , funcallname
 
-def object_one_file_func(objparser,odict,objfile,f,objdata, times,verbose,win32mode=False):    
-    if PATCH_FUNC_KEY in odict.keys() and objfile in odict[PATCH_FUNC_KEY].keys() and \
-        f in odict[PATCH_FUNC_KEY][objfile].keys():
-        return odict,objdata
-    if PATCH_FUNC_KEY not in odict.keys():
-        odict[PATCH_FUNC_KEY] = dict()
-    if objfile not in odict[PATCH_FUNC_KEY].keys():
-        odict[PATCH_FUNC_KEY][objfile] = dict()
-    if f not in odict[PATCH_FUNC_KEY][objfile].keys():
-        odict[PATCH_FUNC_KEY][objfile][f] = dict()
-    getfunccall = None
-    if GET_FUNC_ADDR not in odict[PATCH_FUNC_KEY].keys():
-        odict[PATCH_FUNC_KEY][GET_FUNC_ADDR] = dict()
-        code , name = format_get_func_addr(verbose)
-        odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_NAME] = name
-        odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_CODE] = code
-    getfunccall = odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_NAME]
-    nformatfunc = get_random_name(random.randint(5,20))
-    odict = format_ob_patch_functions(objparser,odict,objfile,f,nformatfunc,times, getfunccall,verbose,win32mode)
+def unpatch_one_file_func(objparser,odict,objfile,f,objdata,win32mode=False):
     realf = f
     if win32mode:
         realf = '_%s'%(f)
@@ -186,24 +186,48 @@ def object_one_file_func(objparser,odict,objfile,f,objdata, times,verbose,win32m
                 objdata[(foff + offi)] ^ odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][offi]))
             objdata[(foff + offi)] = objdata[(foff + offi)] ^ odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][offi]
     odict[PATCH_FUNC_KEY][objfile][f][FUNC_DATA_KEY] = objdata[foff:(foff+fsize)]
+    return odict,objdata
+
+def object_one_file_func(objparser,odict,objfile,f,objdata, times,verbose,win32mode=False):
+    if PATCH_FUNC_KEY in odict.keys() and objfile in odict[PATCH_FUNC_KEY].keys() and \
+        f in odict[PATCH_FUNC_KEY][objfile].keys():
+        return odict,objdata
+    if PATCH_FUNC_KEY not in odict.keys():
+        odict[PATCH_FUNC_KEY] = dict()
+    if objfile not in odict[PATCH_FUNC_KEY].keys():
+        odict[PATCH_FUNC_KEY][objfile] = dict()
+    if f not in odict[PATCH_FUNC_KEY][objfile].keys():
+        odict[PATCH_FUNC_KEY][objfile][f] = dict()
+    getfunccall = None
+    if GET_FUNC_ADDR not in odict[PATCH_FUNC_KEY].keys():
+        odict[PATCH_FUNC_KEY][GET_FUNC_ADDR] = dict()
+        code , name = format_get_func_addr(verbose)
+        odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_NAME] = name
+        odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_CODE] = code
+    getfunccall = odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_NAME]
+    nformatfunc = get_random_name(random.randint(5,20))
+    odict = format_ob_patch_functions(objparser,odict,objfile,f,nformatfunc,times, getfunccall,verbose,win32mode)
+    odict,objdata = unpatch_one_file_func(objparser,odict,objfile,f,objdata,win32mode)
     if win32mode:
         odict[PATCH_FUNC_KEY][objfile][f][WIN32_MODE_KEY] = True
     else:
         odict[PATCH_FUNC_KEY][objfile][f][WIN32_MODE_KEY] = False
     return odict,objdata
 
+def call_object_parser(clsname,f):
+    m = __import__(__name__)
+    cls_ = getattr(m,clsname)
+    if cls_ is None:
+        raise Exception('cannot find [%s]'%(clsname))
+    return cls_(f)
 
-def object_one_file(objparser,odict,objfile,funcs,times,verbose,win32mode=False):
+
+def object_one_file(objclsname,odict,objfile,funcs,times,verbose,win32mode=False):
+    objparser = call_object_parser(objclsname,objfile)
     objdata = objparser.get_data()
     for funcname in funcs:
         odict, objdata = object_one_file_func(objparser, odict,objfile,funcname,objdata,times,verbose,win32mode)
-    return odict,objdata
-
-def elf_one_file(odict,objfile,funcs,times,verbose):
-    elfparser = ElfParser(objfile)
-    odict, objdata = object_one_file(elfparser,odict,objfile,funcs,times,verbose)
-    elfparser.close()
-    #logging.info('writeback [%s]\n%s'%(objfile,dump_ints(objdata)))
+    objparser.close()
     write_file_ints(objdata,objfile)
     return odict
 
@@ -451,7 +475,7 @@ def obunpatchelf_handler(args,parser):
 
     for f in jdict.keys():
         logging.info('f [%s] funcs %s'%(f,jdict[f]))
-        elf_one_file(odict,f,jdict[f],args.times,args.obunpatchelf_loglvl)
+        odict = object_one_file('ElfParser',odict,f,jdict[f],args.times,args.obunpatchelf_loglvl)
 
     rets = format_patch_funcions(args,odict,jdict,args.unpatchfunc)
     write_patch_output(args,rets,odict)
@@ -481,15 +505,6 @@ def obpatchelf_handler(args,parser):
     return
 
 
-def coff_one_file(odict,objfile,funcs,times,verbose,win32mode=False):
-    coffparser = CoffParser(objfile)
-    odict, objdata = object_one_file(coffparser,odict,objfile,funcs,times,verbose,win32mode)
-    coffparser.close()
-    #logging.info('writeback [%s]\n%s'%(objfile,dump_ints(objdata)))
-    write_file_ints(objdata,objfile)
-    return odict
-
-
 def obunpatchcoff_handler(args,parser):
     set_logging_level(args)
     if len(args.subnargs) < 1:
@@ -499,7 +514,7 @@ def obunpatchcoff_handler(args,parser):
 
     for f in jdict.keys():
         logging.info('f [%s] funcs %s'%(f,jdict[f]))
-        coff_one_file(odict,f,jdict[f],args.times,args.obunpatchcoff_loglvl,args.win32)
+        odict = object_one_file('CoffParser',odict,f,jdict[f],args.times,args.obunpatchcoff_loglvl,args.win32)
 
     rets = format_patch_funcions(args,odict,jdict,args.unpatchfunc)
     write_patch_output(args,rets,odict)
