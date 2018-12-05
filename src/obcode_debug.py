@@ -142,6 +142,128 @@ def cob_handler(args,parser):
     sys.exit(0)
     return
 
+REUNPATCH_HANDLER_KEY='reunpatchhandle'
+
+def obj_reunpatch_one_function(objparser, alldatas,args,odict,fname,funcname):
+    relocs = odict[PATCH_FUNC_KEY][fname][funcname][FUNC_DATA_RELOC_KEY]
+    win32mode = odict[PATCH_FUNC_KEY][fname]
+    realf = funcname
+    if win32mode:
+        realf = '_%s'%(funcname)
+    funcsize = objparser.func_size(realf)
+    if funcsize != len(relocs):
+        raise Exception('[%s].[%s] funcsize [%d] != relocs[%d]'%(fname, funcname,funcsize, len(relocs)))
+    idx = 0
+    funcaddr = objparser.func_addr(realf)
+    while idx < len(relocs):
+        getval = objparser.is_in_reloc(funcaddr + idx)
+        if getval != relocs[idx]:
+            raise Exception('[%s].[%s].[%d] reloc[%d] != stored relocs[%d]'%(fname,funcname, idx,getval, relocs[idx]))
+        idx += 1
+    funcoffs = odict[PATCH_FUNC_KEY][fname][funcname][FORMAT_FUNC_OFFSET_KEY]    
+    xors = odict[PATCH_FUNC_KEY][fname][funcname][FORMAT_FUNC_XORS_KEY]
+    funcoff = objparser.func_offset(realf)
+    for offk in funcoffs.keys():
+        off = int(offk)
+        if funcoffs[offk] >= 2:
+            # this is to change the value
+            assert(offk in xors.keys())
+            alldatas[(funcoff+off)] = alldatas[(funcoff + off)] ^ xors[offk]
+    odict[PATCH_FUNC_KEY][fname][funcname][FUNC_DATA_KEY] = alldatas[(funcoff):(funcoff+funcsize)]
+    return odict,alldatas
+
+
+def obj_reunpatch_one_file(objparser,alldatas,args,odict,fname):
+    if PATCH_FUNC_KEY not in odict.keys():
+        raise Exception('no [%s] in PATCH_FUNC_KEY'%(PATCH_FUNC_KEY))
+    if fname not in odict[PATCH_FUNC_KEY].keys():
+        raise Exception('no [%s] in [%s]'%(fname,PATCH_FUNC_KEY))
+    for f in odict[PATCH_FUNC_KEY][fname].keys():
+        if REUNPATCH_HANDLER_KEY not in odict[PATCH_FUNC_KEY][fname][f].keys():
+            odict, alldatas = obj_reunpatch_one_function(objparser,args,odict,fname,f)
+            odict[PATCH_FUNC_KEY][fname][f][REUNPATCH_HANDLER_KEY] = True
+    return odict,alldatas
+
+def output_patch_formats(args, odict,fname):
+    rets = ''
+    for f in odict[PATCH_FUNC_KEY][fname].keys():
+        if len(rets) > 0:
+            rets += format_line('',0)
+        rets += odict[PATCH_FUNC_KEY][fname][f][FORMAT_FUNC_CODE_KEY]
+    return rets
+
+def call_object_parser(clsname,f):
+    m = __import__(__name__)
+    cls_ = getattr(m,objclsname)
+    if cls_ is None:
+        raise Exception('cannot find [%s]'%(objclsname))
+    return cls_(f)
+
+
+def obj_reunpatch_files(objclsname,args,odict,fnames):
+    for fname in fnames:
+        objparser = call_object_parser(objclsname, fname)
+        alldatas = objparser.get_data()
+        odict, alldatas = obj_reunpatch_one_file(objparser, alldatas,args,odict,fname)
+        objparser.close()
+        write_file_ints(alldatas, fname)
+    return odict
+
+def obj_reunpatch(objclsname,patchfuncname,args,odict,files):
+    rets = ''
+    odict = obj_reunpatch_files(objclsname,args,odict,files)
+    # now formats
+    rets += format_includes(args)
+    rets += ''
+
+    if  PATCH_FUNC_KEY in odict.keys() and GET_FUNC_ADDR in odict[PATCH_FUNC_KEY].keys() \
+        and FUNC_ADDR_CODE in odict[PATCH_FUNC_KEY][GET_FUNC_ADDR].keys():
+        rets += odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_CODE]
+
+    # now to give the coding
+    for f in files:
+        rets += format_line('',0)
+        rets += output_patch_formats(args,odict,f)
+
+    rets += format_line('',0)
+    rets += output_patch_function(args,patchfuncname,odict,files)
+    return rets,odict
+
+
+def obj_repatch_one_file(objparser,alldatas,args,odict,f):
+    if PATCH_FUNC_KEY not in odict.keys():
+        raise Exception('[%s] not in json'%(PATCH_FUNC_KEY))
+    if f not in odict[PATCH_FUNC_KEY].keys():
+        raise Exception('[%s] not in [%s]'%(f,PATCH_FUNC_KEY))
+    
+
+def obj_repatch(clsname,args,odict,fnames):
+    for f in fnames:
+        objparser = call_object_parser(clsname, f)
+        alldatas = objparser.get_data()
+        odict,alldatas = obj_repatch_one_file(objparser,alldatas,args,odict,f)
+        objparser.close()
+        write_file_ints(alldatas,f)
+    return odict
+
+
+def obreunpatchelf_handler(args,parser):
+    set_logging_level(args)
+    odict = get_odict(args,False)
+    jdict, args= get_jdict(args)
+    files = []
+    for f in jdict.keys():
+        files.append(f)
+    rets , odict = obj_reunpatch('PEParser',args.unpatchfunc,args,odict,files)
+    write_patch_output(args,rets,odict)
+    sys.exit(0)
+    return
+
+def obrepatchelf_handler(args,parser):
+    set_logging_level(args)
+    sys.exit(0)
+    return
+
 
 def main():
     commandline_fmt='''
@@ -209,7 +331,14 @@ def main():
         },
         "obpatchelfforge<obpatchelfforge_handler>##inputfile to no handle##" : {
             "$" : "+"
+        },
+        "obreunpatchelf<obreunpatchelf_handler>##objfiles ... to replay unpatchelf##" : {
+            "$" : "+"
+        },
+        "obrepatchelf<obrepatchelf_handler>##objfiles ... to replay patchelf##" : {
+            "$" : "+"
         }
+
     }
     '''
     commandline = commandline_fmt%(format_cob_config(4))

@@ -248,6 +248,7 @@ def get_jdict(args):
         else:
             sarr = re.split(';',a)
             if len(sarr) < 2:
+                jdict[sarr[0]] = []
                 continue
             carr = re.split(',',sarr[1])
             jdict[sarr[0]] = carr
@@ -275,8 +276,39 @@ def format_includes(args):
         rets += format_line('#include "%s"'%(s),0)
     return rets
 
+def output_patch_function(args,prefix,patchfuncname,odict,files):
+    staticvarname = '%s_%s'%(prefix,get_random_name(20))
+    rets = ''
+    rets += format_line('',0)
+    rets += format_line('int %s(map_prot_func_t mapfunc)'%(patchfuncname),0)
+    rets += format_line('{',0)
+    retout = 0
+    for o in files:
+        if retout == 0:
+            rets += format_line('int ret;',1)
+            rets += format_line('static int %s=0;'%(staticvarname),1)
+            rets += format_line('',1)
+            rets += format_line('if (%s > 0) {'%(staticvarname), 1)
+            rets += format_line('return 0;',2)
+            rets += format_line('}',1)
+            retout = 1
+        for f in odict[PATCH_FUNC_KEY][o]:
+            rets += format_line('',1)
+            rets += format_debug_line('format for %s'%(f),1,args.verbose)
+            rets += format_line('ret = %s(mapfunc);'%(odict[PATCH_FUNC_KEY][o][f][FORMAT_FUNC_NAME_KEY]),1)
+            rets += format_line('if (ret < 0) {', 1)
+            rets += format_line('return ret;',2)
+            rets += format_line('}',1)
+    rets += format_line('%s=1;'%(staticvarname), 1)
+    rets += format_line('return 0;',1)
+    rets += format_line('}',0)
+    return rets
+
 def format_patch_funcions(args,odict,jdict,patchfuncname,prefix='prefix'):
     rets = format_includes(args)
+    files = []
+    for k in jdict.keys():
+        files.append(k)
     if PATCH_FUNC_KEY in odict.keys() and \
         GET_FUNC_ADDR in odict[PATCH_FUNC_KEY].keys():
         rets += odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_CODE]
@@ -288,30 +320,7 @@ def format_patch_funcions(args,odict,jdict,patchfuncname,prefix='prefix'):
                 rets += format_debug_line('format for function [%s]'%(f),0,args.verbose)
                 rets += odict[PATCH_FUNC_KEY][o][f][FORMAT_FUNC_CODE_KEY]
 
-    staticvarname = '%s_%s'%(prefix,get_random_name(20))
-    rets += format_line('',0)
-    rets += format_line('int %s(map_prot_func_t mapfunc)'%(patchfuncname),0)
-    rets += format_line('{',0)
-    retout = 0
-    for o in jdict.keys():
-        if retout == 0:
-            rets += format_line('int ret;',1)
-            rets += format_line('static int %s=0;'%(staticvarname),1)
-            rets += format_line('',1)
-            rets += format_line('if (%s > 0) {'%(staticvarname), 1)
-            rets += format_line('return 0;',2)
-            rets += format_line('}',1)
-            retout = 1
-        for f in jdict[o]:
-            rets += format_line('',1)
-            rets += format_debug_line('format for %s'%(f),1,args.verbose)
-            rets += format_line('ret = %s(mapfunc);'%(odict[PATCH_FUNC_KEY][o][f][FORMAT_FUNC_NAME_KEY]),1)
-            rets += format_line('if (ret < 0) {', 1)
-            rets += format_line('return ret;',2)
-            rets += format_line('}',1)
-    rets += format_line('%s=1;'%(staticvarname), 1)
-    rets += format_line('return 0;',1)
-    rets += format_line('}',0)
+    rets += output_patch_function(args,prefix,patchfuncname,odict,files)
     return rets
 
 def write_patch_output(args,rets,odict):

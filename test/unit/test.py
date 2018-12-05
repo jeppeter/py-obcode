@@ -170,6 +170,7 @@ class obcode_test(unittest.TestCase):
         self.__tmpd_descrs = []
         if 'MAKOB_FILE' in os.environ.keys():
             del os.environ['MAKOB_FILE']
+        self.runOk= False
         return
 
     def info(self,msg,callstack=1):
@@ -188,7 +189,7 @@ class obcode_test(unittest.TestCase):
         return self.__logger.fatal(msg,(callstack + 1))
 
     def __remove_file_ok(self,filename,description=''):
-        ok = True
+        ok = self.runOk
         if 'OBCODE_TEST_RESERVED' in os.environ.keys():
             ok = False
         if filename is not None and ok:
@@ -198,7 +199,7 @@ class obcode_test(unittest.TestCase):
         return
 
     def __remove_dir_ok(self,dname,description=''):
-        ok = True
+        ok = self.runOk
         if 'OBCODE_TEST_RESERVED' in os.environ.keys():
             ok = False
         if dname is not None and ok:
@@ -435,6 +436,7 @@ class obcode_test(unittest.TestCase):
         }
         '''
         self.__compare_output(writecontent)
+        self.runOk=True
         return
 
     def test_A002(self):
@@ -447,22 +449,26 @@ class obcode_test(unittest.TestCase):
             unixfile = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..','example','thread','unix.cpp'))
             content = self.__get_content(unixfile)
         self.__compare_output_thread(content,appcmds=['10','100','199','391','51'])
+        self.runOk=True
         return
 
     def test_A003(self):
         fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..','example','obv','obv.cpp'))
         content = self.__get_content(fname)
         self.__compare_output(content)
+        self.runOk=True
         return
 
     def test_A004(self):
         fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..','example','obv','insert.cpp'))
         content = self.__get_content(fname)
         self.__compare_output(content)
+        self.runOk=True
         return
 
     def test_A005(self):
         if sys.platform == 'win32':
+            self.runOk=True
             return
         # now we should compare
         topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'))
@@ -501,28 +507,33 @@ class obcode_test(unittest.TestCase):
         subprocess.check_call(cmds,stdout=stdnull)
         stdnull.close()
         stdnull = None
+        self.runOk=True
         return
 
     def test_A006(self):
         fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..','example','srcdir','d.c'))
         content = self.__get_content(fname)
         self.__compare_output(content)
+        self.runOk=True
         return
 
     def test_A007(self):
         fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..','example','srcdir','const.c'))
         content = self.__get_content(fname)
         self.__compare_not_same_output(content)
+        self.runOk=True
         return
 
     def test_A008(self):
         fname = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..','example','srcdir','mixed.c'))
         content = self.__get_content(fname)
         self.__compare_output(content)
+        self.runOk=True
         return
 
     def test_A009(self):
         if sys.platform == 'win32':
+            self.runOk=True
             return
         # now we should compare
         topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'))
@@ -566,10 +577,12 @@ class obcode_test(unittest.TestCase):
         self.assertEqual(norm2lines, ob2lines)
         stdnull.close()
         stdnull = None
+        self.runOk=True
         return
 
     def test_A010(self):
         if sys.platform != 'win32':
+            self.runOk=True
             return
         stdnull = None
         # now we should compare
@@ -615,6 +628,7 @@ class obcode_test(unittest.TestCase):
             subprocess.check_call(cmds,stdout=stdnull)
             self.assertEqual(normlines,oblines)
             self.assertEqual(norm2lines,ob2lines)
+            self.runOk=True
         finally:
             if stdnull is not None:
                 stdnull.close()
@@ -624,6 +638,7 @@ class obcode_test(unittest.TestCase):
 
     def test_A011(self):
         if sys.platform == 'win32':
+            self.runOk=True
             return
         # now we should compare
         topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'))
@@ -670,11 +685,13 @@ class obcode_test(unittest.TestCase):
         self.assertEqual(norm2lines,ob2lines)
         stdnull.close()
         stdnull = None
+        self.runOk=True
         return
 
 
     def test_A012(self):
         if sys.platform == 'win32':
+            self.runOk=True
             return
         # now we should compare
         topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'))
@@ -710,10 +727,12 @@ class obcode_test(unittest.TestCase):
         self.assertEqual(normlines,oblines)
         stdnull.close()
         stdnull = None
+        self.runOk=True
         return
 
     def test_A013(self):
         if sys.platform != 'win32':
+            self.runOk=True
             return
         stdnull = None
         # now we should compare
@@ -748,6 +767,7 @@ class obcode_test(unittest.TestCase):
             cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','clean']
             subprocess.check_call(cmds,stdout=stdnull)
             self.assertEqual(normlines,oblines)
+            self.runOk=True
         finally:
             if stdnull is not None:
                 stdnull.close()

@@ -8,6 +8,10 @@ COLON=;
 
 -include ${TOPDIR}/obcode.mak
 
+ifeq (${CNT},)
+CNT=0
+endif
+
 all:main main2
 
 main:${main_OBJECTS}
@@ -27,11 +31,11 @@ unpatch.json:main_unpatch.c main2_unpatch.c
 
 main_unpatch.c:main.o callc.o
 	cp main.o main_orig.o
-	@$(call OB_ELF_UNPATCH,'includefiles${COLON}main.h${COMMA}callc.h${COMMA}unpatch.h' 'dump${COLON}unpatch.json' 'output${COLON}main_unpatch.c' '${CURDIR}/main.o${COLON}print_out_a${COMMA}print_out_b${COMMA}print_out_c' '${CURDIR}/callc.o${COLON}call_a${COMMA}call_b${COMMA}call_c')
+	@$(call OB_ELF_UNPATCH, --times ${CNT} 'includefiles${COLON}main.h${COMMA}callc.h${COMMA}unpatch.h' 'dump${COLON}unpatch.json' 'output${COLON}main_unpatch.c' '${CURDIR}/main.o${COLON}print_out_a${COMMA}print_out_b${COMMA}print_out_c' '${CURDIR}/callc.o${COLON}call_a${COMMA}call_b${COMMA}call_c')
 
 main2_unpatch.c:main2.o callc.o
 	cp main2.o main2_orig.o
-	@$(call OB_ELF_UNPATCH,'includefiles${COLON}main2.h${COMMA}callc.h${COMMA}unpatch.h' 'dump${COLON}unpatch.json' 'output${COLON}main2_unpatch.c' '${CURDIR}/main2.o${COLON}ccprint_out_a${COMMA}ccprint_out_b${COMMA}ccprint_out_c' '${CURDIR}/callc.o${COLON}call_a${COMMA}call_b${COMMA}call_c')
+	@$(call OB_ELF_UNPATCH, --times ${CNT} 'includefiles${COLON}main2.h${COMMA}callc.h${COMMA}unpatch.h' 'dump${COLON}unpatch.json' 'output${COLON}main2_unpatch.c' '${CURDIR}/main2.o${COLON}ccprint_out_a${COMMA}ccprint_out_b${COMMA}ccprint_out_c' '${CURDIR}/callc.o${COLON}call_a${COMMA}call_b${COMMA}call_c')
 
 
 clean:
