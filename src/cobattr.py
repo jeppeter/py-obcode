@@ -119,7 +119,8 @@ if sys.platform == 'win32':
         'maxround': 32,
         'debug' : 0,
         'noline' : 0,
-        'unicodewidth' : 16
+        'unicodewidth' : 16,
+        'widechartype' : 'wchar_t'
     }
 else:
     GL_INIT_ATTR={
@@ -132,7 +133,8 @@ else:
         'maxround': 32,
         'debug' : 0,
         'noline' : 0,
-        'unicodewidth' : 32
+        'unicodewidth' : 32,
+        'widechartype' : 'wchar_t'
     }
 
 GL_DEFAULT_ATTR={}

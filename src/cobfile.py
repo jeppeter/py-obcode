@@ -670,9 +670,9 @@ class COBFile(object):
             # now 
             tabs = count_tabs(l)
             if cfg.unicodewidth == 32:
-                rets += format_line('wchar_t %s[%d];'%(vn,len(sbyte)/4),tabs)
+                rets += format_line('%s %s[%d];'%(cfg.widechartype,vn,len(sbyte)/4),tabs)
             else:
-                rets += format_line('wchar_t %s[%d];'%(vn,len(sbyte)/2),tabs)
+                rets += format_line('%s %s[%d];'%(cfg.widechartype,vn,len(sbyte)/2),tabs)
             rets += format_line('%s((unsigned char*)%s,%d);'%(vfunc,vn,len(sbyte)), tabs)
         # now replace
         newl = before
