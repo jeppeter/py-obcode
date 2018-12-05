@@ -374,7 +374,7 @@ def patch_objects(objparser,args,ofile,objs,odict,alldatas,force=False):
             odict[PATCH_FUNC_KEY][ofile] = dict()
         for o in objs:
             if o not in odict[PATCH_FUNC_KEY].keys():
-                logging.warn('[%s] not handled'%(o))
+                #logging.error('[%s] not handled'%(o))
                 continue
             if force or (o not in odict[PATCH_FUNC_KEY][ofile].keys() and o in odict[PATCH_FUNC_KEY].keys()):
                 odict[PATCH_FUNC_KEY][ofile][o] = dict()
