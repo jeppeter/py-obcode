@@ -11,19 +11,24 @@ sys.path.append(os.path.join(os.path.abspath(os.path.dirname(__file__)),'..','..
 from strparser import *
 ##importdebugend
 
+def read_bytes(infile):
+	data = b''
+	with open(infile,'rb') as fin:
+		data = fin.read()
+	return data
+
 def crc32_calc(infile):
-	fin = open(infile,'rb')
-	data = fin.read()
-	crcval = zlib.crc32(data)
-	fin.close()
-	fin = None
+	crcval = zlib.crc32(read_bytes(infile))
 	return crcval
 
 def md5_calc(infile):
-	fin = open(infile,'rb')
-	data = fin.read()
 	m = hashlib.md5()
-	m.update(data)
+	m.update(read_bytes(infile))
+	return m.hexdigest()
+
+def sha256_calc(infile):
+	m = hashlib.sha256()
+	m.update(read_bytes(infile))
 	return m.hexdigest()
 
 def crc32_handler(args,parser):
@@ -39,10 +44,17 @@ def crc32_handler(args,parser):
 def md5_handler(args,parser):
 	set_logging_level(args)
 	for f in args.subnargs:
-		md5val = md5_calc(f)
 		sys.stdout.write('[%s] md5 %s\n'%(f, md5_calc(f)))
 	sys.exit(0)
 	return
+
+def sha256_handler(args,parser):
+	set_logging_level(args)
+	for f in args.subnargs:
+		sys.stdout.write('[%s] sha256 %s\n'%(f, sha256_calc(f)))
+	sys.exit(0)
+	return
+
 
 def main():
 	commandline='''
@@ -52,6 +64,9 @@ def main():
 			"$" : "+"
 		},
 		"md5<md5_handler>" : {
+			"$" : "+"
+		},
+		"sha256<sha256_handler>" : {
 			"$" : "+"
 		}
 	}

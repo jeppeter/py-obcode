@@ -144,15 +144,49 @@ out:
     return ret;
 }
 
+#include "sha256calc.c"
 
 int sha256_handler(int argc, char* argv[], pextargs_state_t parsestate, void* popt)
 {
-    popt = popt;
-    parsestate = parsestate;
-    argv = argv;
+    int ret;
+    char* pfilebuf = NULL;
+    int filesize = 0;
+    int filelen = 0;
+    int i,j;
+    char* infile;
+    unsigned char sha256val[32];
+    pargs_options_t pargs = (pargs_options_t) popt;
     argc = argc;
-    fprintf(stderr, "not suppport sha256 yet\n");
-    return -1;
+    argv = argv;
+
+    init_log_verbose(pargs);
+
+    for (i = 0; parsestate->leftargs != NULL && parsestate->leftargs[i] != NULL; i++) {
+        infile = parsestate->leftargs[i];
+        ret = read_file_whole(infile, &pfilebuf, &filesize);
+        if (ret < 0) {
+            GETERRNO(ret);
+            fprintf(stderr, "read [%s] error[%d]\n", infile, ret);
+            goto out;
+        }
+        filelen = ret;
+        ret = sha256_calc((unsigned char*)pfilebuf, (unsigned int)filelen, sha256val,sizeof(sha256val));
+        if (ret < 0) {
+            GETERRNO(ret);
+            goto out;
+        }
+        fprintf(stdout, "[%s] sha256 ", infile);
+        for (j=0;j<(int)sizeof(sha256val);j++) {
+            fprintf(stdout,"%02x", sha256val[j]);
+        }
+        fprintf(stdout, "\n");
+    }
+
+    ret = 0;
+out:
+    read_file_whole(NULL, &pfilebuf, &filesize);
+    SETERRNO(ret);
+    return ret;
 }
 
 int sha3_handler(int argc, char* argv[], pextargs_state_t parsestate, void* popt)
