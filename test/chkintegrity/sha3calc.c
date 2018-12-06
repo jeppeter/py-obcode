@@ -1,27 +1,10 @@
 
-/* -------------------------------------------------------------------------
- * Works when compiled for either 32-bit or 64-bit targets, optimized for 
- * 64 bit.
- *
- * Canonical implementation of Init/Update/Finalize for SHA-3 byte input. 
- *
- * SHA3-256, SHA3-384, SHA-512 are implemented. SHA-224 can easily be added.
- *
- * Based on code from http://keccak.noekeon.org/ .
- *
- * I place the code that I wrote into public domain, free to use. 
- *
- * I would appreciate if you give credits to this work if you used it to 
- * write or test * your code.
- *
- * Aug 2015. Andrey Jivsov. crypto@brainhub.org
- * ---------------------------------------------------------------------- */
 
 /* 'Words' here refers to unsigned long long */
 #define SHA3_KECCAK_SPONGE_WORDS \
 	(((1600)/8/*bits to byte*/)/sizeof(unsigned long long))
 typedef struct sha3_context_ {
-    unsigned long long saved;             /* the portion of the input message that we
+    unsigned long long saved;   /* the portion of the input message that we
                                  * didn't consume yet */
     union {                     /* Keccak's state */
         unsigned long long s[SHA3_KECCAK_SPONGE_WORDS];
@@ -37,8 +20,6 @@ typedef struct sha3_context_ {
 
 
 /* For Init or Reset call these: */
-void sha3_init267(void *priv);
-void sha3_init384(void *priv);
 void sha3_init512(void *priv);
 void sha3_update(void *priv, void const *bufIn, unsigned int len);
 void sha3_final(void *priv, unsigned char* pval);
@@ -94,8 +75,7 @@ static const unsigned keccakf_piln[24] = {
 /* generally called after SHA3_KECCAK_SPONGE_WORDS-ctx->capacityWords words 
  * are XORed into the state s 
  */
-static void
-keccakf(unsigned long long s[25])
+static void keccakf(unsigned long long s[25])
 {
     int i, j, round;
     unsigned long long t, bc[5];
@@ -162,41 +142,21 @@ do{                                                                             
 }while(0)
 
 
-/* For Init or Reset call these: */
-void
-sha3_init256(void *priv)
-{
-    sha3_context *ctx = (sha3_context *) priv;
-    sha3_memset(ctx, 0, sizeof(*ctx));
-    ctx->capacityWords = 2 * 256 / (8 * sizeof(unsigned long long));
-}
 
-void sha3_init384(void *priv)
+void sha3_init512(sha3_context *ctx)
 {
-    sha3_context *ctx = (sha3_context *) priv;
-    sha3_memset(ctx, 0, sizeof(*ctx));
-    ctx->capacityWords = 2 * 384 / (8 * sizeof(unsigned long long));
-}
-
-void sha3_init512(void *priv)
-{
-    sha3_context *ctx = (sha3_context *) priv;
     sha3_memset(ctx, 0, sizeof(*ctx));
     ctx->capacityWords = 2 * 512 / (8 * sizeof(unsigned long long));
 }
 
-void sha3_update(void *priv, void const *bufIn, unsigned int len)
+void sha3_update(sha3_context *ctx, const unsigned char *buf, unsigned int len)
 {
-    sha3_context *ctx = (sha3_context *) priv;
-
     /* 0...7 -- how much is needed to have a word */
     unsigned old_tail = (8 - ctx->byteIndex) & 7;
 
     unsigned int words;
     unsigned tail;
     unsigned int i;
-
-    const unsigned char *buf =  (const unsigned char*)bufIn;
 
 
 
@@ -258,10 +218,8 @@ void sha3_update(void *priv, void const *bufIn, unsigned int len)
  * The padding block is 0x01 || 0x00* || 0x80. First 0x01 and last 0x80 
  * bytes are always present, but they can be the same byte.
  */
-void sha3_final(void *priv, unsigned char* pval)
+void sha3_final(sha3_context *ctx, unsigned char* pval)
 {
-    sha3_context *ctx = (sha3_context *) priv;
-
     /* Append 2-bit suffix 01, per SHA-3 spec. Instead of 1 for padding we
      * use 1<<2 below. The 0x02 below corresponds to the suffix 01.
      * Overall, we feed 0, then 1, and finally 1 to start padding. Without
