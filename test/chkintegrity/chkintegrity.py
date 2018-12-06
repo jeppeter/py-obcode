@@ -5,6 +5,7 @@ import sys
 import os
 import zlib
 import hashlib
+import sha3
 
 ##importdebugstart
 sys.path.append(os.path.join(os.path.abspath(os.path.dirname(__file__)),'..','..','src'))
@@ -31,6 +32,12 @@ def sha256_calc(infile):
 	m.update(read_bytes(infile))
 	return m.hexdigest()
 
+def sha3_calc(infile):
+	m = sha3.sha3_512()
+	m.update(read_bytes(infile))
+	return m.hexdigest()
+
+
 def crc32_handler(args,parser):
 	set_logging_level(args)
 	for f in args.subnargs:
@@ -55,6 +62,13 @@ def sha256_handler(args,parser):
 	sys.exit(0)
 	return
 
+def sha3_handler(args,parser):
+	set_logging_level(args)
+	for f in args.subnargs:
+		sys.stdout.write('[%s] sha3 %s\n'%(f, sha3_calc(f)))
+	sys.exit(0)
+	return
+
 
 def main():
 	commandline='''
@@ -67,6 +81,9 @@ def main():
 			"$" : "+"
 		},
 		"sha256<sha256_handler>" : {
+			"$" : "+"
+		},
+		"sha3<sha3_handler>" : {
 			"$" : "+"
 		}
 	}

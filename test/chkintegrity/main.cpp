@@ -189,14 +189,50 @@ out:
     return ret;
 }
 
+#include "sha3calc.c"
+
 int sha3_handler(int argc, char* argv[], pextargs_state_t parsestate, void* popt)
 {
-    popt = popt;
-    parsestate = parsestate;
-    argv = argv;
+    int ret;
+    char* pfilebuf = NULL;
+    int filesize = 0;
+    int filelen = 0;
+    int i,j,retval;
+    char* infile;
+    unsigned char sha3val[64];
+    pargs_options_t pargs = (pargs_options_t) popt;
     argc = argc;
-    fprintf(stderr, "not suppport sha3 yet\n");
-    return -1;
+    argv = argv;
+
+    init_log_verbose(pargs);
+
+    for (i = 0; parsestate->leftargs != NULL && parsestate->leftargs[i] != NULL; i++) {
+        infile = parsestate->leftargs[i];
+        ret = read_file_whole(infile, &pfilebuf, &filesize);
+        if (ret < 0) {
+            GETERRNO(ret);
+            fprintf(stderr, "read [%s] error[%d]\n", infile, ret);
+            goto out;
+        }
+        filelen = ret;
+        ret = sha3_calc((unsigned char*)pfilebuf, (unsigned int)filelen, sha3val,sizeof(sha3val));
+        if (ret < 0) {
+            GETERRNO(ret);
+            goto out;
+        }
+        retval = ret;
+        fprintf(stdout, "[%s] sha256 ", infile);
+        for (j=0;j<retval;j++) {
+            fprintf(stdout,"%02x", sha3val[j]);
+        }
+        fprintf(stdout, "\n");
+    }
+
+    ret = 0;
+out:
+    read_file_whole(NULL, &pfilebuf, &filesize);
+    SETERRNO(ret);
+    return ret;
 }
 #if defined(_WIN32) || defined(_WIN64)
 int _tmain(int argc, TCHAR* argv[])
