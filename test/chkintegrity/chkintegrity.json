@@ -1,0 +1,17 @@
+{
+    "verbose|v<m_verbose>" : "+",
+    "input|i<m_input>" : null,
+    "output|o<m_output>" : null,
+    "crc32<crc32_handler>" : {
+        "$" : "+"
+    },
+    "sha256<sha256_handler>" : {
+        "$" : "+"
+    },
+    "md5<md5_handler>" : {
+        "$" : "+"
+    },
+    "sha3<sha3_handler>" : {
+        "$" : "+"
+    }
+}
