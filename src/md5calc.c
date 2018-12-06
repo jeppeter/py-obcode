@@ -40,12 +40,12 @@ typedef struct
 }                                            
 
 
-unsigned char md5_padding[]={0x80,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+unsigned char OB_RANDOM_NAME(md5_padding)[]={0x80,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
  
-void md5_init(md5_ctx *context)
+void OB_RANDOM_NAME(md5_init)(md5_ctx *context)
 {
     context->count[0] = 0;
     context->count[1] = 0;
@@ -68,7 +68,7 @@ do{                                                                             
     }                                                                                             \
 }while(0)
 
-void md5_encode(unsigned char *output,unsigned int *input,unsigned int len)
+void OB_RANDOM_NAME(md5_encode)(unsigned char *output,unsigned int *input,unsigned int len)
 {
     unsigned int i = 0,j = 0;
     while(j < len)
@@ -81,7 +81,7 @@ void md5_encode(unsigned char *output,unsigned int *input,unsigned int len)
         j+=4;
     }
 }
-void md5_decode(unsigned int *output,unsigned char *input,unsigned int len)
+void OB_RANDOM_NAME(md5_decode)(unsigned int *output,unsigned char *input,unsigned int len)
 {
     unsigned int i = 0,j = 0;
     while(j < len)
@@ -94,14 +94,14 @@ void md5_decode(unsigned int *output,unsigned char *input,unsigned int len)
         j+=4; 
     }
 }
-void md5_transform(unsigned int state[4],unsigned char block[64])
+void OB_RANDOM_NAME(md5_transform)(unsigned int state[4],unsigned char block[64])
 {
     unsigned int a = state[0];
     unsigned int b = state[1];
     unsigned int c = state[2];
     unsigned int d = state[3];
     unsigned int x[64];
-    md5_decode(x,block,64);
+    OB_RANDOM_NAME(md5_decode)(x,block,64);
     MD5_FF(a, b, c, d, x[ 0], 7, 0xd76aa478); /* 1 */
     MD5_FF(d, a, b, c, x[ 1], 12, 0xe8c7b756); /* 2 */
     MD5_FF(c, d, a, b, x[ 2], 17, 0x242070db); /* 3 */
@@ -180,7 +180,7 @@ void md5_transform(unsigned int state[4],unsigned char block[64])
 }
 
 
-void md5_update(md5_ctx *context,unsigned char *input,unsigned int inputlen)
+void OB_RANDOM_NAME(md5_update)(md5_ctx *context,unsigned char *input,unsigned int inputlen)
 {
     unsigned int i = 0,index = 0,partlen = 0;
     index = (context->count[0] >> 3) & 0x3F;
@@ -193,9 +193,10 @@ void md5_update(md5_ctx *context,unsigned char *input,unsigned int inputlen)
     if(inputlen >= partlen)
     {
         md5_memcpy(&context->buffer[index],input,partlen);
-        md5_transform(context->state,context->buffer);
-        for(i = partlen;i+64 <= inputlen;i+=64)
-            md5_transform(context->state,&input[i]);
+        OB_RANDOM_NAME(md5_transform)(context->state,context->buffer);
+        for(i = partlen;i+64 <= inputlen;i+=64){
+            OB_RANDOM_NAME(md5_transform)(context->state,&input[i]);
+        }
         index = 0;        
     }  
     else
@@ -205,27 +206,27 @@ void md5_update(md5_ctx *context,unsigned char *input,unsigned int inputlen)
     md5_memcpy(&context->buffer[index],&input[i],inputlen-i);
 }
 
-void md5_final(md5_ctx *context,unsigned char digest[16])
+void OB_RANDOM_NAME(md5_final)(md5_ctx *context,unsigned char digest[16])
 {
     unsigned int index = 0,padlen = 0;
     unsigned char bits[8];
     index = (context->count[0] >> 3) & 0x3F;
     padlen = (index < 56)?(56-index):(120-index);
-    md5_encode(bits,context->count,8);
-    md5_update(context,md5_padding,padlen);
-    md5_update(context,bits,8);
-    md5_encode(digest,context->state,16);
+    OB_RANDOM_NAME(md5_encode)(bits,context->count,8);
+    OB_RANDOM_NAME(md5_update)(context,OB_RANDOM_NAME(md5_padding),padlen);
+    OB_RANDOM_NAME(md5_update)(context,bits,8);
+    OB_RANDOM_NAME(md5_encode)(digest,context->state,16);
 }
 
 
-int md5_calc(unsigned char* message,unsigned int size, unsigned char* pval,int valsize)
+int OB_RANDOM_NAME(md5_calc)(unsigned char* message,unsigned int size, unsigned char* pval,int valsize)
 {
     md5_ctx ctx;
     if (valsize < 16) {
         return -1;
     }
-    md5_init(&ctx);
-    md5_update(&ctx,message,size);
-    md5_final(&ctx,pval);
+    OB_RANDOM_NAME(md5_init)(&ctx);
+    OB_RANDOM_NAME(md5_update)(&ctx,message,size);
+    OB_RANDOM_NAME(md5_final)(&ctx,pval);
     return 16;
 }

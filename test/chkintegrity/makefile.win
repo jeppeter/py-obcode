@@ -1,5 +1,6 @@
 
 CURDIR=$(MAKEDIR)
+OBCODE_DIR=$(CURDIR)\..\..
 CLIBS_DIR=$(CURDIR)\clibs
 DYNAMICDIR=$(CLIBS_DIR)\dynamiclib
 STATICDIR=$(CLIBS_DIR)\staticlib
@@ -69,7 +70,7 @@ WINLIB_VALUE=0
 INC_LDFLAGS = "$(DYNAMICDIR)\extargslib.lib" "$(DYNAMICDIR)\winlib.lib" "$(DYNAMICDIR)\json.lib"
 !ENDIF
 
-INC_CFLAGS = /I"$(CLIBS_DIR)\common\extargslib" /I"$(CLIBS_DIR)\winlib" /I"$(CLIBS_DIR)\common\jsonlib" /I"$(CLIBS_DIR)\common"
+INC_CFLAGS = /I"$(OBCODE_DIR)\include" /I"$(OBCODE_DIR)\src" /I"$(CLIBS_DIR)\common\extargslib" /I"$(CLIBS_DIR)\winlib" /I"$(CLIBS_DIR)\common\jsonlib" /I"$(CLIBS_DIR)\common"
 COM_CFLAGS = /Wall /wd"4820" /wd"4668" /wd"4127" /wd"4510" /wd"4512" /wd"4610" /wd"4710" /wd"5045"
 REL_CFLAGS = 
 DBG_CFLAGS = /Zi /Od 

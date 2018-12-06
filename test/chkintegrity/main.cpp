@@ -6,6 +6,8 @@
 #include <cmn_args.h>
 #include <cmn_fileop.h>
 #include <string.h>
+#include <obcode.h>
+
 
 typedef struct __args_options {
     int m_verbose;
@@ -59,7 +61,7 @@ int init_log_verbose(pargs_options_t pargs)
     return 0;
 }
 
-#include "crc32calc.c"
+#include <crc32calc.c>
 
 int crc32_handler(int argc, char* argv[], pextargs_state_t parsestate, void* popt)
 {
@@ -99,7 +101,7 @@ out:
     return ret;
 }
 
-#include "md5calc.c"
+#include <md5calc.c>
 
 int md5_handler(int argc, char* argv[], pextargs_state_t parsestate, void* popt)
 {
@@ -144,7 +146,7 @@ out:
     return ret;
 }
 
-#include "sha256calc.c"
+#include <sha256calc.c>
 
 int sha256_handler(int argc, char* argv[], pextargs_state_t parsestate, void* popt)
 {
@@ -189,7 +191,7 @@ out:
     return ret;
 }
 
-#include "sha3calc.c"
+#include <sha3calc.c>
 
 int sha3_handler(int argc, char* argv[], pextargs_state_t parsestate, void* popt)
 {

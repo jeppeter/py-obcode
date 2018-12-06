@@ -5,6 +5,7 @@ ifeq ($(MAKECMDGOALS),static)
 STATICLIB=1
 endif
 
+OBCODE_DIR=$(shell readlink -f ${SRCDIR}/../.. )
 CLIBS_DIR=${SRCDIR}/clibs
 DYNAMICDIR=${CLIBS_DIR}/dynamiclib
 STATICDIR=${CLIBS_DIR}/staticlib
@@ -15,7 +16,7 @@ include ${SRCDIR}/baseop.mak
 CHKINTEGRITY_SRCS= main.cpp
 CHKINTEGRITY_OFILES=$(patsubst %.cpp,%.o,${CHKINTEGRITY_SRCS})
 
-INCLUDE_CFLAGS= -I${CLIBS_DIR}/uxlib -I${CLIBS_DIR}/common -I${CLIBS_DIR}/common/jsonlib -I${CLIBS_DIR}/common/extargslib
+INCLUDE_CFLAGS= -I${OBCODE_DIR}/include -I${OBCODE_DIR}/src -I${CLIBS_DIR}/uxlib -I${CLIBS_DIR}/common -I${CLIBS_DIR}/common/jsonlib -I${CLIBS_DIR}/common/extargslib
 
 #$(info "SRCDIR ${SRCDIR} $(MAKEFILE_LIST)")
 ifeq (${STATICLIB},)

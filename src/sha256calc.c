@@ -10,9 +10,9 @@ typedef struct {
 } sha256_ctx;
 
 /*********************** FUNCTION DECLARATIONS **********************/
-void sha256_init(sha256_ctx *ctx);
-void sha256_update(sha256_ctx *ctx, const unsigned char data[], unsigned int len);
-void sha256_final(sha256_ctx *ctx, unsigned char hash[]);
+void OB_RANDOM_NAME(sha256_init)(sha256_ctx *ctx);
+void OB_RANDOM_NAME(sha256_update)(sha256_ctx *ctx, const unsigned char data[], unsigned int len);
+void OB_RANDOM_NAME(sha256_final)(sha256_ctx *ctx, unsigned char hash[]);
 
 
 
@@ -29,7 +29,7 @@ void sha256_final(sha256_ctx *ctx, unsigned char hash[]);
 #define SHA256_SIG1(x) (SHA256_ROTRIGHT(x,17) ^ SHA256_ROTRIGHT(x,19) ^ ((x) >> 10))
 
 /**************************** VARIABLES *****************************/
-static const unsigned int k[64] = {
+static const unsigned int OB_RANDOM_NAME(sha256_k)[64] = {
 	0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
 	0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
 	0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
@@ -41,7 +41,7 @@ static const unsigned int k[64] = {
 };
 
 /*********************** FUNCTION DEFINITIONS ***********************/
-void sha256_transform(sha256_ctx *ctx, const unsigned char data[])
+void OB_RANDOM_NAME(sha256_transform)(sha256_ctx *ctx, const unsigned char data[])
 {
 	unsigned int a, b, c, d, e, f, g, h, i, j, t1, t2, m[64];
 
@@ -66,7 +66,7 @@ void sha256_transform(sha256_ctx *ctx, const unsigned char data[])
 	h = ctx->state[7];
 
 	for (i = 0; i < 64; ++i) {
-		t1 = h + SHA256_EP1(e) + SHA256_CH(e,f,g) + k[i] + m[i];
+		t1 = h + SHA256_EP1(e) + SHA256_CH(e,f,g) + OB_RANDOM_NAME(sha256_k)[i] + m[i];
 		t2 = SHA256_EP0(a) + SHA256_MAJ(a,b,c);
 		h = g;
 		g = f;
@@ -88,7 +88,7 @@ void sha256_transform(sha256_ctx *ctx, const unsigned char data[])
 	ctx->state[7] += h;
 }
 
-void sha256_init(sha256_ctx *ctx)
+void OB_RANDOM_NAME(sha256_init)(sha256_ctx *ctx)
 {
 	ctx->datalen = 0;
 	ctx->bitlen = 0;
@@ -114,7 +114,7 @@ do                                                                              
 	}                                                                                             \
 }while(0)
 
-void sha256_update(sha256_ctx *ctx, const unsigned char data[], unsigned int len)
+void OB_RANDOM_NAME(sha256_update)(sha256_ctx *ctx, const unsigned char data[], unsigned int len)
 {
 	unsigned int i;
 
@@ -122,14 +122,14 @@ void sha256_update(sha256_ctx *ctx, const unsigned char data[], unsigned int len
 		ctx->data[ctx->datalen] = data[i];
 		ctx->datalen++;
 		if (ctx->datalen == 64) {
-			sha256_transform(ctx, ctx->data);
+			OB_RANDOM_NAME(sha256_transform)(ctx, ctx->data);
 			ctx->bitlen += 512;
 			ctx->datalen = 0;
 		}
 	}
 }
 
-void sha256_final(sha256_ctx *ctx, unsigned char hash[])
+void OB_RANDOM_NAME(sha256_final)(sha256_ctx *ctx, unsigned char hash[])
 {
 	unsigned int i;
 
@@ -145,7 +145,7 @@ void sha256_final(sha256_ctx *ctx, unsigned char hash[])
 		ctx->data[i++] = 0x80;
 		while (i < 64)
 			ctx->data[i++] = 0x00;
-		sha256_transform(ctx, ctx->data);
+		OB_RANDOM_NAME(sha256_transform)(ctx, ctx->data);
 		sha256_memset(ctx->data, 0, 56);
 	}
 
@@ -159,7 +159,7 @@ void sha256_final(sha256_ctx *ctx, unsigned char hash[])
 	ctx->data[58] = (unsigned char)((ctx->bitlen >> 40) & 0xff);
 	ctx->data[57] = (unsigned char)((ctx->bitlen >> 48) & 0xff);
 	ctx->data[56] = (unsigned char)((ctx->bitlen >> 56) & 0xff);
-	sha256_transform(ctx, ctx->data);
+	OB_RANDOM_NAME(sha256_transform)(ctx, ctx->data);
 
 	// Since this implementation uses little endian byte ordering and SHA uses big endian,
 	// reverse all the bytes when copying the final state to the output hash.
@@ -175,14 +175,14 @@ void sha256_final(sha256_ctx *ctx, unsigned char hash[])
 	}
 }
 
-int sha256_calc(unsigned char* message, unsigned int len,unsigned char* pval, int valsize)
+int OB_RANDOM_NAME(sha256_calc)(unsigned char* message, unsigned int len,unsigned char* pval, int valsize)
 {
 	sha256_ctx ctx;
 	if (valsize < 32) {
 		return -1;
 	}
-	sha256_init(&ctx);
-	sha256_update(&ctx,message,len);
-	sha256_final(&ctx,pval);
+	OB_RANDOM_NAME(sha256_init)(&ctx);
+	OB_RANDOM_NAME(sha256_update)(&ctx,message,len);
+	OB_RANDOM_NAME(sha256_final)(&ctx,pval);
 	return 32;
 }

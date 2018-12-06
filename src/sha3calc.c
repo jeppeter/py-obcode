@@ -20,9 +20,9 @@ typedef struct sha3_context_ {
 
 
 /* For Init or Reset call these: */
-void sha3_init512(void *priv);
-void sha3_update(void *priv, void const *bufIn, unsigned int len);
-void sha3_final(void *priv, unsigned char* pval);
+void OB_RANDOM_NAME(sha3_init512)(void *priv);
+void OB_RANDOM_NAME(sha3_update)(void *priv, void const *bufIn, unsigned int len);
+void OB_RANDOM_NAME(sha3_final)(void *priv, unsigned char* pval);
 
 
 
@@ -47,7 +47,7 @@ void sha3_final(void *priv, unsigned char* pval);
     (((x) << (y)) | ((x) >> ((sizeof(unsigned long long)*8) - (y))))
 #endif
 
-static const unsigned long long keccakf_rndc[24] = {
+static const unsigned long long OB_RANDOM_NAME(keccakf_rndc)[24] = {
     SHA3_CONST(0x0000000000000001UL), SHA3_CONST(0x0000000000008082UL),
     SHA3_CONST(0x800000000000808aUL), SHA3_CONST(0x8000000080008000UL),
     SHA3_CONST(0x000000000000808bUL), SHA3_CONST(0x0000000080000001UL),
@@ -62,12 +62,12 @@ static const unsigned long long keccakf_rndc[24] = {
     SHA3_CONST(0x0000000080000001UL), SHA3_CONST(0x8000000080008008UL)
 };
 
-static const unsigned keccakf_rotc[24] = {
+static const unsigned OB_RANDOM_NAME(keccakf_rotc)[24] = {
     1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62,
     18, 39, 61, 20, 44
 };
 
-static const unsigned keccakf_piln[24] = {
+static const unsigned OB_RANDOM_NAME(keccakf_piln)[24] = {
     10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20,
     14, 22, 9, 6, 1
 };
@@ -75,7 +75,7 @@ static const unsigned keccakf_piln[24] = {
 /* generally called after SHA3_KECCAK_SPONGE_WORDS-ctx->capacityWords words 
  * are XORed into the state s 
  */
-static void keccakf(unsigned long long s[25])
+static void OB_RANDOM_NAME(keccakf)(unsigned long long s[25])
 {
     int i, j, round;
     unsigned long long t, bc[5];
@@ -96,7 +96,7 @@ static void keccakf(unsigned long long s[25])
         /* Rho Pi */
         t = s[1];
         for(i = 0; i < 24; i++) {
-            j = (int)keccakf_piln[i];
+            j = (int)OB_RANDOM_NAME(keccakf_piln)[i];
             bc[0] = s[j];
             s[j] = SHA3_ROTL64(t, keccakf_rotc[i]);
             t = bc[0];
@@ -111,7 +111,7 @@ static void keccakf(unsigned long long s[25])
         }
 
         /* Iota */
-        s[0] ^= keccakf_rndc[round];
+        s[0] ^= OB_RANDOM_NAME(keccakf_rndc)[round];
     }
 }
 
@@ -143,13 +143,13 @@ do{                                                                             
 
 
 
-void sha3_init512(sha3_context *ctx)
+void OB_RANDOM_NAME(sha3_init512)(sha3_context *ctx)
 {
     sha3_memset(ctx, 0, sizeof(*ctx));
     ctx->capacityWords = 2 * 512 / (8 * sizeof(unsigned long long));
 }
 
-void sha3_update(sha3_context *ctx, const unsigned char *buf, unsigned int len)
+void OB_RANDOM_NAME(sha3_update)(sha3_context *ctx, const unsigned char *buf, unsigned int len)
 {
     /* 0...7 -- how much is needed to have a word */
     unsigned old_tail = (8 - ctx->byteIndex) & 7;
@@ -180,7 +180,7 @@ void sha3_update(sha3_context *ctx, const unsigned char *buf, unsigned int len)
         ctx->saved = 0;
         if(++ctx->wordIndex ==
                 (SHA3_KECCAK_SPONGE_WORDS - ctx->capacityWords)) {
-            keccakf(ctx->s);
+            OB_RANDOM_NAME(keccakf)(ctx->s);
             ctx->wordIndex = 0;
         }
     }
@@ -202,7 +202,7 @@ void sha3_update(sha3_context *ctx, const unsigned char *buf, unsigned int len)
         ctx->s[ctx->wordIndex] ^= t;
         if(++ctx->wordIndex ==
                 (SHA3_KECCAK_SPONGE_WORDS - ctx->capacityWords)) {
-            keccakf(ctx->s);
+            OB_RANDOM_NAME(keccakf)(ctx->s);
             ctx->wordIndex = 0;
         }
     }
@@ -218,7 +218,7 @@ void sha3_update(sha3_context *ctx, const unsigned char *buf, unsigned int len)
  * The padding block is 0x01 || 0x00* || 0x80. First 0x01 and last 0x80 
  * bytes are always present, but they can be the same byte.
  */
-void sha3_final(sha3_context *ctx, unsigned char* pval)
+void OB_RANDOM_NAME(sha3_final)(sha3_context *ctx, unsigned char* pval)
 {
     /* Append 2-bit suffix 01, per SHA-3 spec. Instead of 1 for padding we
      * use 1<<2 below. The 0x02 below corresponds to the suffix 01.
@@ -232,7 +232,7 @@ void sha3_final(sha3_context *ctx, unsigned char* pval)
 
     ctx->s[SHA3_KECCAK_SPONGE_WORDS - ctx->capacityWords - 1] ^=
             SHA3_CONST(0x8000000000000000UL);
-    keccakf(ctx->s);
+    OB_RANDOM_NAME(keccakf)(ctx->s);
 
     /* Return first bytes of the ctx->s. This conversion is not needed for
      * little-endian platforms e.g. wrap with #if !defined(__BYTE_ORDER__)
@@ -259,14 +259,14 @@ void sha3_final(sha3_context *ctx, unsigned char* pval)
     return ;
 }
 
-int sha3_calc(unsigned char* message,unsigned int len, unsigned char* pval,unsigned int valsize)
+int OB_RANDOM_NAME(sha3_calc)(unsigned char* message,unsigned int len, unsigned char* pval,unsigned int valsize)
 {
     sha3_context ctx;
     if (valsize < 64) {
         return -1;
     }
-    sha3_init512(&ctx);
-    sha3_update(&ctx,message,len);
-    sha3_final(&ctx,pval);
+    OB_RANDOM_NAME(sha3_init512)(&ctx);
+    OB_RANDOM_NAME(sha3_update)(&ctx,message,len);
+    OB_RANDOM_NAME(sha3_final)(&ctx,pval);
     return 64;
 }

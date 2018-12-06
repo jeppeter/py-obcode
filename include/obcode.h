@@ -13,6 +13,8 @@ extern "C" {
 #define  OB_VAR_SPEC(c,x)                   x
 #define  OB_DECL_VAR(x)                     x
 #define  OB_DECL_VAR_SPEC(c,x)              x
+#define  OB_RANDOM_NAME(x)                  x
+#define  OB_RANDOM_NAME_SPEC(c,x)           x
 
 /*to make the configuration for this file*/
 #define  OB_CONFIG(x)
