@@ -59,9 +59,10 @@ int init_log_verbose(pargs_options_t pargs)
     return 0;
 }
 
-int crc32_calc(unsigned char *message, int size, unsigned int* pval)
+int crc32_calc(unsigned char *message,unsigned int size, unsigned char* pval, int valsize)
 {
-    int i, j;
+    unsigned int i;
+    int j;
     unsigned int byte, crc, mask;
 
     i = 0;
@@ -79,10 +80,13 @@ int crc32_calc(unsigned char *message, int size, unsigned int* pval)
         }
         i = i + 1;
     }
-    if (pval) {
-        *pval = ~crc;
+    crc = ~crc;
+    if (pval && valsize >= 4) {
+        for (i=0;i<4;i++) {
+            pval[i] = ((crc >> (i * 8)) & 0xff);
+        }
     }
-    return size;
+    return 4;
 }
 
 
@@ -96,7 +100,8 @@ int crc32_handler(int argc, char* argv[], pextargs_state_t parsestate, void* pop
     char* infile;
     unsigned int crcval;
     pargs_options_t pargs = (pargs_options_t) popt;
-
+    argc = argc;
+    argv = argv;
     init_log_verbose(pargs);
 
     for (i = 0; parsestate->leftargs != NULL && parsestate->leftargs[i] != NULL; i++) {
@@ -108,7 +113,7 @@ int crc32_handler(int argc, char* argv[], pextargs_state_t parsestate, void* pop
             goto out;
         }
         filelen = ret;
-        ret = crc32_calc((unsigned char*)pfilebuf, filelen, &crcval);
+        ret = crc32_calc((unsigned char*)pfilebuf, (unsigned int)filelen, (unsigned char*)&crcval,sizeof(crcval));
         if (ret < 0) {
             GETERRNO(ret);
             goto out;
@@ -123,14 +128,49 @@ out:
     return ret;
 }
 
+#include "md5calc.c"
+
 int md5_handler(int argc, char* argv[], pextargs_state_t parsestate, void* popt)
 {
-    popt = popt;
-    parsestate = parsestate;
-    argv = argv;
+    int ret;
+    char* pfilebuf = NULL;
+    int filesize = 0;
+    int filelen = 0;
+    int i,j;
+    char* infile;
+    unsigned char md5val[16];
+    pargs_options_t pargs = (pargs_options_t) popt;
     argc = argc;
-    fprintf(stderr, "not suppport md5 yet\n");
-    return -1;
+    argv = argv;
+
+    init_log_verbose(pargs);
+
+    for (i = 0; parsestate->leftargs != NULL && parsestate->leftargs[i] != NULL; i++) {
+        infile = parsestate->leftargs[i];
+        ret = read_file_whole(infile, &pfilebuf, &filesize);
+        if (ret < 0) {
+            GETERRNO(ret);
+            fprintf(stderr, "read [%s] error[%d]\n", infile, ret);
+            goto out;
+        }
+        filelen = ret;
+        ret = md5_calc((unsigned char*)pfilebuf, (unsigned int)filelen, md5val,sizeof(md5val));
+        if (ret < 0) {
+            GETERRNO(ret);
+            goto out;
+        }
+        fprintf(stdout, "[%s] md5 ", infile);
+        for (j=0;j<16;j++) {
+            fprintf(stdout,"%02x", md5val[j]);
+        }
+        fprintf(stdout, "\n");
+    }
+
+    ret = 0;
+out:
+    read_file_whole(NULL, &pfilebuf, &filesize);
+    SETERRNO(ret);
+    return ret;
 }
 
 
