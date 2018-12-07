@@ -27,3 +27,22 @@ int OB_RANDOM_NAME(crc32_calc)(unsigned char *message,unsigned int size, unsigne
     }
     return 4;
 }
+
+int OB_RANDOM_NAME(crc_sum)(unsigned char* message, unsigned int size,unsigned char* pval,int valsize)
+{
+    unsigned int crc=0;
+    unsigned int i;
+    if (valsize < 4) {
+        return -1;
+    }
+    i = 0;
+    while(i<size) {
+        crc += message[i];
+        i ++;
+    }
+    crc = ~crc;
+    for (i=0;i<4;i++) {
+        pval[i] = ((crc >> (i * 8)) & 0xff);
+    }
+    return 4;
+}

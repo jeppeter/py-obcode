@@ -51,7 +51,18 @@ rm -f $script_dir/obmak.py
 rm -f $script_dir/obpatch.py.touched 
 rm -f $script_dir/obpatch.py
 
+$PYTHON -m insertcode -p '%C_CODE_CRC32CALC%' -i $script_dir/src/chkval.py.tmpl pythonc $script_dir/src/crc32calc.c | \
+$PYTHON -m insertcode -p '%C_CODE_MD5CALC%' pythonc $script_dir/src/md5calc.c | \
+$PYTHON -m insertcode -p '%C_CODE_SHA256CALC%' pythonc $script_dir/src/sha256calc.c | \
+$PYTHON -m insertcode -p '%C_CODE_SHA3CALC%' pythonc $script_dir/src/sha3calc.c | \
+$PYTHON -m insertcode -p '%C_CODE_CHKVALDEF%' pythonc $script_dir/src/chkvaldef.c | \
+$PYTHON -m insertcode -p '%C_CODE_CHKVAL%' -o $script_dir/src/chkval.py pythonc $script_dir/src/chkval.c
 
+if [ $? -ne 0 ]
+	then
+	echo "not insert code error" >&2
+	exit 4
+fi
 
 $PYTHON $script_dir/src/obcode_debug.py --release
 wait_file_until "$script_dir/obcode.py.touched"

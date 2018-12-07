@@ -19,6 +19,11 @@ rmdir /Q /S %script_dir%__pycache__ 2>NUL
 
 %PYTHON% -m insertcode -p %%C_CODE_CRC32CALC%% -i %script_dir%src\chkval.py.tmpl pythonc %script_dir%src\crc32calc.c | %PYTHON% -m insertcode -p %%C_CODE_MD5CALC%% pythonc %script_dir%src\md5calc.c | %PYTHON% -m insertcode -p %%C_CODE_SHA256CALC%% pythonc %script_dir%src\sha256calc.c | %PYTHON% -m insertcode -p %%C_CODE_SHA3CALC%% pythonc %script_dir%src\sha3calc.c | %PYTHON% -m insertcode -p %%C_CODE_CHKVALDEF%% pythonc %script_dir%src\chkvaldef.c | %PYTHON% -m insertcode -p %%C_CODE_CHKVAL%% -o %script_dir%src\chkval.py pythonc %script_dir%src\chkval.c
 
+if not errorlevel 0 (
+	echo "can not insert code" >&2
+	goto :fail
+)
+
 
 %PYTHON% %script_dir%src\obcode_debug.py --release
 call :check_file %script_dir%obcode.py.touched
@@ -36,7 +41,7 @@ if not errorlevel 0 (
 	goto :fail
 )
 
-goto :run_test
+goto :end
 
 :check_file
 
@@ -76,13 +81,6 @@ exit /b 0
 :fail
 goto :end
 
-:run_test
-
-%PYTHON% %script_dir%test\unit\test.py -f
-if not errorlevel 0 (
-	echo "not run test ok" >&2
-	goto :end
-)
 
 :end
 echo on
