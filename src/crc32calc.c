@@ -1,4 +1,4 @@
-int OB_RANDOM_NAME(crc32_calc)(unsigned char *message,unsigned int size, unsigned char* pval, int valsize)
+int OB_RANDOM_NAME(crc32_calc)(unsigned char *message,unsigned int size, unsigned char* pval,int valsize)
 {
     unsigned int i;
     int j;

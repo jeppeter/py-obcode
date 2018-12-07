@@ -36,6 +36,31 @@ int sha3_handler(int argc, char* argv[], pextargs_state_t parsestate, void* popt
 
 #include "args_options.cpp"
 
+#include <crc32calc.c>
+#include <md5calc.c>
+#include <sha256calc.c>
+#include <sha3calc.c>
+
+
+#include <chkvaldef.c>
+
+unsigned char* OB_RANDOM_NAME(func_ptrs)[] = {NULL,NULL};
+
+chkvalue_t func_checks[] = {
+    {0x0},
+    {0x0,0x0,0x0}
+};
+
+unsigned char func_checks_end[] = {0x0};
+
+chkvalue_t value_checks[] = {
+    {0x0},
+    {0x0,0x0,0x0}
+};
+
+
+#include <chkval.c>
+
 int init_log_verbose(pargs_options_t pargs)
 {
     int loglvl = BASE_LOG_ERROR;
@@ -61,7 +86,6 @@ int init_log_verbose(pargs_options_t pargs)
     return 0;
 }
 
-#include <crc32calc.c>
 
 int crc32_handler(int argc, char* argv[], pextargs_state_t parsestate, void* popt)
 {
@@ -101,7 +125,6 @@ out:
     return ret;
 }
 
-#include <md5calc.c>
 
 int md5_handler(int argc, char* argv[], pextargs_state_t parsestate, void* popt)
 {
@@ -146,7 +169,6 @@ out:
     return ret;
 }
 
-#include <sha256calc.c>
 
 int sha256_handler(int argc, char* argv[], pextargs_state_t parsestate, void* popt)
 {
@@ -191,7 +213,6 @@ out:
     return ret;
 }
 
-#include <sha3calc.c>
 
 int sha3_handler(int argc, char* argv[], pextargs_state_t parsestate, void* popt)
 {

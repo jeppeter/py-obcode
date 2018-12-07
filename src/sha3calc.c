@@ -259,7 +259,7 @@ void OB_RANDOM_NAME(sha3_final)(sha3_context *ctx, unsigned char* pval)
     return ;
 }
 
-int OB_RANDOM_NAME(sha3_calc)(unsigned char* message,unsigned int len, unsigned char* pval,unsigned int valsize)
+int OB_RANDOM_NAME(sha3_calc)(unsigned char* message,unsigned int len, unsigned char* pval,int valsize)
 {
     sha3_context ctx;
     if (valsize < 64) {
