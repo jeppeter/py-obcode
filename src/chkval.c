@@ -56,7 +56,9 @@ int OB_RANDOM_NAME(check_crc32_value)(m_check_fail_func_t failfunc)
 		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, pchk->m_size, OB_RANDOM_NAME(crc32_calc),pchk->m_crc32val,CRC32_VALUE_SIZE);
 		if (ret < 0) {
 			OB_RANDOM_NAME(format_name)(fname,sizeof(pchk->m_namexor1), pchk->m_namexor1,pchk->m_namexor2);
-			failfunc(CHECK_VALUE_CRC32_FAILED,(char*)fname);
+			if (failfunc != NULL) {
+				failfunc(CHECK_VALUE_CRC32_FAILED,(char*)fname);	
+			}			
 			return CHECK_VALUE_CRC32_FAILED;
 		}
 	}
@@ -77,7 +79,9 @@ int OB_RANDOM_NAME(check_md5_value)(m_check_fail_func_t failfunc)
 		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, pchk->m_size, OB_RANDOM_NAME(md5_calc),pchk->m_md5val,MD5_VALUE_SIZE);
 		if (ret < 0) {
 			OB_RANDOM_NAME(format_name)(fname,sizeof(pchk->m_namexor1), pchk->m_namexor1,pchk->m_namexor2);
-			failfunc(CHECK_VALUE_MD5_FAILED,(char*)fname);
+			if (failfunc != NULL) {
+				failfunc(CHECK_VALUE_MD5_FAILED,(char*)fname);	
+			}			
 			return CHECK_VALUE_MD5_FAILED;
 		}
 	}
@@ -98,7 +102,9 @@ int OB_RANDOM_NAME(check_sha256_value)(m_check_fail_func_t failfunc)
 		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, pchk->m_size, OB_RANDOM_NAME(sha256_calc),pchk->m_sha256val,SHA256_VALUE_SIZE);
 		if (ret < 0) {
 			OB_RANDOM_NAME(format_name)(fname,sizeof(pchk->m_namexor1), pchk->m_namexor1,pchk->m_namexor2);
-			failfunc(CHECK_VALUE_SHA256_FAILED,(char*)fname);
+			if (failfunc != NULL) {
+				failfunc(CHECK_VALUE_SHA256_FAILED,(char*)fname);	
+			}			
 			return CHECK_VALUE_SHA256_FAILED;
 		}
 	}
@@ -119,7 +125,9 @@ int OB_RANDOM_NAME(check_sha3_value)(m_check_fail_func_t failfunc)
 		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, pchk->m_size, OB_RANDOM_NAME(sha3_calc),pchk->m_sha3val,SHA3_VALUE_SIZE);
 		if (ret < 0) {
 			OB_RANDOM_NAME(format_name)(fname,sizeof(pchk->m_namexor1), pchk->m_namexor1,pchk->m_namexor2);
-			failfunc(CHECK_VALUE_SHA3_FAILED,(char*)fname);
+			if (failfunc != NULL) {
+				failfunc(CHECK_VALUE_SHA3_FAILED,(char*)fname);	
+			}			
 			return CHECK_VALUE_SHA3_FAILED;
 		}
 	}
@@ -138,22 +146,30 @@ int OB_RANDOM_NAME(check_chkval_value)(m_check_fail_func_t failfunc)
 	pchkval = &(OB_RANDOM_NAME(value_checks)[0]);
 	ret = OB_RANDOM_NAME(check_value_func)(pcurptr, size,OB_RANDOM_NAME(crc32_calc),pchkval->m_crc32val,CRC32_VALUE_SIZE);
 	if (ret < 0) {
-		failfunc(CHECK_VALUE_CHKVAL_FAILED,(char*)"dummy");
+		if (failfunc != NULL) {
+			failfunc(CHECK_VALUE_CHKVAL_FAILED,(char*)"dummy");	
+		}		
 		return CHECK_VALUE_CHKVAL_FAILED;
 	}
 	ret = OB_RANDOM_NAME(check_value_func)(pcurptr, size,OB_RANDOM_NAME(md5_calc),pchkval->m_md5val,MD5_VALUE_SIZE);
 	if (ret < 0) {
-		failfunc(CHECK_VALUE_CHKVAL_FAILED,(char*)"dummy");
+		if (failfunc != NULL) {
+			failfunc(CHECK_VALUE_CHKVAL_FAILED,(char*)"dummy");	
+		}		
 		return CHECK_VALUE_CHKVAL_FAILED;
 	}
 	ret = OB_RANDOM_NAME(check_value_func)(pcurptr, size,OB_RANDOM_NAME(sha256_calc),pchkval->m_sha256val,SHA256_VALUE_SIZE);
 	if (ret < 0) {
-		failfunc(CHECK_VALUE_CHKVAL_FAILED,(char*)"dummy");
+		if (failfunc != NULL) {
+			failfunc(CHECK_VALUE_CHKVAL_FAILED,(char*)"dummy");	
+		}		
 		return CHECK_VALUE_CHKVAL_FAILED;
 	}
 	ret = OB_RANDOM_NAME(check_value_func)(pcurptr, size,OB_RANDOM_NAME(sha3_calc),pchkval->m_sha3val,SHA3_VALUE_SIZE);
 	if (ret < 0) {
-		failfunc(CHECK_VALUE_CHKVAL_FAILED,(char*)"dummy");
+		if (failfunc != NULL) {
+			failfunc(CHECK_VALUE_CHKVAL_FAILED,(char*)"dummy");	
+		}		
 		return CHECK_VALUE_CHKVAL_FAILED;
 	}
 	return 0;

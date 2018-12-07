@@ -13,5 +13,8 @@
     },
     "sha3<sha3_handler>" : {
         "$" : "+"
+    },
+    "check<check_handler>" : {
+        "$" : 0
     }
 }
