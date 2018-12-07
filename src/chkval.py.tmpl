@@ -6,6 +6,7 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from strparser import *
+from cobfilebase import *
 
 
 ##extractcode_start
@@ -17,5 +18,9 @@ C_CODE_CHKVALDEF='''%C_CODE_CHKVALDEF%'''
 C_CODE_CHKVAL='''%C_CODE_CHKVAL%'''
 
 
+class ChkVal(COBFileBase):
+	def __init__(self,sfile,dfile=None,cfg=None):
+		COBFileBase.__init__(self,sfile,dfile,cfg)
+		return
 
 ##extractcode_end
