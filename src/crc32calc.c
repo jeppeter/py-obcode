@@ -1,4 +1,4 @@
-int OB_RANDOM_NAME(crc32_calc)(unsigned char *message,unsigned int size, unsigned char* pval,int valsize)
+int OB_RANDOM_NAME(crc32_calc)(unsigned char *message, unsigned int size, unsigned char* pval, int valsize)
 {
     unsigned int i;
     int j;
@@ -21,28 +21,40 @@ int OB_RANDOM_NAME(crc32_calc)(unsigned char *message,unsigned int size, unsigne
     }
     crc = ~crc;
     if (pval && valsize >= 4) {
-        for (i=0;i<4;i++) {
+        for (i = 0; i < 4; i++) {
             pval[i] = ((crc >> (i * 8)) & 0xff);
         }
     }
     return 4;
 }
 
-int OB_RANDOM_NAME(crc_sum)(unsigned char* message, unsigned int size,unsigned char* pval,int valsize)
+int OB_RANDOM_NAME(crc_sum)(unsigned char* message, unsigned int size, unsigned char* pval, int valsize)
 {
-    unsigned int crc=0;
-    unsigned int i;
+    unsigned int crc = 0;
+    unsigned int* pival = (unsigned int*) message;
+    unsigned char* pcc;
+    unsigned int ival;
+    int i,j;
     if (valsize < 4) {
         return -1;
     }
-    i = 0;
-    while(i<size) {
-        crc += message[i];
-        i ++;
+    i = (int)size;
+    while (i > 0) {
+        ival = *pival;
+        if ( i < (int)(sizeof(unsigned int))) {
+            ival = 0;
+            pcc = (unsigned char*) pival;
+            for (j=0;j<i;j++, pcc++) {
+                ival += (unsigned int)(((unsigned int)(*pcc))<< (j * 8));
+            }
+        }
+        crc += ival;
+        i -= sizeof(unsigned int);
+        pival ++;
     }
     crc = ~crc;
-    for (i=0;i<4;i++) {
-        pval[i] = ((crc >> (i * 8)) & 0xff);
+    for (i = 0; i < 4; i++) {
+        pval[i] = (unsigned char)((crc >> (i * 8)) & 0xff);
     }
     return 4;
 }
