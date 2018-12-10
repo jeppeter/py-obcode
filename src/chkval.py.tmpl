@@ -55,7 +55,7 @@ class ChkVal(COBFileBase):
         self.__ob_random_name_spec_expr = re.compile('.*(OB_RANDOM_NAME_SPEC\s*(\(.*))$')
         return
 
-    def __format_ob_random_name_inner(self,odict,cfg,params,before,after):
+    def __format_ob_random_name_inner(self,objname,odict,cfg,params,before,after):
         assert(len(params) == 1)
         bs = string_to_ints(params[0])
         bs.insert(0,ord('"'))
@@ -68,57 +68,59 @@ class ChkVal(COBFileBase):
         rndname = ''
         if RANDOM_VARIABLE not in odict.keys():
             odict[RANDOM_VARIABLE] = dict()
+        if objname not in odict[RANDOM_VARIABLE].keys():
+            odict[RANDOM_VARIABLE][objname] = dict()
 
-        if rs not in odict[RANDOM_VARIABLE].keys():
-            odict[RANDOM_VARIABLE][rs] = get_random_name(random.randint(cfg.namemin,cfg.namemax))
-        rndname = odict[RANDOM_VARIABLE][rs]
+        if rs not in odict[RANDOM_VARIABLE][objname].keys():
+            odict[RANDOM_VARIABLE][objname][rs] = get_random_name(random.randint(cfg.namemin,cfg.namemax))
+        rndname = odict[RANDOM_VARIABLE][objname][rs]
         newc = before
         newc += rndname
         newc += after
         return newc,odict
 
 
-    def __format_ob_random_name_func(self,l,odict):
+    def __format_ob_random_name_func(self,l,objname,odict):
         cfg , params, before ,after = self.get_variables(l, self.__ob_random_name_expr)
-        return self.__format_ob_random_name_inner(odict,cfg,params,before,after)
+        return self.__format_ob_random_name_inner(objname,odict,cfg,params,before,after)
 
-    def __format_ob_random_name_spec_func(self,l,odict):
+    def __format_ob_random_name_spec_func(self,l,objname,odict):
         cfg ,params,before ,after = self.get_spec_config_variables(l,self.__ob_mixed_str_spec_expr)
-        return self.__format_ob_random_name_inner(odict,cfg,params,before,after)
+        return self.__format_ob_random_name_inner(objname,odict,cfg,params,before,after)
 
-    def __format_c_line(self,origc,odict):
+    def __format_c_line(self,origc,objname,odict):
         newc = origc        
         # now we should get the
         while True:
             if self.get_filter_expr_not_defined(newc,self.__ob_random_name_expr):
-                newc, odict = self.__format_ob_random_name_func(newc,odict)
+                newc, odict = self.__format_ob_random_name_func(newc,objname,odict)
             elif self.get_filter_expr_not_defined(newc,self.__ob_random_name_spec_expr):
-                newc, odict = self.__format_ob_random_name_spec_func(newc,odict)
+                newc, odict = self.__format_ob_random_name_spec_func(newc,objname,odict)
             else:
                 break
         return newc,odict
 
-    def __format_multi_lines(self,mlines,odict):
+    def __format_multi_lines(self,mlines,objname,odict):
         rets = ''
         sarr = re.split('\n',mlines)
         for l in sarr:
             l = l.rstrip('\r\n')
-            r , odict = self.__format_c_line(l,odict)
+            r , odict = self.__format_c_line(l,objname,odict)
             rets += '%s\n'%(r)
         return rets,odict
 
-    def __format_char_array(self,odict,kval,num=16):
-        if kval  in odict[RANDOM_VARIABLE].keys():
-            name = odict[RANDOM_VARIABLE][kval]
+    def __format_char_array(self,objname,odict,kval,num=16):
+        if kval  in odict[RANDOM_VARIABLE][objname].keys():
+            name = odict[RANDOM_VARIABLE][objname][kval]
         else:
             name = get_random_name(20)
-            odict[RANDOM_VARIABLE][kval] = name
+            odict[RANDOM_VARIABLE][objname][kval] = name
 
-        if  kval in odict[CHKVAL_RANDOM_VALUE].keys():
-            sarr = odict[CHKVAL_RANDOM_VALUE][kval]
+        if  kval in odict[CHKVAL_RANDOM_VALUE][objname].keys():
+            sarr = odict[CHKVAL_RANDOM_VALUE][objname][kval]
         else:
             sarr = get_random_bytes(num)
-            odict[CHKVAL_RANDOM_VALUE][kval] = sarr
+            odict[CHKVAL_RANDOM_VALUE][objname][kval] = sarr
 
         rets = format_line('unsigned char %s[%d]={%s};'%(name,num,format_bytes_c(sarr)), 0)
         return rets,odict
@@ -131,11 +133,11 @@ class ChkVal(COBFileBase):
             idx += 1
         return llval
 
-    def __format_sarr_struct(self,odict,f,name,size,tabs,lastone=False):
+    def __format_sarr_struct(self,objname,odict,f,name,size,tabs,lastone=False):
         rets = ''
-        if name not in odict[CHKVAL_RANDOM_VALUE][f].keys():
-            odict[CHKVAL_RANDOM_VALUE][f][name] = get_random_bytes(size)
-        sarr = odict[CHKVAL_RANDOM_VALUE][f][name]
+        if name not in odict[CHKVAL_RANDOM_VALUE][objname][f].keys():
+            odict[CHKVAL_RANDOM_VALUE][objname][f][name] = get_random_bytes(size)
+        sarr = odict[CHKVAL_RANDOM_VALUE][objname][f][name]
         rets += format_debug_line('%s'%(name), tabs + 1, 3)
         if lastone:
             rets += format_line('{%s}'%(format_bytes_c(sarr)), tabs+1)
@@ -145,26 +147,30 @@ class ChkVal(COBFileBase):
 
 
 
-    def __format_check_value_single(self,odict,f,tabs,lastone):
+    def __format_check_value_single(self,objname,odict,f,tabs,lastone):
         rets = ''
         if CHKVAL_RANDOM_VALUE not in odict.keys():
             odict[CHKVAL_RANDOM_VALUE] = dict()
-        if f not in odict[CHKVAL_RANDOM_VALUE].keys():
-            odict[CHKVAL_RANDOM_VALUE][f] = dict()
+
+        if objname not in odict[CHKVAL_RANDOM_VALUE].keys():
+            odict[CHKVAL_RANDOM_VALUE][objname] = dict()
+
+        if f not in odict[CHKVAL_RANDOM_VALUE][objname].keys():
+            odict[CHKVAL_RANDOM_VALUE][objname][f] = dict()
         rets += format_line('{', tabs)
         rets += format_debug_line('function %s'%(f), tabs + 1, 3)
-        if CHKVAL_STRUCT_OFFSET not in odict[CHKVAL_RANDOM_VALUE][f].keys():
-            odict[CHKVAL_RANDOM_VALUE][f][CHKVAL_STRUCT_OFFSET] = get_random_bytes(CHKVAL_STRUCT_OFFSET_SIZE)
-        sarr = odict[CHKVAL_RANDOM_VALUE][f][CHKVAL_STRUCT_OFFSET]
+        if CHKVAL_STRUCT_OFFSET not in odict[CHKVAL_RANDOM_VALUE][objname][f].keys():
+            odict[CHKVAL_RANDOM_VALUE][objname][f][CHKVAL_STRUCT_OFFSET] = get_random_bytes(CHKVAL_STRUCT_OFFSET_SIZE)
+        sarr = odict[CHKVAL_RANDOM_VALUE][objname][f][CHKVAL_STRUCT_OFFSET]
         rets += format_debug_line('%s'%(CHKVAL_STRUCT_OFFSET),tabs+1,3)
         llval = self.__get_ll_value(sarr)
         rets += format_line('0x%x,'%(llval), tabs+1)
 
 
-        curs , odict = self.__format_sarr_struct(odict,f,CHKVAL_STRUCT_NAMEXOR1,CHKVAL_STRUCT_NAMEXOR1_SIZE,tabs,False)
+        curs , odict = self.__format_sarr_struct(objname,odict,f,CHKVAL_STRUCT_NAMEXOR1,CHKVAL_STRUCT_NAMEXOR1_SIZE,tabs,False)
         rets += curs
 
-        sarr1 = odict[CHKVAL_RANDOM_VALUE][f][CHKVAL_STRUCT_NAMEXOR1]
+        sarr1 = odict[CHKVAL_RANDOM_VALUE][objname][f][CHKVAL_STRUCT_NAMEXOR1]
         namexors = string_to_ints(f)
         if len(namexors) >= CHKVAL_STRUCT_NAMEXOR1_SIZE:
             namexors = namexors[:(CHKVAL_STRUCT_NAMEXOR1_SIZE-1)]
@@ -180,21 +186,21 @@ class ChkVal(COBFileBase):
         while idx < CHKVAL_STRUCT_NAMEXOR1_SIZE:
             sarr2[idx] = namexors[idx] ^ sarr1[idx]
             idx += 1
-        odict[CHKVAL_RANDOM_VALUE][f][CHKVAL_STRUCT_NAMEXOR2] = sarr2
+        odict[CHKVAL_RANDOM_VALUE][objname][f][CHKVAL_STRUCT_NAMEXOR2] = sarr2
         rets += format_debug_line('%s'%(CHKVAL_STRUCT_NAMEXOR2), tabs+ 1, 3)
         rets += format_line('{%s},'%(format_bytes_c(sarr2)), tabs+1)
 
 
-        curs , odict = self.__format_sarr_struct(odict,f,CHKVAL_STRUCT_CRC32VAL,CHKVAL_STRUCT_CRC32VAL_SIZE,tabs,False)
+        curs , odict = self.__format_sarr_struct(objname,odict,f,CHKVAL_STRUCT_CRC32VAL,CHKVAL_STRUCT_CRC32VAL_SIZE,tabs,False)
         rets += curs
 
-        curs , odict = self.__format_sarr_struct(odict,f,CHKVAL_STRUCT_MD5VAL,CHKVAL_STRUCT_MD5VAL_SIZE,tabs,False)
+        curs , odict = self.__format_sarr_struct(objname,odict,f,CHKVAL_STRUCT_MD5VAL,CHKVAL_STRUCT_MD5VAL_SIZE,tabs,False)
         rets += curs
 
-        curs , odict = self.__format_sarr_struct(odict,f,CHKVAL_STRUCT_SHA256VAL,CHKVAL_STRUCT_SHA256VAL_SIZE,tabs,False)
+        curs , odict = self.__format_sarr_struct(objname,odict,f,CHKVAL_STRUCT_SHA256VAL,CHKVAL_STRUCT_SHA256VAL_SIZE,tabs,False)
         rets += curs
 
-        curs , odict = self.__format_sarr_struct(odict,f,CHKVAL_STRUCT_SHA3VAL,CHKVAL_STRUCT_SHA3VAL_SIZE,tabs,True)
+        curs , odict = self.__format_sarr_struct(objname,odict,f,CHKVAL_STRUCT_SHA3VAL,CHKVAL_STRUCT_SHA3VAL_SIZE,tabs,True)
         rets += curs
 
         if lastone:
@@ -205,23 +211,19 @@ class ChkVal(COBFileBase):
 
 
 
-    def __format_check_value(self,odict,chkfuncs=[]):
+    def __format_check_value(self,odict,objname,chkfuncs=[]):
         rets = ''
-        if RANDOM_VARIABLE not in odict.keys():
-            odict[RANDOM_VARIABLE] = dict()
 
-        if CHKVAL_RANDOM_VALUE not in odict.keys():
-            odict[CHKVAL_RANDOM_VALUE] = dict()
         logging.info(' ')
 
-        curs , odict = self.__format_char_array(odict,CHKVAL_FUNC_CHECKS_START,16)
+        curs , odict = self.__format_char_array(objname,odict,CHKVAL_FUNC_CHECKS_START,16)
         rets += curs
 
         logging.info(' ')
 
-        if CHKVAL_FUNC_CHECKS not in odict[RANDOM_VARIABLE].keys():
-            odict[RANDOM_VARIABLE][CHKVAL_FUNC_CHECKS] = get_random_name(20)
-        func_checks = odict[RANDOM_VARIABLE][CHKVAL_FUNC_CHECKS]
+        if CHKVAL_FUNC_CHECKS not in odict[RANDOM_VARIABLE][objname].keys():
+            odict[RANDOM_VARIABLE][objname][CHKVAL_FUNC_CHECKS] = get_random_name(20)
+        func_checks = odict[RANDOM_VARIABLE][objname][CHKVAL_FUNC_CHECKS]
 
         logging.info(' ')
 
@@ -230,50 +232,60 @@ class ChkVal(COBFileBase):
         rets += format_line('chkvalue_t %s[] = {'%(func_checks), 0)
         idx = 0
         for f in chkfuncs:
-            curs , odict = self.__format_check_value_single(odict,f,1,False)
+            curs , odict = self.__format_check_value_single(objname,odict,f,1,False)
             rets += curs
 
-        curs,odict = self.__format_check_value_single(odict,'',1,True)
+        curs,odict = self.__format_check_value_single(objname,odict,'',1,True)
         rets += curs
         rets += format_line('};', 0)
 
-        curs ,odict = self.__format_char_array(odict,CHKVAL_FUNC_CHECKS_END,16)
+        curs ,odict = self.__format_char_array(objname,odict,CHKVAL_FUNC_CHECKS_END,16)
         rets += curs
 
         rets += format_line('',0)
-        if CHKVAL_VALUE_CHECKS not in odict[RANDOM_VARIABLE].keys():
-            odict[RANDOM_VARIABLE][CHKVAL_VALUE_CHECKS] = get_random_name(20)
-        valuechecks = odict[RANDOM_VARIABLE][CHKVAL_VALUE_CHECKS]
+        if CHKVAL_VALUE_CHECKS not in odict[RANDOM_VARIABLE][objname].keys():
+            odict[RANDOM_VARIABLE][objname][CHKVAL_VALUE_CHECKS] = get_random_name(20)
+        valuechecks = odict[RANDOM_VARIABLE][objname][CHKVAL_VALUE_CHECKS]
         rets += format_line('chkvalue_t %s[1] = {'%(valuechecks),0)
-        curs , odict = self.__format_check_value_single(odict,CHKVAL_VALUE_CHECKS.upper(),1,True)
+        curs , odict = self.__format_check_value_single(objname,odict,CHKVAL_VALUE_CHECKS.upper(),1,True)
         rets += curs
         rets += format_line('};',0)
 
-        curs,odict = self.__format_char_array(odict,CHKVAL_VALUE_CHECKS_TOTAL_END,16)
+        curs,odict = self.__format_char_array(objname,odict,CHKVAL_VALUE_CHECKS_TOTAL_END,16)
         rets += curs
         return rets, odict
 
 
 
-    def format_c_code(self,odict, chkfuncs=[]):
-        # firs
+    def format_c_code(self,odict, objname,chkfuncs=[]):
+        if RANDOM_VARIABLE not in odict.keys():
+            odict[RANDOM_VARIABLE] = dict()
+
+        if objname not in odict[RANDOM_VARIABLE].keys():
+            odict[RANDOM_VARIABLE][objname] = dict()
+
+        if CHKVAL_RANDOM_VALUE not in odict.keys():
+            odict[CHKVAL_RANDOM_VALUE] = dict()
+
+        if objname not in odict[CHKVAL_RANDOM_VALUE].keys():
+            odict[CHKVAL_RANDOM_VALUE][objname] = dict()
         rets = ''
-        curs,odict = self.__format_multi_lines(C_CODE_CRC32CALC,odict)
+        curs,odict = self.__format_multi_lines(C_CODE_CRC32CALC,objname,odict)
         rets += curs
-        curs , odict = self.__format_multi_lines(C_CODE_MD5CALC,odict)
+        curs , odict = self.__format_multi_lines(C_CODE_MD5CALC,objname,odict)
         rets += curs
-        curs , odict = self.__format_multi_lines(C_CODE_SHA256CALC,odict)
+        curs , odict = self.__format_multi_lines(C_CODE_SHA256CALC,objname,odict)
         rets += curs
-        curs , odict = self.__format_multi_lines(C_CODE_SHA3CALC, odict)
+        curs , odict = self.__format_multi_lines(C_CODE_SHA3CALC, objname,odict)
         rets += curs
-        curs , odict = self.__format_multi_lines(C_CODE_CHKVALDEF,odict)
+        curs , odict = self.__format_multi_lines(C_CODE_CHKVALDEF,objname,odict)
         rets += curs
 
         # this to check value
-        curs , odict = self.__format_check_value(odict,chkfuncs)
+        curs , odict = self.__format_check_value(odict,objname,chkfuncs)
         rets += curs
 
-        curs, odict = self.__format_multi_lines(C_CODE_CHKVAL,odict)
+        curs, odict = self.__format_multi_lines(C_CODE_CHKVAL,objname,odict)
         rets += curs
         return rets,odict
 

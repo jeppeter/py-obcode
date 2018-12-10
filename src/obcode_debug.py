@@ -279,7 +279,7 @@ def fmtchkval_handler(args,parser):
     chkval = ChkVal(args.input,None,None)
     if CHKVAL_KEY not in odict.keys():
         odict[CHKVAL_KEY] = dict()
-    rets , odict[CHKVAL_KEY] = chkval.format_c_code(odict[CHKVAL_KEY],funcs)
+    rets , odict[CHKVAL_KEY] = chkval.format_c_code(odict[CHKVAL_KEY],args.output,funcs)
     write_patch_output(args,rets,odict)
     sys.exit(0)
     return
