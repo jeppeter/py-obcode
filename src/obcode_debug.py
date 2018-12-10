@@ -272,15 +272,12 @@ def fmtchkval_handler(args,parser):
     set_logging_level(args)
     jdict,args = get_jdict(args)
     odict = get_odict(args,False)
-    funcs = []
-    for k in jdict:
-        funcs.extend(jdict[k])
-    logging.info('funcs %s'%(funcs))
     chkval = ChkVal(args.input,None,None)
     if CHKVAL_KEY not in odict.keys():
         odict[CHKVAL_KEY] = dict()
-    rets , odict[CHKVAL_KEY] = chkval.format_c_code(odict[CHKVAL_KEY],args.output,funcs)
-    write_patch_output(args,rets,odict)
+    for k in jdict:
+        rets , odict[CHKVAL_KEY] = chkval.format_c_code(odict[CHKVAL_KEY],k,jdict[k])
+        write_patch_output(args,rets,odict)
     sys.exit(0)
     return
 
