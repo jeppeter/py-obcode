@@ -1,8 +1,6 @@
 ifndef __OBCODE_MAK__
 __OBCODE_MAK__ := 1
 
-OBMAK_CODE="import sys;c='%OBMAK_CODE%';sys.stdout.write('%s'%(c));"
-
 ifeq (${PYTHON},)
 PYTHON=$(shell which python)
 endif
@@ -12,10 +10,6 @@ OB_VERBOSE=-vvvv
 else
 OB_VERBOSE=
 endif
-
-define OB_CALL_HELP
-${PYTHON} -c "import sys;c='%OBMAK_CODE%';sys.stdout.write('%s'%(c));"  | ${PYTHON} /dev/stdin  | ${PYTHON} /dev/stdin -h
-endef
 
 ifeq (${O},)
 

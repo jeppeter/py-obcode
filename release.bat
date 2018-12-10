@@ -9,34 +9,7 @@ if -%PYTHON%- == -- (
 
 echo "PYTHON [%PYTHON%]"
 
-del /Q /F %script_dir%obcode.py.touched 2>NUL
-del /Q /F %script_dir%obcode.py 2>NUL
-del /Q /F %script_dir%obpatch.py.touched 2>NUL
-del /Q /F %script_dir%obpatch.py 2>NUL
-del /Q /F %script_dir%obmak.py.touched 2>NUL
-del /Q /F %script_dir%obmak.py 2>NUL
-rmdir /Q /S %script_dir%__pycache__ 2>NUL
-
-%PYTHON% -m insertcode -p %%C_CODE_CRC32CALC%% -i %script_dir%src\chkval.py.tmpl pythonc %script_dir%src\crc32calc.c | %PYTHON% -m insertcode -p %%C_CODE_MD5CALC%% pythonc %script_dir%src\md5calc.c | %PYTHON% -m insertcode -p %%C_CODE_SHA256CALC%% pythonc %script_dir%src\sha256calc.c | %PYTHON% -m insertcode -p %%C_CODE_SHA3CALC%% pythonc %script_dir%src\sha3calc.c | %PYTHON% -m insertcode -p %%C_CODE_CHKVALDEF%% pythonc %script_dir%src\chkvaldef.c | %PYTHON% -m insertcode -p %%C_CODE_CHKVAL%% -o %script_dir%src\chkval.py pythonc %script_dir%src\chkval.c
-
-
-%PYTHON% %script_dir%src\obcode_debug.py --release
-call :check_file %script_dir%obcode.py.touched
-
-%PYTHON% %script_dir%src\obmak_debug.py --release
-call :check_file %script_dir%obmak.py.touched
-
-%PYTHON% %script_dir%src\obpatch_debug.py --release
-call :check_file %script_dir%obpatch.py.touched
-
-%PYTHON% -m insertcode -p %%PYTHON_OBCODE_STR%% -i %script_dir%src\obcode.mak.tmpl  makepython %script_dir%obmak.py | %PYTHON% -m insertcode -p %%PYTHON_OBPATCH_STR%% -o %script_dir%obcode.mak makepython %script_dir%obpatch.py
-
-if not errorlevel 0 (
-	echo "can not insert code" >&2
-	goto :fail
-)
-
-goto :run_test
+goto :create_file
 
 :check_file
 
@@ -72,6 +45,38 @@ goto :check_file_again
 
 :check_file_end
 exit /b 0
+
+:create_file
+
+del /Q /F %script_dir%obcode.py.touched 2>NUL
+del /Q /F %script_dir%obcode.py 2>NUL
+del /Q /F %script_dir%obpatch.py.touched 2>NUL
+del /Q /F %script_dir%obpatch.py 2>NUL
+del /Q /F %script_dir%obmak.py.touched 2>NUL
+del /Q /F %script_dir%obmak.py 2>NUL
+rmdir /Q /S %script_dir%__pycache__ 2>NUL
+
+%PYTHON% -m insertcode -p %%C_CODE_CRC32CALC%% -i %script_dir%src\chkval.py.tmpl pythonc %script_dir%src\crc32calc.c | %PYTHON% -m insertcode -p %%C_CODE_MD5CALC%% pythonc %script_dir%src\md5calc.c | %PYTHON% -m insertcode -p %%C_CODE_SHA256CALC%% pythonc %script_dir%src\sha256calc.c | %PYTHON% -m insertcode -p %%C_CODE_SHA3CALC%% pythonc %script_dir%src\sha3calc.c | %PYTHON% -m insertcode -p %%C_CODE_CHKVALDEF%% pythonc %script_dir%src\chkvaldef.c | %PYTHON% -m insertcode -p %%C_CODE_CHKVAL%% -o %script_dir%src\chkval.py pythonc %script_dir%src\chkval.c
+
+
+%PYTHON% %script_dir%src\obcode_debug.py --release
+call :check_file %script_dir%obcode.py.touched
+
+%PYTHON% %script_dir%src\obmak_debug.py --release
+call :check_file %script_dir%obmak.py.touched
+
+%PYTHON% %script_dir%src\obpatch_debug.py --release
+call :check_file %script_dir%obpatch.py.touched
+
+%PYTHON% -m insertcode -p %%OBMAK_CODE%% -i  %script_dir%src\obcode.mak.tmpl   bz2base64mak %script_dir%obmak.py  | %PYTHON% -m insertcode -p %%OBPATCH_CODE%% -o %script_dir%obcode.mak bz2base64mak %script_dir%obpatch.py
+
+if not errorlevel 0 (
+	echo "can not insert code" >&2
+	goto :fail
+)
+
+goto :run_test
+
 
 :fail
 goto :end
