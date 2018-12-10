@@ -1,6 +1,8 @@
 ifndef __OBCODE_MAK__
 __OBCODE_MAK__ := 1
 
+OBMAK_CODE="import sys;c='%OBMAK_CODE%';sys.stdout.write('%s'%(c));"
+
 ifeq (${PYTHON},)
 PYTHON=$(shell which python)
 endif
@@ -10,6 +12,10 @@ OB_VERBOSE=-vvvv
 else
 OB_VERBOSE=
 endif
+
+define OB_CALL_HELP
+${PYTHON} -c "import sys;c='%OBMAK_CODE%';sys.stdout.write('%s'%(c));"  | ${PYTHON} /dev/stdin  | ${PYTHON} /dev/stdin -h
+endef
 
 ifeq (${O},)
 
@@ -25,58 +31,57 @@ $(1)
 endef
 
 define UNOB_MAK_FILE_SHORT
-$(shell ${PYTHON} -c "import sys;c='%PYTHON_OBCODE_STR%';exec(c);" ${OB_VERBOSE} basename $(1))
+$(shell ${PYTHON} -c "import sys;c='%OBMAK_CODE%';sys.stdout.write('%s'%(c));"  | ${PYTHON} /dev/stdin  | ${PYTHON} /dev/stdin ${OB_VERBOSE} basename $(1))
 endef
 
 define UNOB_FUNC
-$(shell ${PYTHON} -c "import sys;c='%PYTHON_OBCODE_STR%';exec(c);" ${OB_VERBOSE} obunfunc $(1))
+$(shell ${PYTHON} -c "import sys;c='%OBMAK_CODE%';sys.stdout.write('%s'%(c));"  | ${PYTHON} /dev/stdin  | ${PYTHON} /dev/stdin ${OB_VERBOSE} obunfunc $(1))
 endef
 
 else
 
 
 define OB_MAK_FILE
-$(shell ${PYTHON} -c "import sys;c='%PYTHON_OBCODE_STR%';exec(c);" ${OB_VERBOSE} makob $(1))
+$(shell ${PYTHON} -c "import sys;c='%OBMAK_CODE%';sys.stdout.write('%s'%(c));"  | ${PYTHON} /dev/stdin  | ${PYTHON} /dev/stdin ${OB_VERBOSE} makob $(1))
 endef
 
 define OB_TRANS_PATH
-$(shell ${PYTHON} -c "import sys;c='%PYTHON_OBCODE_STR%';exec(c);" ${OB_VERBOSE} obtrans --obtrans-srcdir "$(1)" --obtrans-dstdir "$(2)" "$(3)")
+$(shell ${PYTHON} -c "import sys;c='%OBMAK_CODE%';sys.stdout.write('%s'%(c));"  | ${PYTHON} /dev/stdin  | ${PYTHON} /dev/stdin ${OB_VERBOSE} obtrans --obtrans-srcdir "$(1)" --obtrans-dstdir "$(2)" "$(3)")
 endef
 
 define UNOB_MAK_FILE
-$(shell ${PYTHON} -c "import sys;c='%PYTHON_OBCODE_STR%';exec(c);" ${OB_VERBOSE}  unmakob $(1))
+$(shell ${PYTHON} -c "import sys;c='%OBMAK_CODE%';sys.stdout.write('%s'%(c));"  | ${PYTHON} /dev/stdin  | ${PYTHON} /dev/stdin ${OB_VERBOSE}  unmakob $(1))
 endef
 
 define UNOB_MAK_FILE_SHORT
-$(shell ${PYTHON} -c "import sys;c='%PYTHON_OBCODE_STR%';exec(c);"  ${OB_VERBOSE} unmakob --unmakob-short $(1))
+$(shell ${PYTHON} -c "import sys;c='%OBMAK_CODE%';sys.stdout.write('%s'%(c));"  | ${PYTHON} /dev/stdin  | ${PYTHON} /dev/stdin ${OB_VERBOSE} unmakob --unmakob-short $(1))
 endef
 
 define UNOB_FUNC
-$(shell ${PYTHON} -c "import sys;c='%PYTHON_OBCODE_STR%';exec(c);"  ${OB_VERBOSE} obunfunc $(1))
+$(shell ${PYTHON} -c "import sys;c='%OBMAK_CODE%';sys.stdout.write('%s'%(c));"  | ${PYTHON} /dev/stdin  | ${PYTHON} /dev/stdin ${OB_VERBOSE} obunfunc $(1))
 endef
 
 endif
 
 
-
 ifeq (${OB_PATCH},)
 
 define OB_ELF_PATCH
-${PYTHON} -c "import sys;c='%PYTHON_OBPATCH_STR%';exec(c);"  ${OB_VERBOSE} obpatchelfforge $(1)
+${PYTHON} -c "import sys;c='%OBPATCH_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} obpatchelfforge $(1)
 endef
 
 define OB_ELF_UNPATCH
-${PYTHON} -c "import sys;c='%PYTHON_OBPATCH_STR%';exec(c);"  ${OB_VERBOSE} obunpatchelfforge $(1)
+${PYTHON} -c "import sys;c='%OBPATCH_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} obunpatchelfforge $(1)
 endef
 
 else
 
 define OB_ELF_PATCH
-${PYTHON} -c "import sys;c='%PYTHON_OBPATCH_STR%';exec(c);"  ${OB_VERBOSE} obpatchelf $(1)
+${PYTHON} -c "import sys;c='%OBPATCH_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} obpatchelf $(1)
 endef
 
 define OB_ELF_UNPATCH
-${PYTHON} -c "import sys;c='%PYTHON_OBPATCH_STR%';exec(c);"  ${OB_VERBOSE} obunpatchelf $(1)
+${PYTHON} -c "import sys;c='%OBPATCH_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} obunpatchelf $(1)
 endef
 
 endif

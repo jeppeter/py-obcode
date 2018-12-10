@@ -66,7 +66,7 @@ wait_file_until "$script_dir/obmak.py.touched"
 $PYTHON $script_dir/src/obpatch_debug.py --release
 wait_file_until "$script_dir/obpatch.py.touched"
 
-$PYTHON -m insertcode -p '%PYTHON_OBCODE_STR%' -i $script_dir/src/obcode.mak.tmpl makepython  $script_dir/obmak.py | $PYTHON -m insertcode -p '%PYTHON_OBPATCH_STR%' -o $script_dir/obcode.mak makepython $script_dir/obpatch.py
+$PYTHON -m insertcode -p '%OBMAK_CODE%' -i $script_dir/src/obcode.mak.tmpl bz2base64mak  $script_dir/obmak.py | $PYTHON -m insertcode -p '%OBPATCH_CODE%' -o $script_dir/obcode.mak bz2base64mak $script_dir/obpatch.py
 
 if [ $? -ne 0 ]
 	then
