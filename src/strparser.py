@@ -678,5 +678,22 @@ def quote_string(l):
                 rets += c
     return rets
 
+def get_random_bytes(num):
+    sarr = []
+    i = 0
+    while i < num:
+        sarr.append(random.randint(0,255))
+        i += 1
+    return sarr
+
+def format_bytes_c(sarr):
+    rets = ''
+    i = 0
+    while i < len(sarr):
+        if i > 0:
+            rets += ','
+        rets += '0x%02x'%(sarr[i])
+        i += 1
+    return rets
 
 ##extractcode_end

@@ -9,6 +9,7 @@ import os
 ##importdebugstart
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from filehdl import *
+from cobattr import *
 ##importdebugend
 
 
@@ -27,7 +28,10 @@ class COBFileBase(object):
         self.__append_define_expr('^\s*\#\s*elif\s+')
         if cfg is not None:
             self.base_cfg = cfg
+        else:
+            self.base_cfg = CompoundAttr()
         self.in_lines = get_file_lines(sfile)
+        self.cur_line = 0
         return
 
     def __append_define_expr(self,exprstr):

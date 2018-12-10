@@ -37,6 +37,7 @@ def main():
         "verbose|v" : "+",
         "version|V" : false,
         "output|o" : null,
+        "input|i" : null,
         "times|T" : 0,
         "dump|D" : null,
         "includes|I" : [],

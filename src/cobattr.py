@@ -137,7 +137,7 @@ else:
         'widechartype' : 'wchar_t'
     }
 
-GL_DEFAULT_ATTR={}
+GL_DEFAULT_ATTR=GL_INIT_ATTR
 
 class COBAttr(object):
     def __trans_number(self,vstr):

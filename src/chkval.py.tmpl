@@ -3,6 +3,8 @@
 import logging
 import os
 import sys
+import re
+import random
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from strparser import *
@@ -17,12 +19,263 @@ C_CODE_SHA3CALC='''%C_CODE_SHA3CALC%'''
 C_CODE_CHKVALDEF='''%C_CODE_CHKVALDEF%'''
 C_CODE_CHKVAL='''%C_CODE_CHKVAL%'''
 
+CHKVAL_KEY='chkval'
+
+RANDOM_VARIABLE='variable'
+CHKVAL_RANDOM_VALUE='rndval'
+CHKVAL_FUNC_CHECKS_START='func_checks_start'
+CHKVAL_FUNC_CHECKS='func_checks'
+CHKVAL_FUNC_CHECKS_END='func_checks_end'
+CHKVAL_VALUE_CHECKS='value_checks'
+CHKVAL_VALUE_CHECKS_TOTAL_END='value_checks_total_end'
+
+CHKVAL_STRUCT_OFFSET='m_offset'
+CHKVAL_STRUCT_NAMEXOR1='m_namexor1'
+CHKVAL_STRUCT_NAMEXOR2='m_namexor2'
+CHKVAL_STRUCT_SIZE='m_size'
+CHKVAL_STRUCT_CRC32VAL='m_crc32val'
+CHKVAL_STRUCT_MD5VAL='m_md5val'
+CHKVAL_STRUCT_SHA256VAL='m_sha256val'
+CHKVAL_STRUCT_SHA3VAL='m_sha3val'
+
+CHKVAL_STRUCT_OFFSET_SIZE=8
+CHKVAL_STRUCT_NAMEXOR1_SIZE=64
+CHKVAL_STRUCT_NAMEXOR2_SIZE=64
+CHKVAL_STRUCT_SIZE_SIZE=8
+CHKVAL_STRUCT_CRC32VAL_SIZE=8
+CHKVAL_STRUCT_MD5VAL_SIZE=16
+CHKVAL_STRUCT_SHA256VAL_SIZE=32
+CHKVAL_STRUCT_SHA3VAL_SIZE=64
+
 
 class ChkVal(COBFileBase):
-	def __init__(self,sfile,dfile=None,cfg=None):
-		COBFileBase.__init__(self,sfile,dfile,cfg)
-		return
+    def __init__(self,sfile,dfile=None,cfg=None):
+        COBFileBase.__init__(self,sfile,dfile,cfg)      
+        self.__ob_random_name_expr = re.compile('.*(OB_RANDOM_NAME\s*(\(.*))$')
+        self.__ob_random_name_spec_expr = re.compile('.*(OB_RANDOM_NAME_SPEC\s*(\(.*))$')
+        return
 
+    def __format_ob_random_name_inner(self,odict,cfg,params,before,after):
+        assert(len(params) == 1)
+        bs = string_to_ints(params[0])
+        bs.insert(0,ord('"'))
+        bs.append(ord('"'))
+        sbyte,lbyte = parse_string(bs)
+        assert(len(lbyte) <= 1)
+        if len(lbyte) > 0 :
+            assert(lbyte[0] == 0)
+        rs = ints_to_string(sbyte)
+        rndname = ''
+        if RANDOM_VARIABLE not in odict.keys():
+            odict[RANDOM_VARIABLE] = dict()
+
+        if rs not in odict[RANDOM_VARIABLE].keys():
+            odict[RANDOM_VARIABLE][rs] = get_random_name(random.randint(cfg.namemin,cfg.namemax))
+        rndname = odict[RANDOM_VARIABLE][rs]
+        newc = before
+        newc += rndname
+        newc += after
+        return newc,odict
+
+
+    def __format_ob_random_name_func(self,l,odict):
+        cfg , params, before ,after = self.get_variables(l, self.__ob_random_name_expr)
+        return self.__format_ob_random_name_inner(odict,cfg,params,before,after)
+
+    def __format_ob_random_name_spec_func(self,l,odict):
+        cfg ,params,before ,after = self.get_spec_config_variables(l,self.__ob_mixed_str_spec_expr)
+        return self.__format_ob_random_name_inner(odict,cfg,params,before,after)
+
+    def __format_c_line(self,origc,odict):
+        newc = origc        
+        # now we should get the
+        while True:
+            if self.get_filter_expr_not_defined(newc,self.__ob_random_name_expr):
+                newc, odict = self.__format_ob_random_name_func(newc,odict)
+            elif self.get_filter_expr_not_defined(newc,self.__ob_random_name_spec_expr):
+                newc, odict = self.__format_ob_random_name_spec_func(newc,odict)
+            else:
+                break
+        return newc,odict
+
+    def __format_multi_lines(self,mlines,odict):
+        rets = ''
+        sarr = re.split('\n',mlines)
+        for l in sarr:
+            l = l.rstrip('\r\n')
+            r , odict = self.__format_c_line(l,odict)
+            rets += '%s\n'%(r)
+        return rets,odict
+
+    def __format_char_array(self,odict,kval,num=16):
+        if kval  in odict[RANDOM_VARIABLE].keys():
+            name = odict[RANDOM_VARIABLE][kval]
+        else:
+            name = get_random_name(20)
+            odict[RANDOM_VARIABLE][kval] = name
+
+        if  kval in odict[CHKVAL_RANDOM_VALUE].keys():
+            sarr = odict[CHKVAL_RANDOM_VALUE][kval]
+        else:
+            sarr = get_random_bytes(num)
+            odict[CHKVAL_RANDOM_VALUE][kval] = sarr
+
+        rets = format_line('unsigned char %s[%d]={%s};'%(name,num,format_bytes_c(sarr)), 0)
+        return rets,odict
+
+    def __get_ll_value(self,sarr):
+        llval = 0
+        idx = 0
+        while idx < len(sarr):
+            llval += (sarr[idx] << (idx * 8))
+            idx += 1
+        return llval
+
+    def __format_sarr_struct(self,odict,f,name,size,tabs,lastone=False):
+        rets = ''
+        if name not in odict[CHKVAL_RANDOM_VALUE][f].keys():
+            odict[CHKVAL_RANDOM_VALUE][f][name] = get_random_bytes(size)
+        sarr = odict[CHKVAL_RANDOM_VALUE][f][name]
+        rets += format_debug_line('%s'%(name), tabs + 1, 3)
+        if lastone:
+            rets += format_line('{%s}'%(format_bytes_c(sarr)), tabs+1)
+        else:
+            rets += format_line('{%s},'%(format_bytes_c(sarr)), tabs + 1)
+        return rets,odict
+
+
+
+    def __format_check_value_single(self,odict,f,tabs,lastone):
+        rets = ''
+        if CHKVAL_RANDOM_VALUE not in odict.keys():
+            odict[CHKVAL_RANDOM_VALUE] = dict()
+        if f not in odict[CHKVAL_RANDOM_VALUE].keys():
+            odict[CHKVAL_RANDOM_VALUE][f] = dict()
+        rets += format_line('{', tabs)
+        rets += format_debug_line('function %s'%(f), tabs + 1, 3)
+        if CHKVAL_STRUCT_OFFSET not in odict[CHKVAL_RANDOM_VALUE][f].keys():
+            odict[CHKVAL_RANDOM_VALUE][f][CHKVAL_STRUCT_OFFSET] = get_random_bytes(CHKVAL_STRUCT_OFFSET_SIZE)
+        sarr = odict[CHKVAL_RANDOM_VALUE][f][CHKVAL_STRUCT_OFFSET]
+        rets += format_debug_line('%s'%(CHKVAL_STRUCT_OFFSET),tabs+1,3)
+        llval = self.__get_ll_value(sarr)
+        rets += format_line('0x%x,'%(llval), tabs+1)
+
+
+        curs , odict = self.__format_sarr_struct(odict,f,CHKVAL_STRUCT_NAMEXOR1,CHKVAL_STRUCT_NAMEXOR1_SIZE,tabs,False)
+        rets += curs
+
+        sarr1 = odict[CHKVAL_RANDOM_VALUE][f][CHKVAL_STRUCT_NAMEXOR1]
+        namexors = string_to_ints(f)
+        if len(namexors) >= CHKVAL_STRUCT_NAMEXOR1_SIZE:
+            namexors = namexors[:(CHKVAL_STRUCT_NAMEXOR1_SIZE-1)]
+        while len(namexors) < CHKVAL_STRUCT_NAMEXOR1_SIZE:
+            namexors.append(0)
+        sarr2 = []
+        idx = 0
+        while idx < CHKVAL_STRUCT_NAMEXOR2_SIZE:
+            sarr2.append(0)
+            idx += 1
+
+        idx = 0
+        while idx < CHKVAL_STRUCT_NAMEXOR1_SIZE:
+            sarr2[idx] = namexors[idx] ^ sarr1[idx]
+            idx += 1
+        odict[CHKVAL_RANDOM_VALUE][f][CHKVAL_STRUCT_NAMEXOR2] = sarr2
+        rets += format_debug_line('%s'%(CHKVAL_STRUCT_NAMEXOR2), tabs+ 1, 3)
+        rets += format_line('{%s},'%(format_bytes_c(sarr2)), tabs+1)
+
+
+        curs , odict = self.__format_sarr_struct(odict,f,CHKVAL_STRUCT_CRC32VAL,CHKVAL_STRUCT_CRC32VAL_SIZE,tabs,False)
+        rets += curs
+
+        curs , odict = self.__format_sarr_struct(odict,f,CHKVAL_STRUCT_MD5VAL,CHKVAL_STRUCT_MD5VAL_SIZE,tabs,False)
+        rets += curs
+
+        curs , odict = self.__format_sarr_struct(odict,f,CHKVAL_STRUCT_SHA256VAL,CHKVAL_STRUCT_SHA256VAL_SIZE,tabs,False)
+        rets += curs
+
+        curs , odict = self.__format_sarr_struct(odict,f,CHKVAL_STRUCT_SHA3VAL,CHKVAL_STRUCT_SHA3VAL_SIZE,tabs,True)
+        rets += curs
+
+        if lastone:
+            rets += format_line('}', tabs)
+        else:
+            rets += format_line('},', tabs)
+        return rets,odict
+
+
+
+    def __format_check_value(self,odict,chkfuncs=[]):
+        rets = ''
+        if RANDOM_VARIABLE not in odict.keys():
+            odict[RANDOM_VARIABLE] = dict()
+
+        if CHKVAL_RANDOM_VALUE not in odict.keys():
+            odict[CHKVAL_RANDOM_VALUE] = dict()
+        logging.info(' ')
+
+        curs , odict = self.__format_char_array(odict,CHKVAL_FUNC_CHECKS_START,16)
+        rets += curs
+
+        logging.info(' ')
+
+        if CHKVAL_FUNC_CHECKS not in odict[RANDOM_VARIABLE].keys():
+            odict[RANDOM_VARIABLE][CHKVAL_FUNC_CHECKS] = get_random_name(20)
+        func_checks = odict[RANDOM_VARIABLE][CHKVAL_FUNC_CHECKS]
+
+        logging.info(' ')
+
+
+        rets += format_line('',0)
+        rets += format_line('chkvalue_t %s[] = {'%(func_checks), 0)
+        idx = 0
+        for f in chkfuncs:
+            curs , odict = self.__format_check_value_single(odict,f,1,False)
+            rets += curs
+
+        curs,odict = self.__format_check_value_single(odict,'',1,True)
+        rets += curs
+        rets += format_line('};', 0)
+
+        curs ,odict = self.__format_char_array(odict,CHKVAL_FUNC_CHECKS_END,16)
+        rets += curs
+
+        rets += format_line('',0)
+        if CHKVAL_VALUE_CHECKS not in odict[RANDOM_VARIABLE].keys():
+            odict[RANDOM_VARIABLE][CHKVAL_VALUE_CHECKS] = get_random_name(20)
+        valuechecks = odict[RANDOM_VARIABLE][CHKVAL_VALUE_CHECKS]
+        rets += format_line('chkvalue_t %s[1] = {'%(valuechecks),0)
+        curs , odict = self.__format_check_value_single(odict,CHKVAL_VALUE_CHECKS.upper(),1,True)
+        rets += curs
+        rets += format_line('};',0)
+
+        curs,odict = self.__format_char_array(odict,CHKVAL_VALUE_CHECKS_TOTAL_END,16)
+        rets += curs
+        return rets, odict
+
+
+
+    def format_c_code(self,odict, chkfuncs=[]):
+        # firs
+        rets = ''
+        curs,odict = self.__format_multi_lines(C_CODE_CRC32CALC,odict)
+        rets += curs
+        curs , odict = self.__format_multi_lines(C_CODE_MD5CALC,odict)
+        rets += curs
+        curs , odict = self.__format_multi_lines(C_CODE_SHA256CALC,odict)
+        rets += curs
+        curs , odict = self.__format_multi_lines(C_CODE_SHA3CALC, odict)
+        rets += curs
+        curs , odict = self.__format_multi_lines(C_CODE_CHKVALDEF,odict)
+        rets += curs
+
+        # this to check value
+        curs , odict = self.__format_check_value(odict,chkfuncs)
+        rets += curs
+
+        curs, odict = self.__format_multi_lines(C_CODE_CHKVAL,odict)
+        rets += curs
+        return rets,odict
 
 
 

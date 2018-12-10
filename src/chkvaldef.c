@@ -5,7 +5,7 @@ typedef struct __chkvalue
 	signed long long m_offset;
 	unsigned char m_namexor1[64];
 	unsigned char m_namexor2[64];
-	unsigned int m_size;
+	unsigned long long m_size;
 	unsigned char m_crc32val[8];
 	unsigned char m_md5val[16];
 	unsigned char m_sha256val[32];

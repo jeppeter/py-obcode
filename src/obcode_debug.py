@@ -25,6 +25,7 @@ from cobfile import *
 from obmaklib import *
 from extract_ob import *
 from obpatchlib import *
+from chkval import *
 ##importdebugend
 
 REPLACE_IMPORT_LIB=1
@@ -42,6 +43,7 @@ REPLACE_COB_FILE=1
 REPLACE_OBMAK_LIB=1
 REPLACE_EXTRACT_OB=1
 REPLACE_OB_PATCH_LIB=1
+REPLACE_CHKVAL=1
 
 
 def handle_c_file(sfile,dfile,args,param):
@@ -266,6 +268,21 @@ def obrepatchpe_handler(args,parser):
     sys.exit(0)
     return
 
+def fmtchkval_handler(args,parser):
+    set_logging_level(args)
+    jdict,args = get_jdict(args)
+    odict = get_odict(args,False)
+    funcs = []
+    for k in jdict:
+        funcs.extend(jdict[k])
+    logging.info('funcs %s'%(funcs))
+    chkval = ChkVal(args.input,None,None)
+    if CHKVAL_KEY not in odict.keys():
+        odict[CHKVAL_KEY] = dict()
+    rets , odict[CHKVAL_KEY] = chkval.format_c_code(odict[CHKVAL_KEY],funcs)
+    write_patch_output(args,rets,odict)
+    sys.exit(0)
+    return
 
 def main():
     commandline_fmt='''
@@ -274,6 +291,7 @@ def main():
         "version|V" : false,
         "win32|W" : false,
         "output|o" : null,
+        "input|i" : null,
         "times|T" : 0,
         "dump|D" : null,
         "includes|I" : [],
@@ -345,6 +363,9 @@ def main():
         },
         "obrepatchpe<obrepatchpe_handler>##objfiles ... to replay patchelf##" : {
             "$" : "+"
+        },
+        "fmtchkval<fmtchkval_handler>##objfile;func1,func2 ... to format chkval file##" : {
+            "$" : "+"
         }
     }
     '''
@@ -388,6 +409,7 @@ def debug_release():
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'objparser.py')),r'REPLACE_OBJ_PARSER=1')
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'obpatchlib.py')),r'REPLACE_OB_PATCH_LIB=1')
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'cobfilebase.py')),r'REPLACE_COB_FILE_BASE=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'chkval.py')),r'REPLACE_CHKVAL=1')
 
     if len(sys.argv) > 2:
         for k in sys.argv[1:]:
