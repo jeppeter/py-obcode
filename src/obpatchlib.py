@@ -111,7 +111,7 @@ def format_ob_patch_func_code(objparser,jsondump,objname,funcname,formatname,get
         rets += format_line('unsigned char* pcurptr;',1)
         rets += format_line('int ret;',1)
         rets += format_line('',1)
-        rets += format_line('if (mapfunc != NULL){',1)
+        rets += format_line('if (mapfunc != ((map_prot_func_t)0)){',1)
         rets += format_line('ret = mapfunc(pbaseptr,%d,OB_MAP_READ|OB_MAP_EXEC|OB_MAP_WRITE);'%(funcsize),2)
         rets += format_line('if (ret < 0) {',2)
         rets += format_line('return -1;',3)

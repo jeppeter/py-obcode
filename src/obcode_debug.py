@@ -416,6 +416,9 @@ def main():
         },
         "replchkval<replchkval_handler>##objfile ... to replace chkval into new header##" : {
             "$" : "+"
+        },
+        "chkvaldumpfuncself<chkvaldumpfuncself_handler>##objfile ... to get the byte information for handler##" : {
+            "$" : "+"
         }
     }
     '''

@@ -472,4 +472,23 @@ class ChkVal(COBFileBase):
         return rets
 
 
+def dump_object_function_one(args,objparser,odict,o,f):
+    return odict
+
+def dump_object_functions(args,objparser,odict,objs=[]):
+    if CHKVAL_KEY in odict.keys() and \
+        RANDOM_VARIABLE in odict[CHKVAL_KEY].keys() and \
+        CHKVAL_RANDOM_VALUE in odict[CHKVAL_KEY].keys():
+        for o in objs:
+            if o not in odict[CHKVAL_KEY][CHKVAL_RANDOM_VALUE].keys():
+                continue
+            for f in odict[CHKVAL_KEY][CHKVAL_RANDOM_VALUE][o].keys():
+                if PATCH_KEY in odict.keys() and  \
+                    o in odict[PATCH_KEY].keys() and \
+                    f in odict[PATCH_KEY][o].keys():
+                    # this means this is the ok relocations
+                    continue
+    return odict
+
+
 ##extractcode_end
