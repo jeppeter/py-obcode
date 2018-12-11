@@ -268,6 +268,10 @@ def get_jdict(args):
             sarr = re.split(';',a)
             if len(sarr) > 1 and len(sarr[1]) > 0:
                 args.unpatchfunc = sarr[1]
+        elif a.startswith('objfile;'):
+            sarr = re.split(';',a)
+            if len(sarr) > 1 and len(sarr[1]) > 0:
+                args.objfile = sarr[1]
         else:
             sarr = re.split(';',a)
             if len(sarr) < 2:
@@ -290,8 +294,6 @@ def get_odict(args,force):
 def format_includes(args):
     rets = ''
     rets += format_line('#include <obcode.h>',0)
-    rets += format_line('#include <stdio.h>',0)
-    rets += format_line('#include <stdlib.h>',0)
     for s in args.includes:
         rets += format_line('#include <%s>'%(s),0)
 

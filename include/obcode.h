@@ -39,6 +39,7 @@ extern "C" {
 #if defined(_MSC_VER)
 #include <Windows.h>
 #define  OB_TYPEOF(x)                       decltype(x)
+#define  OB_LL_VALUE(x)                     x##UL
 
 #ifdef _M_X64
 typedef UINT64                              OB_ADDR;
@@ -50,7 +51,7 @@ typedef UINT32                              OB_ADDR;
 #define  OB_TYPEOF(x)                       typeof(x)
 
 #define OB_ADDR                             unsigned long int
-
+#define OB_LL_VALUE(x)                      x##ULL
 #else
 #error "not supported compilers"
 #endif
@@ -140,9 +141,13 @@ int ux_map_prot(void* addr, int size, int prot)                                 
 #endif
 
 
-
-
 #endif
+
+#define   OB_CHKVAL_FUNC(failfunc)                         0
+#define   OB_CHKVAL_FUNC_SPEC(cfg,failfunc)                0
+
+typedef void (*m_check_fail_func_t)(int errcode,char* name);
+
 
 
 #ifdef __cplusplus

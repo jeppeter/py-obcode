@@ -36,6 +36,7 @@ def main():
     {
         "verbose|v" : "+",
         "version|V" : false,
+        "objfile|O" : null,
         "output|o" : null,
         "input|i" : null,
         "times|T" : 0,

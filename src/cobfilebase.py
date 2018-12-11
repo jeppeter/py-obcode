@@ -18,6 +18,8 @@ from cobattr import *
 class COBFileBase(object):
     def __init__(self,sfile,dfile,cfg=None):
         self.__define_expr = []
+        self.srcfile = sfile
+        self.dstfile = dfile
         self.__append_define_expr('^\s*\#\s*define\s+')
         self.__append_define_expr('^\s*\#\s*undef\s+')
         self.__append_define_expr('^\s*\#\s*if\s+')
@@ -29,8 +31,11 @@ class COBFileBase(object):
         if cfg is not None:
             self.base_cfg = cfg
         else:
-            self.base_cfg = CompoundAttr()
-        self.in_lines = get_file_lines(sfile)
+            self.base_cfg = COBAttr()
+        if sfile is not None:
+            self.in_lines = get_file_lines(sfile)
+        else:
+            self.in_lines = []
         self.cur_line = 0
         return
 

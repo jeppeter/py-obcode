@@ -197,13 +197,7 @@ class COBFile(COBFileBase):
         self.__var_decl_replace = dict()
         self.__func_replace = dict()
         self.__xor_codes = []
-        self.__srcfile = sfile
-        self.__dstfile = dfile
-        self.base_cfg = COBAttr()
         self.__insert_line = -1
-        if cfg is not None:
-            self.base_cfg = cfg
-
         # we change the ( to \x28 ) \x29 for it will give error on shell in make file
         self.__ob_code_expr = re.compile('\s+(OB_CODE\s*(\\\x28.*))$')
         self.__ob_code_spec_expr = re.compile('\s+(OB_CODE_SPEC\s*(\\\x28.*))$')
@@ -302,7 +296,7 @@ class COBFile(COBFileBase):
             s += format_line('%s = (OB_TYPEOF(%s)) *(((OB_TYPEOF(%s)*)(%s)));'%(varsarr[i], varsarr[i], varsarr[i], ptrnames[i]), tabs+ 1)
         s += format_line('} while(0);',tabs)        
         if cfg.noline == 0:
-            s += format_line('#line %d "%s"'%(self.cur_line+1,quote_string(self.__srcfile)),0)
+            s += format_line('#line %d "%s"'%(self.cur_line+1,quote_string(self.srcfile)),0)
         return s
 
     def __output_ob_header_comment(self,l,cfg,tabs):
@@ -336,7 +330,7 @@ class COBFile(COBFileBase):
         s = ''
         replacename = '%s_%s'%(cfg.prefix,get_random_name(random.randint(cfg.namemin,cfg.namemax)))
         s += format_line('#define %s %s'%(funcname, replacename), tabs)
-        s += format_line('#line %d "%s"'%(self.cur_line,quote_string(self.__srcfile)),0)
+        s += format_line('#line %d "%s"'%(self.cur_line,quote_string(self.srcfile)),0)
         s += format_line('%s'%(l), 0)
         self.__func_replace[funcname] = replacename
         return s
@@ -408,7 +402,7 @@ class COBFile(COBFileBase):
         #    s += format_line('#define OB_VAR(x) %s'%(replacename), tabs)
         s += format_line('#define %s %s'%(leftvars[0],replacename), tabs)
         if cfg.noline == 0:
-            s += format_line('#line %d "%s"'%(self.cur_line,quote_string(self.__srcfile)),0)
+            s += format_line('#line %d "%s"'%(self.cur_line,quote_string(self.srcfile)),0)
         s += format_line('%s'%(l),0)
         self.__var_replace[leftvars[0]] = replacename
         return s
@@ -442,7 +436,7 @@ class COBFile(COBFileBase):
         #    s += format_line('#define OB_DECL_VAR(x) %s'%(replacename), tabs)
         s += format_line('#define %s %s'%(leftvars[0],replacename),tabs)
         if cfg.noline == 0:
-            s += format_line('#line %d "%s"'%(self.cur_line,quote_string(self.__srcfile)),0)
+            s += format_line('#line %d "%s"'%(self.cur_line,quote_string(self.srcfile)),0)
         s += format_line('%s'%(l),0)
         self.__var_decl_replace[leftvars[0]] = replacename
         return s
@@ -468,7 +462,7 @@ class COBFile(COBFileBase):
         s = ''
         s += format_line('/*[%s]*/'%(format_comment_line(l)),tabs)
         if cfg.noline == 0:
-            s += format_line('#line %d "%s"'%(self.cur_line,quote_string(self.__srcfile)),0)        
+            s += format_line('#line %d "%s"'%(self.cur_line,quote_string(self.srcfile)),0)        
         s += '%s"[%%s:%%d]\\n",__FILE__,__LINE__%s\n'%(before,after)
         return s
 
@@ -491,7 +485,7 @@ class COBFile(COBFileBase):
         s = ''
         s += format_line('/*[%s]*/'%(format_comment_line(l)),tabs)
         if cfg.noline == 0:
-            s += format_line('#line %d "%s"'%(self.cur_line,quote_string(self.__srcfile)),0)        
+            s += format_line('#line %d "%s"'%(self.cur_line,quote_string(self.srcfile)),0)        
         s += '%sL"[%%hs:%%d]\\n",__FILE__,__LINE__%s\n'%(before,after)
         return s
 
@@ -559,7 +553,7 @@ class COBFile(COBFileBase):
             rets += format_line('',0)
             rets += format_line('',0)
         if len(rets) > 0 and cfg.noline == 0:
-            rets += format_line('#line %d "%s"'%(self.cur_line,quote_string(self.__srcfile)),0)
+            rets += format_line('#line %d "%s"'%(self.cur_line,quote_string(self.srcfile)),0)
 
         return rets
 
@@ -653,7 +647,7 @@ class COBFile(COBFileBase):
             else:
                 break
         if not self.base_cfg.noline:
-            s += format_line('#line %d "%s"'%(self.cur_line,quote_string(self.__srcfile)),0)
+            s += format_line('#line %d "%s"'%(self.cur_line,quote_string(self.srcfile)),0)
         s += format_line('%s'%(newl),0)
         return s
 
@@ -757,7 +751,7 @@ class COBFile(COBFileBase):
         d['vars'] = self.__var_replace
         d['vars_decl'] = self.__var_decl_replace
         odict = dict()
-        odict[self.__srcfile] = d
+        odict[self.srcfile] = d
         return odict
 
 

@@ -1,7 +1,7 @@
 
 #define FAIL_RET(retval ,name)                                                                    \
 do{                                                                                               \
-	if (failfunc != NULL) {                                                                       \
+	if (failfunc != ((void*)0)) {                                                                 \
 		failfunc((retval), (char*)(name));                                                        \
 	}                                                                                             \
 	return (retval);                                                                              \

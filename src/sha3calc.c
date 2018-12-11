@@ -98,7 +98,7 @@ static void OB_RANDOM_NAME(keccakf)(unsigned long long s[25])
         for(i = 0; i < 24; i++) {
             j = (int)OB_RANDOM_NAME(keccakf_piln)[i];
             bc[0] = s[j];
-            s[j] = SHA3_ROTL64(t, keccakf_rotc[i]);
+            s[j] = SHA3_ROTL64(t, OB_RANDOM_NAME(keccakf_rotc)[i]);
             t = bc[0];
         }
 
@@ -242,8 +242,8 @@ void OB_RANDOM_NAME(sha3_final)(sha3_context *ctx, unsigned char* pval)
     {
         unsigned i;
         for(i = 0; i < SHA3_KECCAK_SPONGE_WORDS; i++) {
-            const unsigned t1 = (uint32_t) ctx->s[i];
-            const unsigned t2 = (uint32_t) ((ctx->s[i] >> 16) >> 16);
+            const unsigned t1 = (unsigned) ctx->s[i];
+            const unsigned t2 = (unsigned) ((ctx->s[i] >> 16) >> 16);
             ctx->sb[i * 8 + 0] = (unsigned char) (t1);
             ctx->sb[i * 8 + 1] = (unsigned char) (t1 >> 8);
             ctx->sb[i * 8 + 2] = (unsigned char) (t1 >> 16);

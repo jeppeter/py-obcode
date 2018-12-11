@@ -275,9 +275,55 @@ def fmtchkval_handler(args,parser):
     chkval = ChkVal(args.input,None,None)
     if CHKVAL_KEY not in odict.keys():
         odict[CHKVAL_KEY] = dict()
-    for k in jdict:
-        rets , odict[CHKVAL_KEY] = chkval.format_c_code(odict[CHKVAL_KEY],k,jdict[k])
-        write_patch_output(args,rets,odict)
+    rets = ''
+    rets += format_includes(args)
+    rets += format_line('',0)
+
+    curs, odict[CHKVAL_KEY] = chkval.format_c_code_pre(odict[CHKVAL_KEY],args.objfile)
+    rets += curs
+
+    curs , odict[CHKVAL_KEY] = chkval.format_c_code(odict[CHKVAL_KEY],args.objfile,jdict)
+    rets += curs
+
+    curs , odict[CHKVAL_KEY] = chkval.format_c_code_post(odict[CHKVAL_KEY],args.objfile)
+    rets += curs
+    write_patch_output(args,rets,odict)
+    sys.exit(0)
+    return
+
+def chkvalheader_handler(args,parser):
+    set_logging_level(args)
+    jdict, args = get_jdict(args)
+    odict = get_odict(args,False)
+
+    objs = []
+    for k in jdict.keys():
+        objs.append(k)
+    if CHKVAL_KEY not in odict.keys():
+        odict[CHKVAL_KEY] = dict()
+
+    chkval = ChkVal(None,None,None)
+    rets = ''
+    rets += chkval.format_chkval_header(odict[CHKVAL_KEY],objs)
+
+    write_file(rets,args.output)
+    sys.exit(0)
+    return
+
+def replchkval_handler(args,parser):
+    set_logging_level(args)
+    jdict, args = get_jdict(args)
+    odict = get_odict(args, False)
+    chkval = ChkVal(args.input,None,None)
+    if CHKVAL_KEY not in odict.keys():
+        odict[CHKVAL_KEY] = dict()
+    objs = []
+    for k in jdict.keys():
+        logging.info('k[%s]'%(k))
+        objs.append(k)
+    rets = ''
+    rets += chkval.replace_functions(odict[CHKVAL_KEY],objs)
+    write_file(rets, args.output)
     sys.exit(0)
     return
 
@@ -287,6 +333,7 @@ def main():
         "verbose|v" : "+",
         "version|V" : false,
         "win32|W" : false,
+        "objfile|O" : null,
         "output|o" : null,
         "input|i" : null,
         "times|T" : 0,
@@ -362,6 +409,12 @@ def main():
             "$" : "+"
         },
         "fmtchkval<fmtchkval_handler>##objfile;func1,func2 ... to format chkval file##" : {
+            "$" : "+"
+        },
+        "chkvalheader<chkvalheader_handler>##objfile ... to format chkval header file##" : {
+            "$" : "+"
+        },
+        "replchkval<replchkval_handler>##objfile ... to replace chkval into new header##" : {
             "$" : "+"
         }
     }

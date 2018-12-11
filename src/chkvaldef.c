@@ -28,7 +28,6 @@ typedef struct __chkvalue
 #define  SHA256_VALUE_SIZE                    32
 #define  SHA3_VALUE_SIZE                      64
 
-typedef void (*m_check_fail_func_t)(int errcode,char* name);
 typedef int (*m_calc_value_func_t)(unsigned char* ptr,unsigned int len,unsigned char* pval,int valsize);
 typedef int (*m_checkvalue_func_t)(unsigned char* ptr,unsigned int size, m_calc_value_func_t calcfunc, unsigned char* pchkval, int calcsize);
 
