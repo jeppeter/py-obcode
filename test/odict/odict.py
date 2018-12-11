@@ -101,6 +101,13 @@ def get_odict(odict,*path):
 		return None
 	return curodict[path[idx]]
 
+def create_odict_is_none(odict,*path):
+    if get_odict(odict,*path) is None:
+        val = dict()
+        return set_odict(odict,val, *path)
+    return odict
+
+
 def set_handler(args,parser):
 	set_logging_level(args)
 	if len(args.subnargs) < 2:
@@ -118,6 +125,14 @@ def get_handler(args,parser):
 	sys.stdout.write('%s value [%s]\n'%(args.subnargs,val))
 	return
 
+def create_handler(args,parser):
+	set_logging_level(args)
+	odict = read_odict(args.input)
+	odict = create_odict_is_none(odict,*args.subnargs)
+	sys.stdout.write('%s\n'%(odict))
+	return
+
+
 
 def main():
 	commandline='''
@@ -129,6 +144,9 @@ def main():
 			"$" : "+"
 		},
 		"get<get_handler>##path... get value##" : {
+			"$" : "+"
+		},
+		"create<create_handler>##path ... create dict when not exists##" : {
 			"$" : "+"
 		}
 	}
