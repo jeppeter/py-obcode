@@ -696,4 +696,34 @@ def format_bytes_c(sarr):
         i += 1
     return rets
 
+def set_odict(odict,val,*path):
+    curodict = odict
+    idx = 0
+    while idx < len(path) - 1:
+        if path[idx] not in curodict.keys():
+            curodict[path[idx]] = dict()
+        curodict = curodict[path[idx]]
+        idx += 1
+    curodict[path[idx]] = val
+    return odict
+
+def get_odict(odict,*path):
+    idx = 0
+    curodict = odict
+    while idx < (len(path) - 1):
+        if path[idx] not in curodict.keys():
+            return None
+        curodict = curodict[path[idx]]
+        idx += 1
+    logging.info('%s [%d][%s]'%(curodict,idx, path[idx]))
+    if path[idx] not in curodict.keys():
+        return None
+    return curodict[path[idx]]
+
+
+def create_odict_is_none(odict,*path):
+    if get_odict(odict,*path) is None:
+        val = dict()
+        return set_odict(odict,val, *path)
+    return odict
 ##extractcode_end

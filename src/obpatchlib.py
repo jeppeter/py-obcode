@@ -53,7 +53,8 @@ def format_ob_patch_func_xors(objparser,jsondump,objname,funcname,formatname,tim
     if ftimes >= validbytes:
         ftimes = validbytes - 1
 
-    if PATCH_FUNC_KEY not in jsondump.keys():
+
+    if PATCH_FUNC_KEY not in jsondump.keys() :
         jsondump[PATCH_FUNC_KEY] = dict()
     if objname not in jsondump[PATCH_FUNC_KEY].keys():
         jsondump[PATCH_FUNC_KEY][objname] = dict()
@@ -94,6 +95,7 @@ def format_ob_patch_func_code(objparser,jsondump,objname,funcname,formatname,get
     if win32mode:
         realf = '_%s'%(funcname)
 
+    #offsetk = get_odict(jsondump, PATCH_FUNC_KEY,objname, funcname,FORMAT_FUNC_OFFSET_KEY)
     offsetk = jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_OFFSET_KEY]
     xors = jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_XORS_KEY]
     funcsize = objparser.func_size(realf)
