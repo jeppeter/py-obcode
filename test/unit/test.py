@@ -674,9 +674,6 @@ class obcode_test(unittest.TestCase):
             cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','clean']
             subprocess.check_call(cmds,stdout=stdnull)
 
-
-
-
             self.assertEqual(normlines,oblines)
             self.assertEqual(norm2lines,ob2lines)
             self.assertEqual(norm2lines,repatch2lines)
@@ -764,7 +761,9 @@ class obcode_test(unittest.TestCase):
         subprocess.check_call(cmds,stdout=stdnull)
         cmdbin = os.path.join(exampledir,'main')
         oblines = []
-        for l in cmdpack.run_cmd_output([cmdbin]):
+        copyenv = os.environ.copy()
+        copyenv['LD_LIBRARY_PATH'] = exampledir
+        for l in cmdpack.run_cmd_output([cmdbin],copyenv=copyenv):
             l = l.rstrip('\r\n')
             oblines.append(l)
         # no patch mode
@@ -776,11 +775,13 @@ class obcode_test(unittest.TestCase):
         subprocess.check_call(cmds,stdout=stdnull)
         cmdbin = os.path.join(tmpd,'main')
         normlines = []
-        for l in cmdpack.run_cmd_output([cmdbin]):
+        copyenv['LD_LIBRARY_PATH'] = tmpd
+        for l in cmdpack.run_cmd_output([cmdbin],copyenv=copyenv):
             l = l.rstrip('\r\n')
             normlines.append(l)
         cmds = ['make','-C',tmpd,'TOPDIR=%s'%(topdir),'clean']
         subprocess.check_call(cmds,stdout=stdnull)
+        self.assertTrue(len(normlines) > 2)
         self.assertEqual(normlines,oblines)
         stdnull.close()
         stdnull = None
@@ -823,6 +824,7 @@ class obcode_test(unittest.TestCase):
                 normlines.append(l)
             cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','clean']
             subprocess.check_call(cmds,stdout=stdnull)
+            self.assertTrue(len(normlines) > 2)
             self.assertEqual(normlines,oblines)
             self.runOk=True
         finally:

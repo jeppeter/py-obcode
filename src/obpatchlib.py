@@ -364,22 +364,26 @@ def write_patch_output(args,rets,odict):
 def patch_objects(objparser,args,ofile,objs,odict,alldatas,force=False):
     if PATCH_FUNC_KEY in odict.keys():
         odict = create_odict_is_none(odict,PATCH_FUNC_KEY,ofile)
-        #if ofile not in odict[PATCH_FUNC_KEY].keys():
-        #    odict[PATCH_FUNC_KEY][ofile] = dict()
         for o in objs:
-            if o not in odict[PATCH_FUNC_KEY].keys():
-                #logging.error('[%s] not handled'%(o))
+            ofileval = get_odict_value(odict,PATCH_FUNC_KEY,o)
+            ofuncval = get_odict_value(odict,PATCH_FUNC_KEY,ofile,o)
+            if ofileval is None:
                 continue
-            if force or (o not in odict[PATCH_FUNC_KEY][ofile].keys() and o in odict[PATCH_FUNC_KEY].keys()):
-                odict[PATCH_FUNC_KEY][ofile][o] = dict()
-                odict[PATCH_FUNC_KEY][ofile][o] = Utf8Encode(odict[PATCH_FUNC_KEY][o]).get_val()
+            if force or (ofileval is not None and ofuncval is None):
+                #odict[PATCH_FUNC_KEY][ofile][o] = dict()
+                #odict[PATCH_FUNC_KEY][ofile][o] = Utf8Encode(odict[PATCH_FUNC_KEY][o]).get_val()
+                odict = set_odict_value(odict, Utf8Encode(ofileval).get_val(), PATCH_FUNC_KEY,ofile,o)
                 for f in odict[PATCH_FUNC_KEY][ofile][o].keys():
-                    rels = odict[PATCH_FUNC_KEY][ofile][o][f][FUNC_DATA_RELOC_KEY]
+                    #rels = odict[PATCH_FUNC_KEY][ofile][o][f][FUNC_DATA_RELOC_KEY]
+                    rels = get_odict_value(odict,PATCH_FUNC_KEY,ofile,o,f,FUNC_DATA_RELOC_KEY)
                     #logging.info('rels\n%s'%(dump_ints(rels)))
-                    offsetk = odict[PATCH_FUNC_KEY][ofile][o][f][FORMAT_FUNC_OFFSET_KEY]
-                    data = odict[PATCH_FUNC_KEY][ofile][o][f][FUNC_DATA_KEY]
+                    #offsetk = odict[PATCH_FUNC_KEY][ofile][o][f][FORMAT_FUNC_OFFSET_KEY]
+                    offsetk = get_odict_value(odict,PATCH_FUNC_KEY,ofile,o,f,FORMAT_FUNC_OFFSET_KEY)
+                    #data = odict[PATCH_FUNC_KEY][ofile][o][f][FUNC_DATA_KEY]
+                    data = get_odict_value(odict,PATCH_FUNC_KEY,ofile,o,f,FUNC_DATA_KEY)
                     reloff = objparser.get_text_file_off(data,rels,f)
-                    xors = odict[PATCH_FUNC_KEY][ofile][o][f][FORMAT_FUNC_XORS_KEY]
+                    #xors = odict[PATCH_FUNC_KEY][ofile][o][f][FORMAT_FUNC_XORS_KEY]
+                    xors = get_odict_value(odict,PATCH_FUNC_KEY,ofile,o,f,FORMAT_FUNC_XORS_KEY)
                     for k in offsetk.keys():
                         logging.info('xors[%s]=%d'%(k,offsetk[k]))
                         if offsetk[k] <= 1 and offsetk[k] >= 0:
@@ -390,8 +394,10 @@ def patch_objects(objparser,args,ofile,objs,odict,alldatas,force=False):
                                 xors[k]))
                             alldatas[(reloff + ki)] = alldatas[(reloff + ki)] ^ xors[k]
                             offsetk[k] = 2
-                    odict[PATCH_FUNC_KEY][ofile][o][f][FORMAT_FUNC_OFFSET_KEY] = offsetk
-                    odict[PATCH_FUNC_KEY][ofile][o][f][FUNC_DATA_KEY] = alldatas[reloff:(reloff + len(data))]
+                    #odict[PATCH_FUNC_KEY][ofile][o][f][FORMAT_FUNC_OFFSET_KEY] = offsetk
+                    odict = set_odict_value(odict,offsetk, PATCH_FUNC_KEY,ofile,o,f,FORMAT_FUNC_OFFSET_KEY)
+                    #odict[PATCH_FUNC_KEY][ofile][o][f][FUNC_DATA_KEY] = alldatas[reloff:(reloff + len(data))]
+                    odict = set_odict_value(odict,alldatas[reloff:(reloff+ len(data))], PATCH_FUNC_KEY,ofile,o,f,FUNC_DATA_KEY)
     return odict,alldatas
 
 def _log_patch_function(args,odict,fname,funcname):
