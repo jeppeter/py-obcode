@@ -8,49 +8,18 @@ import random
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from strparser import *
+from jsonhdl import *
 from cobfilebase import *
 
 
 ##extractcode_start
+
 C_CODE_CRC32CALC='''%C_CODE_CRC32CALC%'''
 C_CODE_MD5CALC='''%C_CODE_MD5CALC%'''
 C_CODE_SHA256CALC='''%C_CODE_SHA256CALC%'''
 C_CODE_SHA3CALC='''%C_CODE_SHA3CALC%'''
 C_CODE_CHKVALDEF='''%C_CODE_CHKVALDEF%'''
 C_CODE_CHKVAL='''%C_CODE_CHKVAL%'''
-
-CHKVAL_KEY='chkval'
-
-RANDOM_VARIABLE='variable'
-CHKVAL_RANDOM_VALUE='rndval'
-CHKVAL_FUNC_CHECKS_START='func_checks_start'
-CHKVAL_FUNC_CHECKS='func_checks'
-CHKVAL_FUNC_CHECKS_END='func_checks_end'
-CHKVAL_VALUE_CHECKS='value_checks'
-CHKVAL_VALUE_CHECKS_TOTAL_END='value_checks_total_end'
-CHKVAL_FUNC_CHECK_CRC32_FUNC='check_crc32_value'
-CHKVAL_FUNC_CHECK_MD5_FUNC='check_md5_value'
-CHKVAL_FUNC_CHECK_SHA256_FUNC='check_sha256_value'
-CHKVAL_FUNC_CHECK_SHA3_FUNC='check_sha3_value'
-
-CHKVAL_STRUCT_OFFSET='m_offset'
-CHKVAL_STRUCT_NAMEXOR1='m_namexor1'
-CHKVAL_STRUCT_NAMEXOR2='m_namexor2'
-CHKVAL_STRUCT_SIZE='m_size'
-CHKVAL_STRUCT_CRC32VAL='m_crc32val'
-CHKVAL_STRUCT_MD5VAL='m_md5val'
-CHKVAL_STRUCT_SHA256VAL='m_sha256val'
-CHKVAL_STRUCT_SHA3VAL='m_sha3val'
-CHKVAL_STRUCT_LASTONE='LAST_STRUCT_MEMBER'
-
-CHKVAL_STRUCT_OFFSET_SIZE=8
-CHKVAL_STRUCT_NAMEXOR1_SIZE=64
-CHKVAL_STRUCT_NAMEXOR2_SIZE=64
-CHKVAL_STRUCT_SIZE_SIZE=8
-CHKVAL_STRUCT_CRC32VAL_SIZE=8
-CHKVAL_STRUCT_MD5VAL_SIZE=16
-CHKVAL_STRUCT_SHA256VAL_SIZE=32
-CHKVAL_STRUCT_SHA3VAL_SIZE=64
 
 
 class ChkVal(COBFileBase):
@@ -442,21 +411,25 @@ class ChkVal(COBFileBase):
 
 
 def dump_object_function_one(args,objparser,odict,o,f):
+    logging.info('o[%s]f[%s]'%(o,f))
+    fodict = get_odict_value(odict,CHKVAL_RAW_DATA,o,f)
+    if fodict is None:
+        fodict = dict()
+        odict = set_odict_value(odict,fodict, CHKVAL_RAW_DATA,o,f)
     return odict
 
 def dump_object_functions(args,objparser,odict,objs=[]):
-    if CHKVAL_KEY in odict.keys() and \
-        RANDOM_VARIABLE in odict[CHKVAL_KEY].keys() and \
-        CHKVAL_RANDOM_VALUE in odict[CHKVAL_KEY].keys():
+    rval = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RANDOM_VALUE,args.output)
+    if rval is not None:
         for o in objs:
-            if o not in odict[CHKVAL_KEY][CHKVAL_RANDOM_VALUE].keys():
+            rval = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RANDOM_VALUE,args.output,o)
+            if rval is None:
+                logging.warn('can not get [%s]'%(o))
                 continue
-            for f in odict[CHKVAL_KEY][CHKVAL_RANDOM_VALUE][o].keys():
-                if PATCH_KEY in odict.keys() and  \
-                    o in odict[PATCH_KEY].keys() and \
-                    f in odict[PATCH_KEY][o].keys():
-                    # this means this is the ok relocations
-                    continue
+            for f in rval.keys():
+                odict = dump_object_function_one(args,objparser,odict,o,f)
+    else:
+        logging.info('[%s]None handle'%(args.output))
     return odict
 
 

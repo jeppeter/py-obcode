@@ -13,6 +13,7 @@ import json
 ##importdebugstart
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from strparser import *
+from jsonhdl import *
 from filehdl import *
 from objparser import *
 from elfparser import *
@@ -31,6 +32,7 @@ from chkval import *
 REPLACE_IMPORT_LIB=1
 
 REPLACE_STR_PARSER=1
+REPLACE_JSON_HDL=1
 REPLACE_FILE_HDL=1
 REPLACE_OBJ_PARSER=1
 REPLACE_ELF_PARSER=1
@@ -327,6 +329,20 @@ def replchkval_handler(args,parser):
     sys.exit(0)
     return
 
+def chkvaldumpfuncself_handler(args,parser):
+    set_logging_level(args)
+    logging.info('chkvaldumpfuncself')
+    jdict, args = get_jdict(args)
+    odict = get_odict(args, False)
+    elfparser = ElfParser(args.output)
+    objs = []
+    for k in jdict.keys():
+        objs.append(k)
+    odict = dump_object_functions(args,elfparser,odict,objs)
+    write_json(odict, args.dump)
+    sys.exit(0)
+    return
+
 def main():
     commandline_fmt='''
     {
@@ -463,6 +479,7 @@ def debug_release():
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'obpatchlib.py')),r'REPLACE_OB_PATCH_LIB=1')
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'cobfilebase.py')),r'REPLACE_COB_FILE_BASE=1')
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'chkval.py')),r'REPLACE_CHKVAL=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'jsonhdl.py')),r'REPLACE_JSON_HDL=1')
 
     if len(sys.argv) > 2:
         for k in sys.argv[1:]:

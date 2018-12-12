@@ -9,6 +9,7 @@ import extargsparse
 ##importdebugstart
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from strparser import *
+from jsonhdl import *
 from filehdl import *
 from fmthdl import *
 from extract_ob import *
@@ -22,6 +23,7 @@ from obpatchlib import *
 REPLACE_IMPORT_LIB=1
 
 REPLACE_STR_PARSER=1
+REPLACE_JSON_HDL=1
 REPLACE_FILE_HDL=1
 REPLACE_FMT_HDL=1
 REPLACE_EXTRACT_OB=1
@@ -105,6 +107,7 @@ def debug_release():
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'objparser.py')),r'REPLACE_OBJ_PARSER=1')
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'elfparser.py')),r'REPLACE_ELF_PARSER=1')
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'coffparser.py')),r'REPLACE_COFF_PARSER=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'jsonhdl.py')),r'REPLACE_JSON_HDL=1')
     if len(sys.argv) > 2:
         for k in sys.argv[1:]:
             if not k.startswith('-'):

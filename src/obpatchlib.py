@@ -6,22 +6,11 @@ import os
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from objparser import *
+from jsonhdl import *
 from elfparser import *
 from coffparser import *
 
 ##extractcode_start
-FORMAT_FUNC_NAME_KEY='funcname'
-FORMAT_FUNC_CODE_KEY='funccode'
-FORMAT_FUNC_OFFSET_KEY='funcoff'
-FORMAT_FUNC_XORS_KEY='xors'
-FORMAT_FUNC_ORIG_KEY='origdata'
-FUNC_DATA_KEY='funcdata'
-FUNC_DATA_RELOC_KEY='relocs'
-PATCH_FUNC_KEY='patchfunc'
-WIN32_MODE_KEY='win32mode'
-GET_FUNC_ADDR='getfuncaddr'
-FUNC_ADDR_NAME='funcaddrname'
-FUNC_ADDR_CODE='funcaddrcode'
 
 
 def format_ob_patch_func_xors(objparser,jsondump,objname,funcname,formatname,times,win32mode):
@@ -336,6 +325,8 @@ def format_patch_funcions(args,odict,files,patchfuncname,prefix='prefix'):
     rets += output_patch_function(args,prefix,patchfuncname,odict,files)
     return rets
 
+
+
 def write_patch_output(args,rets,odict):
     if args.output is None:
         fout = sys.stdout
@@ -349,16 +340,7 @@ def write_patch_output(args,rets,odict):
         fout.flush()
     fout = None
 
-    if args.dump is None:
-        fout = sys.stderr
-    else:
-        fout = open(args.dump,'w+b')
-    write_file_direct(json.dumps(odict,sort_keys=True,indent=4), fout)
-    if fout != sys.stderr:
-        fout.close()
-    else:
-        fout.flush()
-    fout = None
+    write_json(odict,args.dump)
     return
 
 def patch_objects(objparser,args,ofile,objs,odict,alldatas,force=False):
