@@ -546,6 +546,11 @@ class obcode_test(unittest.TestCase):
         subprocess.check_call(cmds,stdout=stdnull)
         cmds = ['make','-C',exampledir,'OB_PATCH=1','all']
         subprocess.check_call(cmds,stdout=stdnull)
+        errorbakjson = os.path.join(exampledir,'error_bak.json')
+        unpatchjson = os.path.join(exampledir,'unpatch.json')
+        errorjson = os.path.join(exampledir,'error.json')
+        cmds = ['cp',unpatchjson, errorbakjson]
+        subprocess.check_call(cmds,stdout=stdnull)
         cmdbin = os.path.join(exampledir,'main')
         oblines = []
         for l in cmdpack.run_cmd_output([cmdbin]):
@@ -573,8 +578,29 @@ class obcode_test(unittest.TestCase):
             norm2lines.append(l)
         cmds = ['make','-C',exampledir,'clean']
         subprocess.check_call(cmds,stdout=stdnull)
+        cmds = ['cp', errorbakjson,errorjson]
+        subprocess.check_call(cmds,stdout=stdnull)
+        cmds = ['make','-C',exampledir,'OB_REPATCH=%s'%(errorjson),'all']
+        subprocess.check_call(cmds,stdout=stdnull)
+        repatchlines = []
+        cmdbin = os.path.join(exampledir,'main')
+        for l in cmdpack.run_cmd_output([cmdbin]):
+            l = l.rstrip('\r\n')
+            repatchlines.append(l)
+        repatch2lines = []
+        cmdbin = os.path.join(exampledir,'main2')
+        for l in cmdpack.run_cmd_output([cmdbin]):
+            l = l.rstrip('\r\n')
+            repatch2lines.append(l)
+        cmds = ['make','-C',exampledir,'clean']
+        subprocess.check_call(cmds,stdout=stdnull)
+
         self.assertEqual(normlines,oblines)
         self.assertEqual(norm2lines, ob2lines)
+        self.assertEqual(normlines,repatchlines)
+        self.assertEqual(norm2lines,repatch2lines)
+        cmds = ['rm','-f',errorbakjson,errorjson]
+        subprocess.check_call(cmds,stdout=stdnull)
         stdnull.close()
         stdnull = None
         self.runOk=True

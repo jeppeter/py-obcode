@@ -186,29 +186,20 @@ def unpatch_one_file_func(objparser,odict,objfile,f,objdata,win32mode=False):
 
 
 def object_one_file_func(objparser,odict,objfile,f,objdata, times,verbose,win32mode=False):
-    if PATCH_FUNC_KEY in odict.keys() and objfile in odict[PATCH_FUNC_KEY].keys() and \
-        f in odict[PATCH_FUNC_KEY][objfile].keys():
+    val = get_odict_value(odict,PATCH_FUNC_KEY,objfile,f)
+    if val is not None:
         return odict,objdata
-    if PATCH_FUNC_KEY not in odict.keys():
-        odict[PATCH_FUNC_KEY] = dict()
-    if objfile not in odict[PATCH_FUNC_KEY].keys():
-        odict[PATCH_FUNC_KEY][objfile] = dict()
-    if f not in odict[PATCH_FUNC_KEY][objfile].keys():
-        odict[PATCH_FUNC_KEY][objfile][f] = dict()
-    getfunccall = None
-    if GET_FUNC_ADDR not in odict[PATCH_FUNC_KEY].keys():
-        odict[PATCH_FUNC_KEY][GET_FUNC_ADDR] = dict()
+    odict = set_odict_value(odict,dict(), PATCH_FUNC_KEY,objfile,f)
+    getfunccall = get_odict_value(odict,PATCH_FUNC_KEY,GET_FUNC_ADDR,FUNC_ADDR_NAME)
+    if getfunccall is None:
         code , name = format_get_func_addr(verbose)
-        odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_NAME] = name
-        odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_CODE] = code
-    getfunccall = odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_NAME]
+        odict = set_odict_value(odict, code, PATCH_FUNC_KEY,GET_FUNC_ADDR,FUNC_ADDR_CODE)
+        odict = set_odict_value(odict, name, PATCH_FUNC_KEY,GET_FUNC_ADDR,FUNC_ADDR_NAME)
+        getfunccall = name
     nformatfunc = get_random_name(random.randint(5,20))
     odict = format_ob_patch_functions(objparser,odict,objfile,f,nformatfunc,times, getfunccall,verbose,win32mode)
     odict,objdata = unpatch_one_file_func(objparser,odict,objfile,f,objdata,win32mode)
-    if win32mode:
-        odict[PATCH_FUNC_KEY][objfile][f][WIN32_MODE_KEY] = True
-    else:
-        odict[PATCH_FUNC_KEY][objfile][f][WIN32_MODE_KEY] = False
+    odict = set_odict_value(odict,win32mode, PATCH_FUNC_KEY,objfile,f,WIN32_MODE_KEY)
     return odict,objdata
 
 def call_object_parser(clsname,f):
@@ -318,7 +309,7 @@ def output_patch_function(args,prefix,patchfuncname,odict,files):
         for f in odict[PATCH_FUNC_KEY][o]:
             rets += format_line('',1)
             rets += format_debug_line('format for %s'%(f),1,args.verbose)
-            rets += format_line('ret = %s(mapfunc);'%(odict[PATCH_FUNC_KEY][o][f][FORMAT_FUNC_NAME_KEY]),1)
+            rets += format_line('ret = %s(mapfunc);'%(get_odict_value(odict,PATCH_FUNC_KEY,o,f,FORMAT_FUNC_NAME_KEY)),1)
             rets += format_line('if (ret < 0) {', 1)
             rets += format_line('return ret;',2)
             rets += format_line('}',1)
@@ -329,16 +320,18 @@ def output_patch_function(args,prefix,patchfuncname,odict,files):
 
 def format_patch_funcions(args,odict,files,patchfuncname,prefix='prefix'):
     rets = format_includes(args)
-    if PATCH_FUNC_KEY in odict.keys() and \
-        GET_FUNC_ADDR in odict[PATCH_FUNC_KEY].keys():
-        rets += odict[PATCH_FUNC_KEY][GET_FUNC_ADDR][FUNC_ADDR_CODE]
+    curs = get_odict_value(odict, PATCH_FUNC_KEY,GET_FUNC_ADDR,FUNC_ADDR_CODE)
+    if curs is not None:
+        rets += curs
     if PATCH_FUNC_KEY in odict.keys():
         for o in files:
             rets += format_debug_line('format file [%s]'%(o),0,args.verbose)
-            for f in odict[PATCH_FUNC_KEY][o].keys():
-                rets += format_line('',0)
-                rets += format_debug_line('format for function [%s]'%(f),0,args.verbose)
-                rets += odict[PATCH_FUNC_KEY][o][f][FORMAT_FUNC_CODE_KEY]
+            objs = get_odict_value(odict,PATCH_FUNC_KEY,o)
+            if objs is not None:
+                for f in objs.keys():
+                    rets += format_line('',0)
+                    rets += format_debug_line('format for function [%s]'%(f),0,args.verbose)
+                    rets += get_odict_value(odict,PATCH_FUNC_KEY,o,f,FORMAT_FUNC_CODE_KEY)
 
     rets += output_patch_function(args,prefix,patchfuncname,odict,files)
     return rets
@@ -370,8 +363,9 @@ def write_patch_output(args,rets,odict):
 
 def patch_objects(objparser,args,ofile,objs,odict,alldatas,force=False):
     if PATCH_FUNC_KEY in odict.keys():
-        if ofile not in odict[PATCH_FUNC_KEY].keys():
-            odict[PATCH_FUNC_KEY][ofile] = dict()
+        odict = create_odict_is_none(odict,PATCH_FUNC_KEY,ofile)
+        #if ofile not in odict[PATCH_FUNC_KEY].keys():
+        #    odict[PATCH_FUNC_KEY][ofile] = dict()
         for o in objs:
             if o not in odict[PATCH_FUNC_KEY].keys():
                 #logging.error('[%s] not handled'%(o))
