@@ -149,8 +149,8 @@ def cob_handler(args,parser):
 REUNPATCH_HANDLER_KEY='reunpatchhandle'
 
 def obj_reunpatch_one_function(objparser, alldatas,args,odict,fname,funcname):
-    relocs = odict[PATCH_FUNC_KEY][fname][funcname][FUNC_DATA_RELOC_KEY]
-    win32mode = odict[PATCH_FUNC_KEY][fname][funcname][WIN32_MODE_KEY]
+    relocs = get_odict_value(odict,PATCH_FUNC_KEY,fname,funcname,FUNC_DATA_RELOC_KEY)
+    win32mode = get_odict_value(odict,PATCH_FUNC_KEY,fname,funcname,WIN32_MODE_KEY)
     realf = funcname
     if win32mode:
         realf = '_%s'%(funcname)
@@ -169,14 +169,14 @@ def obj_reunpatch_one_function(objparser, alldatas,args,odict,fname,funcname):
 
 
 def obj_reunpatch_one_file(objparser,alldatas,args,odict,fname):
-    if PATCH_FUNC_KEY not in odict.keys():
-        raise Exception('no [%s] in PATCH_FUNC_KEY'%(PATCH_FUNC_KEY))
-    if fname not in odict[PATCH_FUNC_KEY].keys():
-        raise Exception('no [%s] in [%s]'%(fname,PATCH_FUNC_KEY))
-    for f in odict[PATCH_FUNC_KEY][fname].keys():
-        if REUNPATCH_HANDLER_KEY not in odict[PATCH_FUNC_KEY][fname][f].keys():
+    objs = get_odict_value(odict,PATCH_FUNC_KEY,fname)
+    if objs is None:
+        raise Exception('no [%s.%s] found'%(PATCH_FUNC_KEY,fname))
+    for f in objs.keys():
+        repatch = get_odict_value(odict,PATCH_FUNC_KEY,fname,f,REUNPATCH_HANDLER_KEY)
+        if repatch is None:
             odict, alldatas = obj_reunpatch_one_function(objparser,alldatas,args,odict,fname,f)
-            odict[PATCH_FUNC_KEY][fname][f][REUNPATCH_HANDLER_KEY] = True
+            odict = set_odict_value(odict,True,PATCH_FUNC_KEY,fname,f,REUNPATCH_HANDLER_KEY)
     return odict,alldatas
 
 
