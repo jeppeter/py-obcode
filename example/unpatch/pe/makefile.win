@@ -17,12 +17,14 @@ NOLOGO_CFLAGS=
 NOLOGO_LDFLAGS=
 NOLOGO_MAKEFLAGS=
 GIT_VERBOSE=
+PYTHON_VERBOSE= -vvvv
 !ELSE
 QUIETCMD=@
 NOLOGO_CFLAGS=/nologo
 NOLOGO_LDFLAGS=/nologo
 NOLOGO_MAKEFLAGS=/NOLOGO
 GIT_VERBOSE=--quiet
+PYTHON_VERBOSE=
 !ENDIF
 !ELSE
 QUIETCMD=@
@@ -30,6 +32,7 @@ NOLOGO_CFLAGS=/nologo
 NOLOGO_LDFLAGS=/nologo
 NOLOGO_MAKEFLAGS=/NOLOGO
 GIT_VERBOSE=--quiet
+PYTHON_VERBOSE=
 !ENDIF
 
 !IFDEF STATICLIB
@@ -81,34 +84,54 @@ main2_CLAUSE = "$(CURDIR)\main2.obj;ccprint_out_a,ccprint_out_b,ccprint_out_c" "
 
 all:main.exe main2.exe getfunc.exe
 
+!IFDEF OB_REPATCH
+
+main.exe:$(main_OBJECTS)
+	$(QUIETCMD) echo "call static $(main_OBJECTS)"
+	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(main_OBJECTS)
+	$(QUIETCMD)echo "use static lib"
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py $(PYTHON_VERBOSE) -o $(CURDIR)\main.exe obrepatchpe -D $(OB_REPATCH)  $(CURDIR)\main.obj $(CURDIR)\callc.obj $(CURDIR)\main_unpatch.obj
+
+main2.exe:$(main2_OBJECTS)
+	$(QUIETCMD) echo "call static $(main_OBJECTS)"
+	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(main2_OBJECTS)
+	$(QUIETCMD)echo "use static lib"
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py $(PYTHON_VERBOSE) -o $(CURDIR)\main2.exe obrepatchpe -D $(OB_REPATCH)  $(CURDIR)\main2.obj $(CURDIR)\callc.obj $(CURDIR)\main2_unpatch.obj
+
+!ELSE
+
 !IFDEF OB_PATCH
 main.exe:$(main_OBJECTS) unpatch.json
 	$(QUIETCMD) echo "call static $(main_OBJECTS)"
 	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(main_OBJECTS)
 	$(QUIETCMD)echo "use static lib"
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py -o $(CURDIR)\main.exe obpatchpe -D $(CURDIR)\unpatch.json  $(CURDIR)\main.obj $(CURDIR)\callc.obj $(CURDIR)\main_unpatch.obj
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py $(PYTHON_VERBOSE) -o $(CURDIR)\main.exe obpatchpe -D $(CURDIR)\unpatch.json  $(CURDIR)\main.obj $(CURDIR)\callc.obj $(CURDIR)\main_unpatch.obj
+
+main2.exe:$(main2_OBJECTS) unpatch.json
+	$(QUIETCMD) echo "call static $(main_OBJECTS)"
+	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(main2_OBJECTS)
+	$(QUIETCMD)echo "use static lib"
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py $(PYTHON_VERBOSE) -o $(CURDIR)\main2.exe obpatchpe -D $(CURDIR)\unpatch.json  $(CURDIR)\main2.obj $(CURDIR)\callc.obj $(CURDIR)\main2_unpatch.obj
+
+
 !ELSE
 main.exe:$(main_OBJECTS) unpatch.json
 	$(QUIETCMD) echo "call static $(main_OBJECTS)"
 	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(main_OBJECTS)
 	$(QUIETCMD)echo "use static lib"
+
+main2.exe:$(main2_OBJECTS) unpatch.json
+	$(QUIETCMD) echo "call static $(main_OBJECTS)"
+	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(main2_OBJECTS)
+	$(QUIETCMD)echo "use static lib"
+# ENDIF OB_PATCH
+!ENDIF  
+
+# ENDIF OB_REPATCH
 !ENDIF
 
 getfunc.exe:$(getfunc_OBJECTS)
 	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(getfunc_OBJECTS)
-
-!IFDEF OB_PATCH
-main2.exe:$(main2_OBJECTS) unpatch.json
-	$(QUIETCMD) echo "call static $(main_OBJECTS)"
-	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(main2_OBJECTS)
-	$(QUIETCMD)echo "use static lib"
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py -o $(CURDIR)\main2.exe obpatchpe -D $(CURDIR)\unpatch.json  $(CURDIR)\main2.obj $(CURDIR)\callc.obj $(CURDIR)\main2_unpatch.obj
-!ELSE
-main2.exe:$(main2_OBJECTS) unpatch.json
-	$(QUIETCMD) echo "call static $(main_OBJECTS)"
-	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(main2_OBJECTS)
-	$(QUIETCMD)echo "use static lib"
-!ENDIF
 
 
 .cpp.obj:
@@ -118,13 +141,23 @@ unpatch.json:main_unpatch.cpp main2_unpatch.cpp
 
 #	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h -D unpatch.json -o unpatch.cpp obunpatchcoff "$(CURDIR)\main.obj;print_out_a,print_out_b,print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c" -vvvv
 
+!IFDEF OB_REPATCH
+
+main_unpatch.cpp:main.obj callc.obj
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py $(PYTHON_VERBOSE) --includefiles main.h --includefiles unpatch.h --includefiles callc.h -D $(OB_REPATCH) -o main_unpatch.cpp obreunpatchcoff $(main_CLAUSE)
+
+main2_unpatch.cpp:main2.obj callc.obj
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py $(PYTHON_VERBOSE) --includefiles main2.h --includefiles unpatch.h --includefiles callc.h -D $(OB_REPATCH) -o main2_unpatch.cpp obreunpatchcoff $(main2_CLAUSE)
+
+
+!ELSE
 
 !IFDEF OB_PATCH
 main_unpatch.cpp:main.obj callc.obj
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o main_unpatch.cpp obunpatchcoff $(main_CLAUSE)
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py $(PYTHON_VERBOSE) --includefiles main.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o main_unpatch.cpp obunpatchcoff $(main_CLAUSE)
 
 main2_unpatch.cpp:main2.obj callc.obj
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main2.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o main2_unpatch.cpp obunpatchcoff $(main2_CLAUSE)
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py $(PYTHON_VERBOSE) --includefiles main2.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o main2_unpatch.cpp obunpatchcoff $(main2_CLAUSE)
 
 !ELSE
 main_unpatch.cpp:main.obj callc.obj
@@ -137,6 +170,10 @@ main2_unpatch.cpp:main2.obj callc.obj
 	$(QUIETCMD)echo #include "unpatch.h" >main2_unpatch.cpp
 	$(QUIETCMD)echo int unpatch_handler(map_prot_func_t protfunc) { protfunc = protfunc;return 0;} >>main2_unpatch.cpp
 
+# endif OB_PATCH
+!ENDIF
+
+# endif OB_REPATCH
 !ENDIF
 
 
