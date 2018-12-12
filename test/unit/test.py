@@ -625,6 +625,13 @@ class obcode_test(unittest.TestCase):
             subprocess.check_call(cmds,stdout=stdnull)
             cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','OB_PATCH=1','all']
             subprocess.check_call(cmds,stdout=stdnull)
+            errorbakjson = os.path.join(exampledir,'error_bak.json')
+            errorjson = os.path.join(exampledir,'error.json')
+            unpatchjson = os.path.join(exampledir,'unpatch.json')
+            cmds = ['copy','/Y',unpatchjson, errorbakjson]
+            subprocess.check_call(cmds,stdout=stdnull,shell=True)
+            cmds = ['copy','/Y',unpatchjson, errorjson]
+            subprocess.check_call(cmds,stdout=stdnull,shell=True)
             cmdbin = os.path.join(exampledir,'main.exe')
             oblines = []
             for l in cmdpack.run_cmd_output([cmdbin]):
@@ -652,8 +659,32 @@ class obcode_test(unittest.TestCase):
                 norm2lines.append(l)
             cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','clean']
             subprocess.check_call(cmds,stdout=stdnull)
+            cmds = ['nmake.exe', '/NOLOGO','/f','makefile.win','OB_REPATCH=%s'%(errorjson),'all']
+            subprocess.check_call(cmds,stdout=stdnull)
+            cmdbin = os.path.join(exampledir,'main.exe')
+            repatchlines = []
+            for l in cmdpack.run_cmd_output([cmdbin]):
+                l = l.rstrip('\r\n')
+                repatchlines.append(l)
+            cmdbin = os.path.join(exampledir,'main2.exe')
+            repatch2lines = []
+            for l in cmdpack.run_cmd_output([cmdbin]):
+                l = l.rstrip('\r\n')
+                repatch2lines.append(l)
+            cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','clean']
+            subprocess.check_call(cmds,stdout=stdnull)
+
+
+
+
             self.assertEqual(normlines,oblines)
             self.assertEqual(norm2lines,ob2lines)
+            self.assertEqual(norm2lines,repatch2lines)
+            self.assertEqual(normlines,repatchlines)
+            cmds = ['del','/F','/Q',errorjson]
+            subprocess.check_call(cmds,stdout=stdnull,shell=True)
+            cmds = ['del','/F','/Q',errorbakjson]
+            subprocess.check_call(cmds,stdout=stdnull,shell=True)
             self.runOk=True
         finally:
             if stdnull is not None:
