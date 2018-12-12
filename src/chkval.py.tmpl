@@ -72,15 +72,12 @@ class ChkVal(COBFileBase):
         if len(lbyte) > 0 :
             assert(lbyte[0] == 0)
         rs = ints_to_string(sbyte)
-        rndname = ''
-        if RANDOM_VARIABLE not in odict.keys():
-            odict[RANDOM_VARIABLE] = dict()
-        if objname not in odict[RANDOM_VARIABLE].keys():
-            odict[RANDOM_VARIABLE][objname] = dict()
 
-        if rs not in odict[RANDOM_VARIABLE][objname].keys():
-            odict[RANDOM_VARIABLE][objname][rs] = get_random_name(random.randint(cfg.namemin,cfg.namemax))
-        rndname = odict[RANDOM_VARIABLE][objname][rs]
+        rndname = get_odict_value(odict,RANDOM_VARIABLE,objname,rs)
+        if rndname is None:
+            rndname = get_random_name(random.randint(cfg.namemin,cfg.namemax))
+            odict = set_odict_value(odict,rndname,RANDOM_VARIABLE,objname,rs)
+            #odict[RANDOM_VARIABLE][objname][rs] = get_random_name(random.randint(cfg.namemin,cfg.namemax))
         newc = before
         newc += rndname
         newc += after
@@ -117,17 +114,15 @@ class ChkVal(COBFileBase):
         return rets,odict
 
     def __format_char_array(self,objname,odict,kval,num=16):
-        if kval  in odict[RANDOM_VARIABLE][objname].keys():
-            name = odict[RANDOM_VARIABLE][objname][kval]
-        else:
+        name = get_odict_value(odict,RANDOM_VARIABLE,objname,kval)
+        if name is None:
             name = get_random_name(20)
-            odict[RANDOM_VARIABLE][objname][kval] = name
+            odict = set_odict_value(odict,name, RANDOM_VARIABLE,objname,kval)
 
-        if  kval in odict[CHKVAL_RANDOM_VALUE][objname].keys():
-            sarr = odict[CHKVAL_RANDOM_VALUE][objname][kval]
-        else:
+        sarr = get_odict_value(odict,CHKVAL_RANDOM_VALUE,objname,kval)
+        if sarr is None:
             sarr = get_random_bytes(num)
-            odict[CHKVAL_RANDOM_VALUE][objname][kval] = sarr
+            odict = set_odict_value(odict,sarr,CHKVAL_RANDOM_VALUE,objname,kval)
 
         rets = format_line('unsigned char %s[%d]={%s};'%(name,num,format_bytes_c(sarr)), 0)
         return rets,odict
@@ -142,9 +137,10 @@ class ChkVal(COBFileBase):
 
     def __format_sarr_struct(self,objname,odict,o,f,name,size,tabs,lastone=False):
         rets = ''
-        if name not in odict[CHKVAL_RANDOM_VALUE][objname][o][f].keys():
-            odict[CHKVAL_RANDOM_VALUE][objname][o][f][name] = get_random_bytes(size)
-        sarr = odict[CHKVAL_RANDOM_VALUE][objname][o][f][name]
+        sarr = get_odict_value(odict,CHKVAL_RANDOM_VALUE,objname,o,f,name)
+        if sarr is None:
+            sarr = get_random_bytes(size)
+            odict = set_odict_value(odict,sarr, CHKVAL_RANDOM_VALUE,objname,o,f,name)
         rets += format_debug_line('%s'%(name), tabs + 1, 3)
         if lastone:
             rets += format_line('{%s}'%(format_bytes_c(sarr)), tabs+1)
@@ -156,22 +152,13 @@ class ChkVal(COBFileBase):
 
     def __format_check_value_single(self,objname,o,odict,f,tabs,lastone):
         rets = ''
-        if CHKVAL_RANDOM_VALUE not in odict.keys():
-            odict[CHKVAL_RANDOM_VALUE] = dict()
 
-        if objname not in odict[CHKVAL_RANDOM_VALUE].keys():
-            odict[CHKVAL_RANDOM_VALUE][objname] = dict()
-
-        if o not in odict[CHKVAL_RANDOM_VALUE][objname].keys():
-            odict[CHKVAL_RANDOM_VALUE][objname][o] = dict()
-
-        if f not in odict[CHKVAL_RANDOM_VALUE][objname][o].keys():
-            odict[CHKVAL_RANDOM_VALUE][objname][o][f] = dict()
         rets += format_line('{', tabs)
         rets += format_debug_line('function %s'%(f), tabs + 1, 3)
-        if CHKVAL_STRUCT_OFFSET not in odict[CHKVAL_RANDOM_VALUE][objname][o][f].keys():
-            odict[CHKVAL_RANDOM_VALUE][objname][o][f][CHKVAL_STRUCT_OFFSET] = get_random_bytes(CHKVAL_STRUCT_OFFSET_SIZE)
-        sarr = odict[CHKVAL_RANDOM_VALUE][objname][o][f][CHKVAL_STRUCT_OFFSET]
+        sarr = get_odict_value(odict,CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_OFFSET)
+        if sarr is None:
+            sarr = get_random_bytes(CHKVAL_STRUCT_OFFSET_SIZE)
+            odict = set_odict_value(odict,sarr, CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_OFFSET)
         rets += format_debug_line('%s'%(CHKVAL_STRUCT_OFFSET),tabs+1,3)
         llval = self.__get_ll_value(sarr)
         rets += format_line('(signed long long) OB_LL_VALUE(0x%x),'%(llval), tabs+1)
@@ -180,12 +167,15 @@ class ChkVal(COBFileBase):
         curs , odict = self.__format_sarr_struct(objname,odict,o,f,CHKVAL_STRUCT_NAMEXOR1,CHKVAL_STRUCT_NAMEXOR1_SIZE,tabs,False)
         rets += curs
 
-        sarr1 = odict[CHKVAL_RANDOM_VALUE][objname][o][f][CHKVAL_STRUCT_NAMEXOR1]
+        sarr1 = get_odict_value(odict,CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_NAMEXOR1)
+        assert(sarr1 is not None)
         namexors = string_to_ints(f)
         if len(namexors) >= CHKVAL_STRUCT_NAMEXOR1_SIZE:
             namexors = namexors[:(CHKVAL_STRUCT_NAMEXOR1_SIZE-1)]
-        while len(namexors) < CHKVAL_STRUCT_NAMEXOR1_SIZE:
+        if len(namexors) < CHKVAL_STRUCT_NAMEXOR1_SIZE:
             namexors.append(0)
+        while len(namexors) < CHKVAL_STRUCT_NAMEXOR1_SIZE:
+            namexors.append(random.randint(0,255))
         sarr2 = []
         idx = 0
         while idx < CHKVAL_STRUCT_NAMEXOR2_SIZE:
@@ -196,13 +186,14 @@ class ChkVal(COBFileBase):
         while idx < CHKVAL_STRUCT_NAMEXOR1_SIZE:
             sarr2[idx] = namexors[idx] ^ sarr1[idx]
             idx += 1
-        odict[CHKVAL_RANDOM_VALUE][objname][o][f][CHKVAL_STRUCT_NAMEXOR2] = sarr2
+        odict = set_odict_value(odict,sarr2, CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_NAMEXOR2)
         rets += format_debug_line('%s'%(CHKVAL_STRUCT_NAMEXOR2), tabs+ 1, 3)
         rets += format_line('{%s},'%(format_bytes_c(sarr2)), tabs+1)
 
-        if CHKVAL_STRUCT_SIZE not in odict[CHKVAL_RANDOM_VALUE][objname][o][f].keys():
-            odict[CHKVAL_RANDOM_VALUE][objname][o][f][CHKVAL_STRUCT_SIZE] = get_random_bytes(CHKVAL_STRUCT_SIZE_SIZE)
-        sarr = odict[CHKVAL_RANDOM_VALUE][objname][o][f][CHKVAL_STRUCT_SIZE]
+        sarr = get_odict_value(odict,CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_SIZE)
+        if sarr is None:
+            sarr = get_random_bytes(CHKVAL_STRUCT_SIZE_SIZE)
+            odict = set_odict_value(odict,sarr,CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_SIZE)
         llval = self.__get_ll_value(sarr)
         rets += format_debug_line(' %s value'%(CHKVAL_STRUCT_SIZE),tabs+1,3)
         rets += format_line('(unsigned long long) OB_LL_VALUE(0x%x),'%(llval), tabs + 1)
@@ -228,50 +219,32 @@ class ChkVal(COBFileBase):
 
 
     def __format_check_value(self,odict,objname,o,chkfuncs=[]):
-
-        logging.info(' ')
-
-        if objname not in odict[CHKVAL_RANDOM_VALUE].keys():
-            odict[CHKVAL_RANDOM_VALUE][objname] = dict()
-
-        if o not in odict[CHKVAL_RANDOM_VALUE][objname].keys():
-            odict[CHKVAL_RANDOM_VALUE][objname][o] = dict()
-
+        odict = create_odict_is_none(odict,CHKVAL_RANDOM_VALUE,objname,o)
         curs , odict = self.__format_char_array(objname,odict,CHKVAL_FUNC_CHECKS_START,16)
-
-        logging.info(' ')
-
-        if CHKVAL_FUNC_CHECKS not in odict[RANDOM_VARIABLE][objname].keys():
-            odict[RANDOM_VARIABLE][objname][CHKVAL_FUNC_CHECKS] = get_random_name(20)
-
-        logging.info(' ')
-
+        funcchecks = get_odict_value(odict,RANDOM_VARIABLE,objname,CHKVAL_FUNC_CHECKS)
+        if funcchecks is None:
+            funcchecks = get_random_name(20)
+            odict = set_odict_value(odict,funcchecks, RANDOM_VARIABLE,objname,CHKVAL_FUNC_CHECKS)
 
         idx = 0
         for f in chkfuncs:
             curs , odict = self.__format_check_value_single(objname,o,odict,f,1,False)
 
-
         curs ,odict = self.__format_char_array(objname,odict,CHKVAL_FUNC_CHECKS_END,16)
 
-        if CHKVAL_VALUE_CHECKS not in odict[RANDOM_VARIABLE][objname].keys():
-            odict[RANDOM_VARIABLE][objname][CHKVAL_VALUE_CHECKS] = get_random_name(20)
+        valuechecks = get_odict_value(odict,RANDOM_VARIABLE,objname,CHKVAL_VALUE_CHECKS)
+        if valuechecks is None:
+            valuechecks = get_random_name(20)
+            odict = set_odict_value(odict,valuechecks, RANDOM_VARIABLE,objname,CHKVAL_VALUE_CHECKS)
+
         curs , odict = self.__format_check_value_single(objname,CHKVAL_STRUCT_LASTONE,odict,CHKVAL_VALUE_CHECKS.upper(),1,True)
         return odict
 
     def format_c_code_pre(self,odict,objname):
         logging.info('objname [%s]'%(objname))
-        if RANDOM_VARIABLE not in odict.keys():
-            odict[RANDOM_VARIABLE] = dict()
+        odict = create_odict_is_none(odict, RANDOM_VARIABLE,objname)
+        odict = create_odict_is_none(odict,CHKVAL_RANDOM_VALUE,objname)
 
-        if objname not in odict[RANDOM_VARIABLE].keys():
-            odict[RANDOM_VARIABLE][objname] = dict()
-
-        if CHKVAL_RANDOM_VALUE not in odict.keys():
-            odict[CHKVAL_RANDOM_VALUE] = dict()
-
-        if objname not in odict[CHKVAL_RANDOM_VALUE].keys():
-            odict[CHKVAL_RANDOM_VALUE][objname] = dict()
         rets = ''
         curs,odict = self.__format_multi_lines(C_CODE_CRC32CALC,objname,odict)
         rets += curs
@@ -298,7 +271,9 @@ class ChkVal(COBFileBase):
         curs , odict = self.__format_char_array(objname,odict,CHKVAL_FUNC_CHECKS_START,16)
         rets += curs
 
-        func_checks = odict[RANDOM_VARIABLE][objname][CHKVAL_FUNC_CHECKS]
+        func_checks = get_odict_value(odict,RANDOM_VARIABLE,objname,CHKVAL_FUNC_CHECKS)
+        assert(func_checks is not None)
+
         rets += format_line('',0)
         rets += format_line('chkvalue_t %s[] = {'%(func_checks), 0)
 
@@ -316,8 +291,10 @@ class ChkVal(COBFileBase):
         curs ,odict = self.__format_char_array(objname,odict,CHKVAL_FUNC_CHECKS_END,16)
         rets += curs
 
-        rets += format_line('', 0)        
-        valuechecks = odict[RANDOM_VARIABLE][objname][CHKVAL_VALUE_CHECKS]
+        rets += format_line('', 0)
+
+        valuechecks = get_odict_value(odict,RANDOM_VARIABLE,objname,CHKVAL_VALUE_CHECKS)
+        assert(valuechecks is not None)
         rets += format_line('chkvalue_t %s[1] = {'%(valuechecks),0)
         curs , odict = self.__format_check_value_single(objname,CHKVAL_STRUCT_LASTONE,odict,CHKVAL_VALUE_CHECKS.upper(),1,True)
         rets += curs
@@ -349,16 +326,8 @@ class ChkVal(COBFileBase):
             rets += format_line('int %s(m_check_fail_func_t failfunc);'%(funcname),tabs)
         return rets
 
-    def get_chkval_func(self,odict,objname,functype):
-        funcret = None
-        if RANDOM_VARIABLE in odict.keys() and \
-            objname in odict[RANDOM_VARIABLE].keys():
-            if functype in odict[RANDOM_VARIABLE][objname].keys():
-                funcret = odict[RANDOM_VARIABLE][objname][functype]
-        return funcret
-
     def __set_retodict(self,odict,retodict,objname,functype):
-        func = self.get_chkval_func(odict,objname,functype)
+        func = get_odict_value(odict,RANDOM_VARIABLE,objname,functype)
         if func is not None:
             if objname not in retodict.keys():
                 retodict[objname] = dict()
@@ -391,10 +360,10 @@ class ChkVal(COBFileBase):
 
         for o in objs:
             logging.info('o[%s]'%(o))
-            crc32func = self.get_chkval_func(odict,o,CHKVAL_FUNC_CHECK_CRC32_FUNC)
-            md5func = self.get_chkval_func(odict,o,CHKVAL_FUNC_CHECK_MD5_FUNC)
-            sha256func = self.get_chkval_func(odict,o,CHKVAL_FUNC_CHECK_SHA256_FUNC)
-            sha3func = self.get_chkval_func(odict,o,CHKVAL_FUNC_CHECK_SHA3_FUNC)
+            crc32func = get_odict_value(odict,RANDOM_VARIABLE,o,CHKVAL_FUNC_CHECK_CRC32_FUNC)
+            md5func = get_odict_value(odict,RANDOM_VARIABLE,o,CHKVAL_FUNC_CHECK_MD5_FUNC)
+            sha256func = get_odict_value(odict,RANDOM_VARIABLE,o,CHKVAL_FUNC_CHECK_SHA256_FUNC)
+            sha3func = get_odict_value(odict,RANDOM_VARIABLE,o,CHKVAL_FUNC_CHECK_SHA3_FUNC)
             rets += self.output_chkval_func(crc32func,o,'crc32')
             rets += self.output_chkval_func(md5func,o,'md5')
             rets += self.output_chkval_func(sha256func,o,'sha256')

@@ -28,19 +28,19 @@ ${CURDIR}/%.o:${CURDIR}/%.cpp ${CURDIR}/chk_main.h ${CURDIR}/chk_main2.h
 
 ${CURDIR}/chk_main_1.o:${CURDIR}/chk_main_1.cpp ${CURDIR}/main.o ${CURDIR}/callc.o  ${CURDIR}/chk_main.h
 	gcc -Wall ${CFLAGS} -c $< -o $@
-	python ${TOPDIR}/obcode.py chkvaldumpfuncself -vvvvv 'dump;${CURDIR}/dump.json' 'output;${CURDIR}/chk_main_1.o' '${CURDIR}/callc.o' '${CURDIR}/main.o'
+	#python ${TOPDIR}/obcode.py chkvaldumpfuncself -vvvvv 'dump;${CURDIR}/dump.json' 'output;${CURDIR}/chk_main_1.o' '${CURDIR}/callc.o' '${CURDIR}/main.o'
 
 ${CURDIR}/chk_main_2.o:${CURDIR}/chk_main_2.cpp ${CURDIR}/main.o ${CURDIR}/callc.o  ${CURDIR}/chk_main.h
 	gcc -Wall ${CFLAGS} -c $< -o $@
-	python ${TOPDIR}/obcode.py chkvaldumpfuncself -vvvvv 'dump;${CURDIR}/dump.json' 'output;${CURDIR}/chk_main_2.o' '${CURDIR}/callc.o' '${CURDIR}/main.o'
+	#python ${TOPDIR}/obcode.py chkvaldumpfuncself -vvvvv 'dump;${CURDIR}/dump.json' 'output;${CURDIR}/chk_main_2.o' '${CURDIR}/callc.o' '${CURDIR}/main.o'
 
 ${CURDIR}/chk_main2_1.o:${CURDIR}/chk_main2_1.cpp ${CURDIR}/main2.o ${CURDIR}/callc2.o  ${CURDIR}/chk_main2.h
 	gcc -Wall ${CFLAGS} -c $< -o $@
-	python ${TOPDIR}/obcode.py chkvaldumpfuncself -vvvvv 'dump;${CURDIR}/dump.json' 'output;${CURDIR}/chk_main2_1.o' '${CURDIR}/callc2.o' '${CURDIR}/main2.o'
+	#python ${TOPDIR}/obcode.py chkvaldumpfuncself -vvvvv 'dump;${CURDIR}/dump.json' 'output;${CURDIR}/chk_main2_1.o' '${CURDIR}/callc2.o' '${CURDIR}/main2.o'
 
 ${CURDIR}/chk_main2_2.o:${CURDIR}/chk_main2_2.cpp ${CURDIR}/main2.o ${CURDIR}/callc2.o  ${CURDIR}/chk_main2.h
 	gcc -Wall ${CFLAGS} -c $< -o $@
-	python ${TOPDIR}/obcode.py chkvaldumpfuncself -vvvvv 'dump;${CURDIR}/dump.json' 'output;${CURDIR}/chk_main2_2.o' '${CURDIR}/callc2.o' '${CURDIR}/main2.o'
+	#python ${TOPDIR}/obcode.py chkvaldumpfuncself -vvvvv 'dump;${CURDIR}/dump.json' 'output;${CURDIR}/chk_main2_2.o' '${CURDIR}/callc2.o' '${CURDIR}/main2.o'
 
 
 ${CURDIR}/chk_main.h:${CURDIR}/chk_main_1.cpp ${CURDIR}/chk_main_2.cpp
