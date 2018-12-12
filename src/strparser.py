@@ -696,7 +696,7 @@ def format_bytes_c(sarr):
         i += 1
     return rets
 
-def set_odict(odict,val,*path):
+def set_odict_value(odict,val,*path):
     curodict = odict
     idx = 0
     while idx < len(path) - 1:
@@ -705,9 +705,9 @@ def set_odict(odict,val,*path):
         curodict = curodict[path[idx]]
         idx += 1
     curodict[path[idx]] = val
-    return odict
+    return odict    
 
-def get_odict(odict,*path):
+def get_odict_value(odict,*path):
     idx = 0
     curodict = odict
     while idx < (len(path) - 1):
@@ -715,15 +715,20 @@ def get_odict(odict,*path):
             return None
         curodict = curodict[path[idx]]
         idx += 1
-    logging.info('%s [%d][%s]'%(curodict,idx, path[idx]))
     if path[idx] not in curodict.keys():
         return None
     return curodict[path[idx]]
 
+def append_odict_value(odict,val,*path):
+    nval = get_odict_value(odict,*path)
+    if nval is None:
+        nval = []
+    nval.append(val)
+    return set_odict_value(odict,nval,*path)
 
 def create_odict_is_none(odict,*path):
-    if get_odict(odict,*path) is None:
+    if get_odict_value(odict,*path) is None:
         val = dict()
-        return set_odict(odict,val, *path)
+        return set_odict_value(odict,val, *path)
     return odict
 ##extractcode_end

@@ -54,21 +54,13 @@ def format_ob_patch_func_xors(objparser,jsondump,objname,funcname,formatname,tim
         ftimes = validbytes - 1
 
 
-    if PATCH_FUNC_KEY not in jsondump.keys() :
-        jsondump[PATCH_FUNC_KEY] = dict()
-    if objname not in jsondump[PATCH_FUNC_KEY].keys():
-        jsondump[PATCH_FUNC_KEY][objname] = dict()
-        logging.info('jsondump [%s]'%(objname))
-    if funcname not in jsondump[PATCH_FUNC_KEY][objname].keys():
-        jsondump[PATCH_FUNC_KEY][objname][funcname] = dict()
-    if FORMAT_FUNC_XORS_KEY not in jsondump[PATCH_FUNC_KEY][objname][funcname].keys():
-        jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_XORS_KEY] = dict()
-    if FORMAT_FUNC_OFFSET_KEY not in jsondump[PATCH_FUNC_KEY][objname][funcname].keys():
-        jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_OFFSET_KEY] = dict()
-    jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_NAME_KEY] = formatname
-    jsondump[PATCH_FUNC_KEY][objname][funcname][FUNC_DATA_RELOC_KEY] = []
+    jsondump = create_odict_is_none(jsondump,PATCH_FUNC_KEY,objname,funcname, FORMAT_FUNC_XORS_KEY)
+    jsondump = create_odict_is_none(jsondump,PATCH_FUNC_KEY,objname,funcname, FORMAT_FUNC_OFFSET_KEY)
+    jsondump = set_odict_value(jsondump,formatname, PATCH_FUNC_KEY,objname,funcname,FORMAT_FUNC_NAME_KEY)
+    jsondump = set_odict_value(jsondump,[], PATCH_FUNC_KEY,objname, funcname,FUNC_DATA_RELOC_KEY)
     for i in range(funcsize):
-        jsondump[PATCH_FUNC_KEY][objname][funcname][FUNC_DATA_RELOC_KEY].append(objparser.is_in_reloc((funcvaddr+i), realf))
+        jsondump = append_odict_value(jsondump,objparser.is_in_reloc((funcvaddr+i), realf), PATCH_FUNC_KEY,objname,funcname, FUNC_DATA_RELOC_KEY)
+        #jsondump[PATCH_FUNC_KEY][objname][funcname][FUNC_DATA_RELOC_KEY].append(objparser.is_in_reloc((funcvaddr+i), realf))
 
     if ftimes > 0:
         i = 0
@@ -80,12 +72,12 @@ def format_ob_patch_func_xors(objparser,jsondump,objname,funcname,formatname,tim
             if funcdata[xoroff] < -1:
                 # it is forbid to set the value ,so we do not use it
                 continue
-            if funcdata[xoroff] > 0 or  (xoroff in  jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_OFFSET_KEY].keys() \
-                and jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_OFFSET_KEY][xoroff] > 0):
+            curval = get_odict_value(jsondump,PATCH_FUNC_KEY,objname,funcname,FORMAT_FUNC_OFFSET_KEY,xoroff)
+            if funcdata[xoroff] or (curval is not None and curval > 0):
                 continue
             funcdata[xoroff] += 2
-            jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_XORS_KEY][xoroff] = xornum
-            jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_OFFSET_KEY][xoroff] = funcdata[xoroff]
+            jsondump = set_odict_value(jsondump,xornum, PATCH_FUNC_KEY,objname,funcname,FORMAT_FUNC_XORS_KEY,xoroff)
+            jsondump = set_odict_value(jsondump,funcdata[xoroff], PATCH_FUNC_KEY,objname,funcname,FORMAT_FUNC_OFFSET_KEY,xoroff)
             i += 1
     return jsondump
 
@@ -95,9 +87,8 @@ def format_ob_patch_func_code(objparser,jsondump,objname,funcname,formatname,get
     if win32mode:
         realf = '_%s'%(funcname)
 
-    #offsetk = get_odict(jsondump, PATCH_FUNC_KEY,objname, funcname,FORMAT_FUNC_OFFSET_KEY)
-    offsetk = jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_OFFSET_KEY]
-    xors = jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_XORS_KEY]
+    offsetk = get_odict_value(jsondump, PATCH_FUNC_KEY,objname, funcname,FORMAT_FUNC_OFFSET_KEY)
+    xors = get_odict_value(jsondump,PATCH_FUNC_KEY,objname,funcname,FORMAT_FUNC_XORS_KEY)
     funcsize = objparser.func_size(realf)
 
     ftimes = 0    
@@ -119,7 +110,7 @@ def format_ob_patch_func_code(objparser,jsondump,objname,funcname,formatname,get
         rets += format_line('return -1;',3)
         rets += format_line('}',2)
         rets += format_line('}',1)
-        funcdata = jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_OFFSET_KEY]
+        funcdata = get_odict_value(jsondump,PATCH_FUNC_KEY,objname,funcname,FORMAT_FUNC_OFFSET_KEY)
         funcoff = objparser.func_offset(realf)
         for xoroff in offsetk.keys():
             xornum = xors[xoroff]
@@ -137,7 +128,7 @@ def format_ob_patch_func_code(objparser,jsondump,objname,funcname,formatname,get
         rets += format_line('mapfunc = mapfunc;', 1)
     rets += format_line('return 0;',1)
     rets += format_line('}',0)
-    jsondump[PATCH_FUNC_KEY][objname][funcname][FORMAT_FUNC_CODE_KEY]= rets
+    jsondump = set_odict_value(jsondump,rets,PATCH_FUNC_KEY,objname,funcname,FORMAT_FUNC_CODE_KEY)
     return jsondump
 
 def format_ob_patch_functions(objparser,jsondump,objname,funcname,formatname,times, getfunccall,debuglevel=0,win32mode=False):
@@ -177,17 +168,22 @@ def unpatch_one_file_func(objparser,odict,objfile,f,objdata,win32mode=False):
         raise Exception('can not find [%s]'%(realf))
     fvaddr = objparser.func_vaddr(realf)
     assert(fvaddr >= 0)
-    for offi in odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY].keys():
-        if odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_OFFSET_KEY][offi] >= 2:
+    xorskey = get_odict_value(odict,PATCH_FUNC_KEY,objfile,f,FORMAT_FUNC_XORS_KEY)
+    offsetk = get_odict_value(odict,PATCH_FUNC_KEY,objfile,f,FORMAT_FUNC_OFFSET_KEY)
+    assert(xorskey is not None)
+    for offi in xorskey.keys():
+        off = int(offi)
+        logging.info('off [0x%x:%d]'%(off,off))
+        if offsetk[offi] >= 2:
             # we change the xor data into
-            off = int(offi)
             logging.info('[%s].[%s]foff [0x%x] + off [0x%x] [0x%02x] ^ [0x%02x] => [0x%02x]'%(objfile,f,\
                 foff, off,objdata[(foff + off)] ,\
-                odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][offi], \
-                objdata[(foff + off)] ^ odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][offi]))
-            objdata[(foff + off)] = objdata[(foff + off)] ^ odict[PATCH_FUNC_KEY][objfile][f][FORMAT_FUNC_XORS_KEY][offi]
+                xorskey[offi], \
+                objdata[(foff + off)] ^ xorskey[offi]))
+            objdata[(foff + off)] = objdata[(foff + off)] ^ xorskey[offi]
     odict[PATCH_FUNC_KEY][objfile][f][FUNC_DATA_KEY] = objdata[foff:(foff+fsize)]
     return odict,objdata
+
 
 def object_one_file_func(objparser,odict,objfile,f,objdata, times,verbose,win32mode=False):
     if PATCH_FUNC_KEY in odict.keys() and objfile in odict[PATCH_FUNC_KEY].keys() and \
