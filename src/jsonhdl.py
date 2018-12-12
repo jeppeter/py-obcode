@@ -23,6 +23,9 @@ FUNC_ADDR_CODE='funcaddrcode'
 CHKVAL_KEY='chkval'
 
 RANDOM_VARIABLE='variable'
+CHKVAL_START_FUNCTION_NAME='crc32_calc'
+CHKVAL_END_FUNCTION_NAME='check_end_func'
+CHKVAL_BASE_FUNCTION_NAME='check_value_func'
 
 
 CHKVAL_RANDOM_VALUE='rndval'
@@ -56,6 +59,8 @@ CHKVAL_STRUCT_SHA256VAL_SIZE=32
 CHKVAL_STRUCT_SHA3VAL_SIZE=64
 
 CHKVAL_RAW_DATA='rawdata'
+CHKVAL_RDATA_DATAS='data'
+CHKVAL_RDATA_RELOCS='relocs'
 
 
 def set_odict_value(odict,val,*path):

@@ -4,6 +4,7 @@ int OB_RANDOM_NAME(crc32_calc)(unsigned char *message, unsigned int size, unsign
     int j;
     unsigned int byte, crc, mask;
 
+    OB_EXPAND_CODE(byte,crc,mask);
     i = 0;
     crc = 0xFFFFFFFF;
     while (i < size) {

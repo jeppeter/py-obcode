@@ -15,6 +15,8 @@ extern "C" {
 #define  OB_DECL_VAR_SPEC(c,x)              x
 #define  OB_RANDOM_NAME(x)                  x
 #define  OB_RANDOM_NAME_SPEC(c,x)           x
+#define  OB_EXPAND_CODE(...)                do{}while(0)
+#define  OB_EXPAND_CODE_SPEC(...)           do{}while(0)
 
 /*to make the configuration for this file*/
 #define  OB_CONFIG(x)
@@ -148,6 +150,65 @@ int ux_map_prot(void* addr, int size, int prot)                                 
 
 typedef void (*m_check_fail_func_t)(int errcode,char* name);
 
+
+#ifndef OB_PRINT_FUNC
+#define OB_PRINT_FUNC     printf
+#endif
+
+#ifdef  OB_DEBUG_MODE
+#define OB_DEBUG(...)                                                                             \
+  do{                                                                                             \
+  	OB_PRINT_FUNC("[%s:%d] ",__FILE__,__LINE__);                                                  \
+  	OB_PRINT_FUNC(__VA_ARGS__);                                                                   \
+  	OB_PRINT_FUNC("\n");                                                                          \
+  }while(0)
+
+#define OB_BUFFER_FMT(ptr,size,...)                                                               \
+  do{                                                                                             \
+  	unsigned char* __pptr = (unsigned char*) (ptr);                                               \
+  	unsigned char* __lastptr=__pptr;                                                              \
+  	unsigned int __curi=0;                                                                        \
+  	unsigned int __csize=(unsigned int)(size);                                                    \
+  	OB_PRINT_FUNC("[%s:%d] ",__FILE__,__LINE__);                                                  \
+  	OB_PRINT_FUNC(__VA_ARGS__);                                                                   \
+  	for (__curi=0;__curi < __csize;__curi ++,__pptr ++) {                                         \
+  		if ((__curi % 16) == 0) {                                                                 \
+  			if (__lastptr != __pptr) {                                                            \
+  				OB_PRINT_FUNC("    ");                                                            \
+  				while(__lastptr != __pptr) {                                                      \
+  					if (*__lastptr >= ' ' && *__lastptr <= '~') {                                 \
+  						OB_PRINT_FUNC("%c",*__lastptr);                                           \
+  					} else {                                                                      \
+  						OB_PRINT_FUNC(".");                                                       \
+  					}                                                                             \
+  					__lastptr ++;                                                                 \
+  				}                                                                                 \
+  			}                                                                                     \
+  			OB_PRINT_FUNC("\n[%p]0x%08x:",__pptr,__curi);                                         \
+  		}                                                                                         \
+  		OB_PRINT_FUNC(" 0x%02x", *__pptr);                                                        \
+  	}                                                                                             \
+  	if (__lastptr != __pptr) {                                                                    \
+  		while((__curi % 16) != 0) {                                                               \
+  			OB_PRINT_FUNC( "     ");                                                              \
+  			__curi ++;                                                                            \
+  		}                                                                                         \
+  		OB_PRINT_FUNC("    ");                                                                    \
+  		while(__lastptr != __pptr) {                                                              \
+  			if (*__lastptr >= ' ' && *__lastptr <= '~') {                                         \
+  				OB_PRINT_FUNC("%c",*__lastptr);                                                   \
+  			} else {                                                                              \
+  				OB_PRINT_FUNC(".");                                                               \
+  			}                                                                                     \
+  			__lastptr ++;                                                                         \
+  		}                                                                                         \
+  		OB_PRINT_FUNC("\n");                                                                      \
+  	}                                                                                             \
+  }while(0)
+#else
+#define OB_DEBUG(...)    do{} while(0)
+#define OB_BUFFER_FMT(ptr,size,...) do {}while(0)
+#endif
 
 
 #ifdef __cplusplus

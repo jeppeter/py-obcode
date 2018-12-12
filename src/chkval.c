@@ -185,7 +185,12 @@ int OB_RANDOM_NAME(check_chkval_value)(m_check_fail_func_t failfunc)
 }
 
 int OB_RANDOM_NAME(check_end_func)(m_check_fail_func_t failfunc)
-{
-	failfunc = failfunc;
+{	
+	/*this is for the coding of */
+	unsigned char* ptr;
+	OB_EXPAND_CODE(ptr);
+	failfunc = failfunc;	
+	ptr = (unsigned char*)&(OB_RANDOM_NAME(func_checks)[0]);
+	ptr = ptr;
 	return 0;
 }

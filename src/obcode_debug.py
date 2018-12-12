@@ -334,11 +334,10 @@ def chkvaldumpfuncself_handler(args,parser):
     logging.info('chkvaldumpfuncself')
     jdict, args = get_jdict(args)
     odict = get_odict(args, False)
-    elfparser = ElfParser(args.output)
     objs = []
     for k in jdict.keys():
         objs.append(k)
-    odict = dump_object_functions(args,elfparser,odict,objs)
+    odict = dump_object_functions(args,'ElfParser',odict,objs)
     write_json(odict, args.dump)
     sys.exit(0)
     return

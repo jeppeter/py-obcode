@@ -215,6 +215,10 @@ class ChkVal(COBFileBase):
         odict = create_odict_is_none(odict,CHKVAL_RANDOM_VALUE,objname)
 
         rets = ''
+
+        curs , odict = self.__format_multi_lines(C_CODE_CHKVALDEF,objname,odict)
+        rets += curs
+
         curs,odict = self.__format_multi_lines(C_CODE_CRC32CALC,objname,odict)
         rets += curs
         curs , odict = self.__format_multi_lines(C_CODE_MD5CALC,objname,odict)
@@ -222,8 +226,6 @@ class ChkVal(COBFileBase):
         curs , odict = self.__format_multi_lines(C_CODE_SHA256CALC,objname,odict)
         rets += curs
         curs , odict = self.__format_multi_lines(C_CODE_SHA3CALC, objname,odict)
-        rets += curs
-        curs , odict = self.__format_multi_lines(C_CODE_CHKVALDEF,objname,odict)
         rets += curs
 
         return rets,odict
@@ -410,26 +412,83 @@ class ChkVal(COBFileBase):
         return rets
 
 
-def dump_object_function_one(args,objparser,odict,o,f):
+def dump_object_function_one(args,objparser,odict,o,f,win32mode=False):
     logging.info('o[%s]f[%s]'%(o,f))
     fodict = get_odict_value(odict,CHKVAL_RAW_DATA,o,f)
+    realf = f
+    if win32mode:
+        realf = '_%s'%(f)
     if fodict is None:
         fodict = dict()
+        patchodict = get_odict_value(odict,PATCH_FUNC_KEY,o,f)
+        fvaddr = objparser.func_vaddr(realf)
+        foff = objparser.func_offset(realf)
+        fsize = objparser.func_size(realf)
+        if fvaddr < 0 or fsize < 0 or foff < 0:
+            raise Exception('can not find [%s] in [%s]'%(f,o))
+        alldata = objparser.get_data()
+        if patchodict is None:
+            # no patched code handle ,so we should just read the files
+            # and get the data
+            relocs = []
+            idx = 0
+            while idx < fsize:
+                relocs.append(objparser.is_in_reloc(fvaddr+idx,realf))
+                idx += 1
+            fodict = set_odict_value(fodict,alldata[foff:(foff + fsize)],CHKVAL_RDATA_DATAS)
+            fodict = set_odict_value(fodict,relocs,CHKVAL_RDATA_RELOCS)
+        else:
+            # now we try to get the patched odict
+            relocs = get_odict_value(patchodict,FUNC_DATA_RELOC_KEY)
+            rawdata = alldata[foff:(foff + fsize)]
+            xors = get_odict_value(patchodict,FORMAT_FUNC_XORS_KEY)
+            offsetk = get_odict_value(patchodict,FORMAT_FUNC_OFFSET_KEY)
+            assert(relocs is not None)
+            assert(patchdata is not None)
+            assert(offsetk is not None)
+            assert(xors is not None)
+            for kidx in offsetk.keys():
+                if offsetk[kidx] >= 2:
+                    koff = int(kidx)
+                    logging.info('set [0x%x:%d] [0x%x] ^ [0x%x] => [0x%x]'(koff,koff,rawdata[koff], xors[kidx], (rawdata[koff] ^ xors[kidx])))
+                    rawdata[koff] = rawdata[koff] ^ xors[kidx]
+            fodict = set_odict_value(fodict,rawdata, CHKVAL_RDATA_DATAS)
+            fodict = set_odict_value(fodict,relocs, CHKVAL_RDATA_RELOCS)
         odict = set_odict_value(odict,fodict, CHKVAL_RAW_DATA,o,f)
     return odict
 
-def dump_object_functions(args,objparser,odict,objs=[]):
+def dump_check_functions(args,objtype,odict,outname,win32mode=False):
+    startfunc = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE,outname,CHKVAL_START_FUNCTION_NAME)
+    endfunc = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE,outname,CHKVAL_END_FUNCTION_NAME)
+    basefunc = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE,outname,CHKVAL_BASE_FUNCTION_NAME)
+    assert(startfunc is not None)
+    assert(endfunc is not None)
+    assert(basefunc is not None)
+    objparser = call_object_parser(objtype,outname)
+    odict = dump_object_function_one(args,objparser,odict,outname, startfunc,win32mode)
+    odict = dump_object_function_one(args,objparser, odict,outname, endfunc, win32mode)
+    odict = dump_object_function_one(args,objparser, odict,outname, basefunc, win32mode)
+    objparser.close()
+    objparser = None
+    return odict
+
+def dump_object_functions(args,objtype,odict,objs=[],win32mode=False):
     rval = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RANDOM_VALUE,args.output)
     if rval is not None:
         for o in objs:
+            curobjparser= call_object_parser(objtype,o)
             rval = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RANDOM_VALUE,args.output,o)
             if rval is None:
                 logging.warn('can not get [%s]'%(o))
                 continue
             for f in rval.keys():
-                odict = dump_object_function_one(args,objparser,odict,o,f)
+                odict = dump_object_function_one(args,curobjparser,odict,o,f,win32mode)
+            curobjparser.close()
     else:
         logging.info('[%s]None handle'%(args.output))
+
+    # now we should get the output function value
+    odict = dump_check_functions(args,objtype,odict,args.output,win32mode)
     return odict
 
 
