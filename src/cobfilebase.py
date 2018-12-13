@@ -4,10 +4,12 @@ import re
 import logging
 import sys
 import os
+import random
 
 
 ##importdebugstart
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+from strparser import *
 from filehdl import *
 from cobattr import *
 ##importdebugend
@@ -93,4 +95,73 @@ class COBFileBase(object):
             retparams = params[1:]
         before = l.replace(variables[0][0],'',1)
         return cfgattr,retparams, before,after
+
+    def __format_one_variable_handle(self,varname,ptrvar,obaddrvar,szvar,pcvar,tabs):
+        cbytes = get_random_bytes(8)
+        ccidx = []
+        for i in range(8):
+            ccidx.append(i)
+        curbytes = []
+        curidx = []
+        rets=''
+        rets += format_line('', tabs)
+        rets += format_debug_line('to handle %s variable'%(varname),tabs,3)
+        rets += format_debug_line('format %s xors'%(format_bytes_c(cbytes)), tabs, 3)
+        rets += format_line('%s = (void*)&%s;'%(ptrvar,varname), tabs)
+        rets += format_line('%s = (OB_ADDR)%s;'%(obaddrvar,ptrvar), tabs)        
+        rets += format_line('%s = sizeof(%s);'%(szvar,obaddrvar), tabs)
+        rets += format_line('%s = (unsigned char*)%s;'%(pcvar,obaddrvar), tabs)
+
+        rets += format_line('', tabs)
+        rets += format_debug_line('encoding', tabs, 3)
+        while len(cbytes) > 0:
+            idx = random.randint(0,len(cbytes) - 1)
+            curidx.append(ccidx[idx])
+            del ccidx[idx]
+            curbytes.append(cbytes[idx])
+            del cbytes[idx]
+            rets += format_line('if (%d < %s){'%(curidx[-1],szvar), tabs) 
+            rets += format_line('%s[%d] ^= 0x%x;'%(pcvar,curidx[-1],curbytes[-1]), tabs + 1)
+            rets += format_line('}', tabs)
+
+        rets += format_line('', tabs)
+        rets += format_debug_line('decoding', tabs, 3)
+        cbytes.extend(curbytes)
+        curbytes = []
+        ccidx.extend(curidx)
+        curidx = []
+        while len(cbytes) > 0:
+            idx = random.randint(0,len(cbytes) - 1)
+            curidx.append(ccidx[idx])
+            del ccidx[idx]
+            curbytes.append(cbytes[idx])
+            del cbytes[idx]
+            rets += format_line('if (%d < %s){'%(curidx[-1],szvar), tabs) 
+            rets += format_line('%s[%d] ^= 0x%x;'%(pcvar,curidx[-1],curbytes[-1]), tabs + 1)
+            rets += format_line('}', tabs)
+
+        # now to give the value
+        rets += format_line('%s = *((OB_TYPEOF(%s)*)%s);'%(varname,varname,pcvar), tabs)
+
+        return rets
+
+    def expand_code(self,l,params,cfg,before,after):
+        rets = ''
+        obaddrvar = get_random_name(random.randint(cfg.namemin,cfg.namemax))
+        ptrvar = get_random_name(random.randint(cfg.namemin,cfg.namemax))
+        pcvar = get_random_name(random.randint(cfg.namemin,cfg.namemax))
+        szvar = get_random_name(random.randint(cfg.namemin,cfg.namemax))
+        tabs = count_tabs(l)
+        rets += format_line('do{', tabs)
+        rets += format_line('void* %s;'%(ptrvar),tabs + 1)
+        rets += format_line('OB_ADDR %s;'%(obaddrvar), tabs + 1)
+        rets += format_line('unsigned char* %s;'%(pcvar), tabs + 1)
+        rets += format_line('unsigned int %s;'%(szvar), tabs + 1)
+        idx = 0
+        while idx < len(params):
+            rets += self.__format_one_variable_handle(params[idx],ptrvar,obaddrvar,szvar,pcvar,tabs + 1)
+            idx += 1
+        rets += format_line('', tabs+1)
+        rets += format_line('}while(0);', tabs)
+        return rets
 ##extractcode_end

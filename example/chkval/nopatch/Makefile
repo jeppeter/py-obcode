@@ -9,17 +9,19 @@ main_OBJS=$(patsubst ${CURDIR}/%.cpp,${CURDIR}/%.o,${main_SRCS})
 main2_SRCS=${CURDIR}/main2.cpp ${CURDIR}/callc2.cpp ${CURDIR}/chk_main2_1.cpp ${CURDIR}/chk_main2_2.cpp
 main2_OBJS=$(patsubst ${CURDIR}/%.cpp,${CURDIR}/%.o,${main2_SRCS})
 
-CFLAGS= -I${TOPDIR}/include 
+CFLAGS= -I${TOPDIR}/include  -DOB_DEBUG_MODE=1 -include stdio.h -include  stdlib.h
 LDFLAGS=
 
 all:${CURDIR}/main ${CURDIR}/main2
 
 ${CURDIR}/main:${main_OBJS}
 	gcc -Wall ${LDFLAGS} -o $@ ${main_OBJS}
+	python ${TOPDIR}/obcode.py chkvalfillelf -vvvvv 'dump;${CURDIR}/dump.json' 'output;${CURDIR}/main' '${CURDIR}/chk_main_1.o' '${CURDIR}/chk_main_2.o'
 
 
 ${CURDIR}/main2:${main2_OBJS}
 	gcc -Wall ${LDFLAGS} -o $@ ${main2_OBJS}
+	python ${TOPDIR}/obcode.py chkvalfillelf -vvvvv 'dump;${CURDIR}/dump.json' 'output;${CURDIR}/main2' '${CURDIR}/chk_main2_1.o' '${CURDIR}/chk_main2_2.o'
 
 
 ${CURDIR}/%.o:${CURDIR}/%.cpp ${CURDIR}/chk_main.h ${CURDIR}/chk_main2.h 

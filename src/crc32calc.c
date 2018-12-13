@@ -2,7 +2,7 @@ int OB_RANDOM_NAME(crc32_calc)(unsigned char *message, unsigned int size, unsign
 {
     unsigned int i;
     int j;
-    unsigned int byte, crc, mask;
+    unsigned int byte=0, crc=0, mask=0;
 
     OB_EXPAND_CODE(byte,crc,mask);
     i = 0;

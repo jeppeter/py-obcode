@@ -18,9 +18,11 @@ int OB_RANDOM_NAME(format_name)(unsigned char* pstored, unsigned int size, unsig
 
 int OB_RANDOM_NAME(check_value_func)(unsigned char* ptr,unsigned int size,m_calc_value_func_t calcfunc, unsigned char* pchkval, int calcsize)
 {
-	int ret;
+	int ret=0;
 	unsigned char calcvalue[64];
 	int i;
+
+	OB_EXPAND_CODE(ret);
 
 	ret = calcfunc(ptr,size,calcvalue,calcsize);
 	if (ret < 0) {
@@ -61,6 +63,7 @@ int OB_RANDOM_NAME(check_crc32_value)(m_check_fail_func_t failfunc)
 		pchk = &(OB_RANDOM_NAME(func_checks)[i]);
 		pcurptr = OB_RANDOM_NAME(get_func_address)((unsigned char*)OB_RANDOM_NAME(check_value_func));
 		pcurptr += pchk->m_offset;
+		OB_DEBUG("pcurptr [%p] size [0x%llx:%lld]",pcurptr, pchk->m_size,pchk->m_size);
 		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, pchk->m_size, OB_RANDOM_NAME(crc32_calc),pchk->m_crc32val,CRC32_VALUE_SIZE);
 		if (ret < 0) {
 			OB_RANDOM_NAME(format_name)(fname,sizeof(pchk->m_namexor1), pchk->m_namexor1,pchk->m_namexor2);
@@ -81,6 +84,7 @@ int OB_RANDOM_NAME(check_md5_value)(m_check_fail_func_t failfunc)
 		pchk = &(OB_RANDOM_NAME(func_checks)[i]);
 		pcurptr = OB_RANDOM_NAME(get_func_address)((unsigned char*)OB_RANDOM_NAME(check_value_func));
 		pcurptr += pchk->m_offset;
+		OB_DEBUG("pcurptr [%p] size [0x%llx:%lld]",pcurptr, pchk->m_size,pchk->m_size);
 		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, pchk->m_size, OB_RANDOM_NAME(md5_calc),pchk->m_md5val,MD5_VALUE_SIZE);
 		if (ret < 0) {
 			OB_RANDOM_NAME(format_name)(fname,sizeof(pchk->m_namexor1), pchk->m_namexor1,pchk->m_namexor2);
@@ -101,6 +105,7 @@ int OB_RANDOM_NAME(check_sha256_value)(m_check_fail_func_t failfunc)
 		pchk = &(OB_RANDOM_NAME(func_checks)[i]);
 		pcurptr = OB_RANDOM_NAME(get_func_address)((unsigned char*)OB_RANDOM_NAME(check_value_func));
 		pcurptr += pchk->m_offset;
+		OB_DEBUG("pcurptr [%p] size [0x%llx:%lld]",pcurptr, pchk->m_size,pchk->m_size);
 		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, pchk->m_size, OB_RANDOM_NAME(sha256_calc),pchk->m_sha256val,SHA256_VALUE_SIZE);
 		if (ret < 0) {
 			OB_RANDOM_NAME(format_name)(fname,sizeof(pchk->m_namexor1), pchk->m_namexor1,pchk->m_namexor2);
@@ -121,6 +126,7 @@ int OB_RANDOM_NAME(check_sha3_value)(m_check_fail_func_t failfunc)
 		pchk = &(OB_RANDOM_NAME(func_checks)[i]);
 		pcurptr = OB_RANDOM_NAME(get_func_address)((unsigned char*)OB_RANDOM_NAME(check_value_func));
 		pcurptr += pchk->m_offset;
+		OB_DEBUG("pcurptr [%p] size [0x%llx:%lld]",pcurptr, pchk->m_size,pchk->m_size);
 		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, pchk->m_size, OB_RANDOM_NAME(sha3_calc),pchk->m_sha3val,SHA3_VALUE_SIZE);
 		if (ret < 0) {
 			OB_RANDOM_NAME(format_name)(fname,sizeof(pchk->m_namexor1), pchk->m_namexor1,pchk->m_namexor2);
@@ -138,7 +144,7 @@ int OB_RANDOM_NAME(check_chkval_value)(m_check_fail_func_t failfunc)
 	int ret;
 	int i;
 	pchkvalue_t pchkval;
-	pcurptr = (unsigned char*)&(OB_RANDOM_NAME(func_checks)[0]);
+	pcurptr = (unsigned char*)&(OB_RANDOM_NAME(func_checks_start)[0]);
 	pendptr = (unsigned char*)&(OB_RANDOM_NAME(func_checks_end)[0]);
 	size = (unsigned int)(pendptr - pcurptr);
 	pchkval = &(OB_RANDOM_NAME(value_checks)[0]);
@@ -187,10 +193,8 @@ int OB_RANDOM_NAME(check_chkval_value)(m_check_fail_func_t failfunc)
 int OB_RANDOM_NAME(check_end_func)(m_check_fail_func_t failfunc)
 {	
 	/*this is for the coding of */
-	unsigned char* ptr;
-	OB_EXPAND_CODE(ptr);
+	int ret=0;
+	OB_EXPAND_CODE(ret);
 	failfunc = failfunc;	
-	ptr = (unsigned char*)&(OB_RANDOM_NAME(func_checks)[0]);
-	ptr = ptr;
-	return 0;
+	return ret;
 }

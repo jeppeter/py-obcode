@@ -10,6 +10,9 @@ extern "C" {
 int OB_FUNC callc_a(void);
 int OB_FUNC callc_b(void);
 int OB_FUNC callc_c(void);
+int OB_FUNC callc_d(void);
+int OB_FUNC callc_e(void);
+int OB_FUNC callc_f(void);
 
 #ifdef __cplusplus
 };

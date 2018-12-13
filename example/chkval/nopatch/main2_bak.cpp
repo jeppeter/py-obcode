@@ -33,6 +33,30 @@ void failfunc_main2_4(int exitcode, char* name)
 }
 
 
+void failfunc_main2_5(int exitcode, char* name)
+{
+	OUTP("fail [%d] [%s]", exitcode, name);
+	exit(exitcode);
+}
+
+void failfunc_main2_6(int exitcode, char* name)
+{
+	OUTP("fail [%d] [%s]", exitcode, name);
+	exit(exitcode);
+}
+
+void failfunc_main2_7(int exitcode, char* name)
+{
+	OUTP("fail [%d] [%s]", exitcode, name);
+	exit(exitcode);
+}
+
+void failfunc_main2_8(int exitcode, char* name)
+{
+	OUTP("fail [%d] [%s]", exitcode, name);
+	exit(exitcode);
+}
+
 int print_out2_a(void)
 {
 	int a=1,b=2,c=3;
@@ -78,6 +102,66 @@ int print_out2_c(void)
 	return 0;
 }
 
+int print_out2_d(void)
+{
+	int a=1,b=2,c=3;
+	int ret;
+	OB_CODE(a,b,c);
+	ret = OB_CHKVAL_FUNC(failfunc_main2_4);
+	if (ret < 0) {
+		return ret;
+	}	
+	OUTP("a=%d;b=%d;c=%d;",a,b,c);
+	OUTP("a=%d;b=%d;c=%d;",a,b,c);
+	OUTP("a=%d;b=%d;c=%d;",a,b,c);
+	return 0;
+}
+
+int print_out2_e(void)
+{
+	int a=1,b=2,c=3;
+	int ret;
+	OB_CODE(a,b,c);
+	ret = OB_CHKVAL_FUNC(failfunc_main2_5);
+	if (ret < 0) {
+		return ret;
+	}	
+	OUTP("a=%d;b=%d;c=%d;",a,b,c);
+	OUTP("a=%d;b=%d;c=%d;",a,b,c);
+	OUTP("a=%d;b=%d;c=%d;",a,b,c);
+	return 0;
+}
+
+int print_out2_f(void)
+{
+	int a=1,b=2,c=3;
+	int ret;
+	OB_CODE(a,b,c);
+	ret = OB_CHKVAL_FUNC(failfunc_main2_6);
+	if (ret < 0) {
+		return ret;
+	}	
+	OUTP("a=%d;b=%d;c=%d;",a,b,c);
+	OUTP("a=%d;b=%d;c=%d;",a,b,c);
+	OUTP("a=%d;b=%d;c=%d;",a,b,c);
+	return 0;
+}
+
+int print_out2_g(void)
+{
+	int a=1,b=2,c=3;
+	int ret;
+	OB_CODE(a,b,c);
+	ret = OB_CHKVAL_FUNC(failfunc_main2_7);
+	if (ret < 0) {
+		return ret;
+	}	
+	OUTP("a=%d;b=%d;c=%d;",a,b,c);
+	OUTP("a=%d;b=%d;c=%d;",a,b,c);
+	OUTP("a=%d;b=%d;c=%d;",a,b,c);
+	return 0;
+}
+
 
 int main(int argc,char* argv[])
 {
@@ -89,8 +173,15 @@ int main(int argc,char* argv[])
 	print_out2_a();
 	print_out2_b();
 	print_out2_c();
+	print_out2_d();
+	print_out2_e();
+	print_out2_f();
+	print_out2_g();
 	callc_a();
 	callc_b();
 	callc_c();
+	callc_d();
+	callc_e();
+	callc_f();
 	return 0;
 }

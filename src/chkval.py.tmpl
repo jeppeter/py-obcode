@@ -5,6 +5,9 @@ import os
 import sys
 import re
 import random
+import zlib
+import sha3
+import hashlib
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from strparser import *
@@ -29,6 +32,8 @@ class ChkVal(COBFileBase):
         self.__ob_random_name_spec_expr = re.compile('.*(OB_RANDOM_NAME_SPEC\s*(\(.*))$')
         self.__ob_chkval_func_expr = re.compile('.*(OB_CHKVAL_FUNC\s*(\(.*))$')
         self.__ob_chkval_func_spec_expr = re.compile('.*(OB_CHKVAL_FUNC_SPEC\s*(\(.*))$')
+        self.__ob_expand_code_expr = re.compile('\s+(OB_EXPAND_CODE\s*(\\\x28.*))$')
+        self.__ob_expand_code_spec_expr = re.compile('\s+(OB_EXPAND_CODE_SPEC\s*(\\\x28.*))$')
         return
 
     def __format_ob_random_name_inner(self,objname,odict,cfg,params,before,after):
@@ -206,7 +211,7 @@ class ChkVal(COBFileBase):
             valuechecks = get_random_name(20)
             odict = set_odict_value(odict,valuechecks, RANDOM_VARIABLE,objname,CHKVAL_VALUE_CHECKS)
 
-        curs , odict = self.__format_check_value_single(objname,CHKVAL_STRUCT_LASTONE,odict,CHKVAL_VALUE_CHECKS.upper(),1,True)
+        curs , odict = self.__format_check_value_single(objname,CHKVAL_VALUE_CHECKS,odict,CHKVAL_VALUE_CHECKS_DICT,1,True)
         return odict
 
     def format_c_code_pre(self,odict,objname):
@@ -267,7 +272,7 @@ class ChkVal(COBFileBase):
         valuechecks = get_odict_value(odict,RANDOM_VARIABLE,objname,CHKVAL_VALUE_CHECKS)
         assert(valuechecks is not None)
         rets += format_line('chkvalue_t %s[1] = {'%(valuechecks),0)
-        curs , odict = self.__format_check_value_single(objname,CHKVAL_STRUCT_LASTONE,odict,CHKVAL_VALUE_CHECKS.upper(),1,True)
+        curs , odict = self.__format_check_value_single(objname,CHKVAL_VALUE_CHECKS,odict,CHKVAL_VALUE_CHECKS_DICT,1,True)
         rets += curs
         rets += format_line('};',0)
 
@@ -313,6 +318,7 @@ class ChkVal(COBFileBase):
             retodict = self.__set_retodict(odict,retodict,o,CHKVAL_FUNC_CHECK_MD5_FUNC)
             retodict = self.__set_retodict(odict,retodict,o,CHKVAL_FUNC_CHECK_SHA256_FUNC)
             retodict = self.__set_retodict(odict,retodict,o,CHKVAL_FUNC_CHECK_SHA3_FUNC)
+            retodict = self.__set_retodict(odict,retodict,o,CHKVAL_FUNC_CHECK_CHKVAL_VALUE)
         return retodict
 
     def format_chkval_header(self,odict,objs=[]):
@@ -335,10 +341,12 @@ class ChkVal(COBFileBase):
             md5func = get_odict_value(odict,RANDOM_VARIABLE,o,CHKVAL_FUNC_CHECK_MD5_FUNC)
             sha256func = get_odict_value(odict,RANDOM_VARIABLE,o,CHKVAL_FUNC_CHECK_SHA256_FUNC)
             sha3func = get_odict_value(odict,RANDOM_VARIABLE,o,CHKVAL_FUNC_CHECK_SHA3_FUNC)
+            chkvalfunc = get_odict_value(odict,RANDOM_VARIABLE,o,CHKVAL_FUNC_CHECK_CHKVAL_VALUE)
             rets += self.output_chkval_func(crc32func,o,'crc32')
             rets += self.output_chkval_func(md5func,o,'md5')
             rets += self.output_chkval_func(sha256func,o,'sha256')
             rets += self.output_chkval_func(sha3func,o,'sha3')
+            rets += self.output_chkval_func(chkvalfunc,o,'chkval')
 
         rets += format_line('',0)
         rets += format_line('#ifdef __cplusplus',0)
@@ -380,6 +388,21 @@ class ChkVal(COBFileBase):
         cfg ,params,before ,after = self.get_spec_config_variables(l,self.__ob_chkval_func_spec_expr)
         return self.__format_ob_chkval_func_inner(l,retodict,cfg,params,before,after)
 
+    def __format_ob_expand_code_inner(self,l,params,cfg,before,after):
+        rets = ''
+        rets += self.expand_code(l,params,cfg,before,after)
+        #rets += format_line('#line %d'%(self.cur_line),0)
+        rets += format_line('%s'%(l),0)
+        return rets
+
+    def __format_ob_expand_code(self,l):
+        cfg ,params,before ,after = self.get_variables(l,self.__ob_expand_code_expr)
+        return self.__format_ob_expand_code_inner(l,params,cfg,before,after)
+
+    def __format_ob_expand_code_spec(self,l):
+        cfg ,params,before ,after = self.get_spec_config_variables(l,self.__ob_chkval_func_spec_expr)
+        return self.__format_ob_expand_code_inner(l,params,cfg,before,after)
+
     def replace_functions(self,odict,objs=[]):
         logging.info('objs %s'%(objs))
         retodict = self.get_functions_odict(odict,objs)
@@ -412,7 +435,23 @@ class ChkVal(COBFileBase):
         return rets
 
 
-def dump_object_function_one(args,objparser,odict,o,f,win32mode=False):
+    def expand_chkval_code(self):
+        self.cur_line = 0
+        rets = ''
+        for l in self.in_lines:
+            self.cur_line += 1
+            l = l.rstrip('\r\n')
+            logging.debug('[%d][%s]'%(self.cur_line, l))
+            if self.get_filter_expr_not_defined(l,self.__ob_expand_code_expr):
+                rets += self.__format_ob_expand_code(l)
+            elif self.get_filter_expr_not_defined(l,self.__ob_expand_code_spec_expr):
+                rets += self.__format_ob_expand_code_spec(l)
+            else:
+                rets += '%s\n'%(l)
+        return rets
+
+
+def chkval_dump_object_function_one(args,objparser,odict,o,f,win32mode=False):
     logging.info('o[%s]f[%s]'%(o,f))
     fodict = get_odict_value(odict,CHKVAL_RAW_DATA,o,f)
     realf = f
@@ -420,59 +459,41 @@ def dump_object_function_one(args,objparser,odict,o,f,win32mode=False):
         realf = '_%s'%(f)
     if fodict is None:
         fodict = dict()
-        patchodict = get_odict_value(odict,PATCH_FUNC_KEY,o,f)
         fvaddr = objparser.func_vaddr(realf)
         foff = objparser.func_offset(realf)
         fsize = objparser.func_size(realf)
         if fvaddr < 0 or fsize < 0 or foff < 0:
             raise Exception('can not find [%s] in [%s]'%(f,o))
         alldata = objparser.get_data()
-        if patchodict is None:
-            # no patched code handle ,so we should just read the files
-            # and get the data
-            relocs = []
-            idx = 0
-            while idx < fsize:
-                relocs.append(objparser.is_in_reloc(fvaddr+idx,realf))
-                idx += 1
-            fodict = set_odict_value(fodict,alldata[foff:(foff + fsize)],CHKVAL_RDATA_DATAS)
-            fodict = set_odict_value(fodict,relocs,CHKVAL_RDATA_RELOCS)
-        else:
-            # now we try to get the patched odict
-            relocs = get_odict_value(patchodict,FUNC_DATA_RELOC_KEY)
-            rawdata = alldata[foff:(foff + fsize)]
-            xors = get_odict_value(patchodict,FORMAT_FUNC_XORS_KEY)
-            offsetk = get_odict_value(patchodict,FORMAT_FUNC_OFFSET_KEY)
-            assert(relocs is not None)
-            assert(patchdata is not None)
-            assert(offsetk is not None)
-            assert(xors is not None)
-            for kidx in offsetk.keys():
-                if offsetk[kidx] >= 2:
-                    koff = int(kidx)
-                    logging.info('set [0x%x:%d] [0x%x] ^ [0x%x] => [0x%x]'(koff,koff,rawdata[koff], xors[kidx], (rawdata[koff] ^ xors[kidx])))
-                    rawdata[koff] = rawdata[koff] ^ xors[kidx]
-            fodict = set_odict_value(fodict,rawdata, CHKVAL_RDATA_DATAS)
-            fodict = set_odict_value(fodict,relocs, CHKVAL_RDATA_RELOCS)
+        relocs = []
+        # just read the code ,and this is to search for the coding
+        idx = 0
+        while idx < fsize:
+            relocs.append(objparser.is_in_reloc(fvaddr+idx,realf))
+            idx += 1
+        fodict = set_odict_value(fodict,alldata[foff:(foff + fsize)],CHKVAL_RDATA_DATAS)
+        fodict = set_odict_value(fodict,relocs,CHKVAL_RDATA_RELOCS)
         odict = set_odict_value(odict,fodict, CHKVAL_RAW_DATA,o,f)
     return odict
 
-def dump_check_functions(args,objtype,odict,outname,win32mode=False):
+def chkval_dump_check_functions(args,objtype,odict,outname,win32mode=False):
     startfunc = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE,outname,CHKVAL_START_FUNCTION_NAME)
     endfunc = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE,outname,CHKVAL_END_FUNCTION_NAME)
     basefunc = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE,outname,CHKVAL_BASE_FUNCTION_NAME)
+    valuechkes = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE,outname,CHKVAL_VALUE_CHECKS)
     assert(startfunc is not None)
     assert(endfunc is not None)
     assert(basefunc is not None)
     objparser = call_object_parser(objtype,outname)
-    odict = dump_object_function_one(args,objparser,odict,outname, startfunc,win32mode)
-    odict = dump_object_function_one(args,objparser, odict,outname, endfunc, win32mode)
-    odict = dump_object_function_one(args,objparser, odict,outname, basefunc, win32mode)
+    odict = chkval_dump_object_function_one(args,objparser,odict,outname, startfunc,win32mode)
+    odict = chkval_dump_object_function_one(args,objparser, odict,outname, endfunc, win32mode)
+    odict = chkval_dump_object_function_one(args,objparser, odict,outname, basefunc, win32mode)
+    odict = chkval_dump_object_function_one(args,objparser,odict,outname, valuechkes, win32mode)
     objparser.close()
     objparser = None
     return odict
 
-def dump_object_functions(args,objtype,odict,objs=[],win32mode=False):
+def chkval_dump_object_functions(args,objtype,odict,objs=[],win32mode=False):
     rval = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RANDOM_VALUE,args.output)
     if rval is not None:
         for o in objs:
@@ -482,14 +503,211 @@ def dump_object_functions(args,objtype,odict,objs=[],win32mode=False):
                 logging.warn('can not get [%s]'%(o))
                 continue
             for f in rval.keys():
-                odict = dump_object_function_one(args,curobjparser,odict,o,f,win32mode)
+                odict = chkval_dump_object_function_one(args,curobjparser,odict,o,f,win32mode)
             curobjparser.close()
     else:
         logging.info('[%s]None handle'%(args.output))
 
     # now we should get the output function value
-    odict = dump_check_functions(args,objtype,odict,args.output,win32mode)
+    odict = chkval_dump_check_functions(args,objtype,odict,args.output,win32mode)
     return odict
 
+def chkval_get_realdata(objparser,exefile,odict,rawdata,objname,funcname,win32mode):
+    realdata = []
+    realdata.extend(rawdata)
+    exeodict = get_odict_value(odict,PATCH_FUNC_KEY,exefile,objname,funcname)
+    if exeodict is not None:
+        # this is patched, so we should give this to the xors
+        offsetk = get_odict_value(exeodict,FORMAT_FUNC_OFFSET_KEY)
+        xors = get_odict_value(exeodict,FORMAT_FUNC_XORS_KEY)
+        assert(offsetk is not None)
+        assert(xors is not None)
+        for offk in offsetk.keys():
+            offi = int(offk)
+            if offsetk[offk] >= 2:
+                logging.debug('[%s].[%s].[0x%x:%d] [0x%02x] ^ [0x%02x] = [0x%02x]'%(objname,funcname,offi,offi,realdata[offi],xors[offk],(realdata[offi] ^ xors[offk])))
+                realdata[offi] = realdata[offi] ^ xors[offk]
+    return realdata
+
+def get_crc32_value(rawdata):
+    crc32val = zlib.crc32(ints_to_bytes(rawdata))
+    if crc32val  >= 0x80000000:
+        crc32val = (1 << 32) - crc32val
+    elif crc32val < 0:
+        crc32val = (1 << 32) + crc32val
+    return '%x'%(crc32val)
+
+def get_md5_value(rawdata):
+    m = hashlib.md5()
+    m.update(ints_to_bytes(rawdata))
+    return m.hexdigest()
+
+def get_sha256_value(rawdata):
+    m = hashlib.sha256()
+    m.update(ints_to_bytes(rawdata))
+    return m.hexdigest()
+
+def get_sha3_value(rawdata):
+    m = sha3.sha3_512()
+    m.update(ints_to_bytes(rawdata))
+    return m.hexdigest()
+
+
+
+def chkval_fill_inc_obj_func(args,objparser,exefile,alldata,odict,incfile,objfile,funcname,basefuncoff,win32mode):
+    # now get the k value
+    datas = get_odict_value(odict,CHKVAL_RAW_DATA,objfile,funcname,CHKVAL_RDATA_DATAS)
+    relocs = get_odict_value(odict,CHKVAL_RAW_DATA,objfile,funcname,CHKVAL_RDATA_RELOCS)
+    assert(datas is not None)
+    assert(relocs is not None)
+    # now to get function store data
+    rnddatadict = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RANDOM_VALUE,incfile,objfile,funcname)
+    realf = funcname
+    if win32mode:
+        realf = '_%s'%(funcname)
+    assert(rnddatadict is not None)
+    crc32rnddata = get_odict_value(rnddatadict,CHKVAL_STRUCT_CRC32VAL)
+    sha256rnddata = get_odict_value(rnddatadict,CHKVAL_STRUCT_SHA256VAL)
+    sha3rnddata = get_odict_value(rnddatadict,CHKVAL_STRUCT_SHA3VAL)
+    md5rnddata = get_odict_value(rnddatadict,CHKVAL_STRUCT_MD5VAL)
+    sizernddata = get_odict_value(rnddatadict,CHKVAL_STRUCT_SIZE)
+    offsetrnddata = get_odict_value(rnddatadict,CHKVAL_STRUCT_OFFSET)
+
+    crc32foff = objparser.get_text_file_off(crc32rnddata,zero_bytes(CHKVAL_STRUCT_CRC32VAL_SIZE),'%s_%s'%(realf,CHKVAL_STRUCT_CRC32VAL))
+    sha256foff = objparser.get_text_file_off(sha256rnddata,zero_bytes(CHKVAL_STRUCT_SHA256VAL_SIZE),'%s_%s'%(realf,CHKVAL_STRUCT_SHA256VAL))
+    sha3foff = objparser.get_text_file_off(sha3rnddata,zero_bytes(CHKVAL_STRUCT_SHA3VAL_SIZE),'%s_%s'%(realf,CHKVAL_STRUCT_SHA3VAL))
+    md5foff = objparser.get_text_file_off(md5rnddata,zero_bytes(CHKVAL_STRUCT_MD5VAL_SIZE),'%s_%s'%(realf,CHKVAL_STRUCT_MD5VAL))
+    sizefoff = objparser.get_text_file_off(sizernddata,zero_bytes(CHKVAL_STRUCT_SIZE_SIZE),'%s_%s'%(realf,CHKVAL_STRUCT_SIZE))
+    offsetfoff = objparser.get_text_file_off(offsetrnddata,zero_bytes(CHKVAL_STRUCT_OFFSET_SIZE),'%s_%s'%(realf,CHKVAL_STRUCT_OFFSET))
+
+    foff = objparser.get_text_file_off(datas,relocs,realf)
+    rawdata = alldata[foff:(foff + len(relocs))]
+    realdata = chkval_get_realdata(objparser,exefile,odict,rawdata,objfile,funcname,win32mode)
+    # to give the data set
+    if foff > basefuncoff:
+        setoffset = (foff - basefuncoff)
+    else:
+        setoffset = (basefuncoff - foff)
+        setoffset = (0x1 << 64) - setoffset
+    
+    crc32val = get_crc32_value(realdata)
+    md5val = get_md5_value(realdata)
+    sha256val = get_sha256_value(realdata)
+    sha3val = get_sha3_value(realdata)
+
+    crc32bytes = format_bytes(crc32val,CHKVAL_STRUCT_CRC32VAL_SIZE,False)
+    md5bytes = format_bytes(md5val, CHKVAL_STRUCT_MD5VAL_SIZE,True)
+    sha256bytes = format_bytes(sha256val, CHKVAL_STRUCT_SHA256VAL_SIZE,True)
+    sha3bytes = format_bytes(sha3val, CHKVAL_STRUCT_SHA3VAL_SIZE,True)
+    sizebytes = format_bytes('%x'%(len(relocs)), CHKVAL_STRUCT_SIZE_SIZE, False)
+    offsetbytes = format_bytes('%x'%(setoffset), CHKVAL_STRUCT_OFFSET_SIZE, False)
+
+
+    alldata = set_data_bytes(alldata,crc32bytes,crc32foff,'[%s].[%s].crc32'%(exefile,funcname))
+    alldata = set_data_bytes(alldata,md5bytes, md5foff,'[%s].[%s]md5'%(exefile,funcname))
+    alldata = set_data_bytes(alldata,sha256bytes, sha256foff,'[%s].[%s]sha256'%(exefile,funcname))
+    alldata = set_data_bytes(alldata, sha3bytes, sha3foff,'[%s].[%s]sha3'%(exefile,funcname))
+    alldata = set_data_bytes(alldata,sizebytes, sizefoff,'[%s].[%s]size'%(exefile,funcname))
+    alldata = set_data_bytes(alldata, offsetbytes, offsetfoff,'[%s].[%s]offset'%(exefile,funcname))
+
+    # now we should get the 
+    return odict,alldata
+
+def chkval_fill_inc_obj(args,objparser,exefile,alldata,odict,incfile,objfile,basefuncoff,win32mode):
+    funcs = get_odict_value(odict,CHKVAL_RAW_DATA,objfile)
+    if funcs is not None:
+        for f in funcs.keys():
+            odict,alldata = chkval_fill_inc_obj_func(args,objparser,exefile,alldata,odict,incfile,objfile,f,basefuncoff,win32mode)
+    else:
+        logging.warn('[%s] not get functions'%(objfile))
+    return odict,alldata
+
+def chkval_fill_inc_lastitem(args,objparser,exefile,alldata,odict,incfile,win32mode):
+    funcodict = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RANDOM_VALUE,incfile,CHKVAL_STRUCT_LASTONE.upper(),'')
+    assert(funcodict is not None)
+    sizedata = get_odict_value(funcodict,CHKVAL_STRUCT_SIZE)
+    relocs = zero_bytes(len(sizedata))
+    realf = CHKVAL_STRUCT_LASTONE.upper()
+    if win32mode:
+        realf = '_%s'%(realf)
+    foff = objparser.get_text_file_off(sizedata,relocs,realf)
+    assert(foff >= 0)
+    zerobytes = format_bytes('0',CHKVAL_STRUCT_SIZE_SIZE,False)
+    alldata = set_data_bytes(alldata,zerobytes,foff,'[%s].[%s]'%(incfile,CHKVAL_STRUCT_LASTONE.upper()))
+    return odict,alldata
+
+def get_value_check_offset(valuechecksdict,objparser,name):
+    posdata = get_odict_value(valuechecksdict,name)
+    posrelocs = zero_bytes(len(posdata))
+    return objparser.get_text_file_off(posdata,posrelocs,name)
+
+def __inc_filled_self(args,objparser,exefile,alldata,odict,incfile,win32mode):
+    # first to find the crc32_calc function and find 
+    startoffdata = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RANDOM_VALUE,incfile,CHKVAL_FUNC_CHECKS_START)
+    assert(startoffdata is not None)
+    startoffrel = zero_bytes(len(startoffdata))
+    startoff = objparser.get_text_file_off(startoffdata, startoffrel,CHKVAL_FUNC_CHECKS_START)
+    assert(startoff >= 0)
+    endoffdata = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RANDOM_VALUE,incfile,CHKVAL_FUNC_CHECKS_END)
+    assert(endoffdata is not None)
+    endoffrel = zero_bytes(len(endoffdata))
+    endoff = objparser.get_text_file_off(endoffdata,endoffrel,CHKVAL_FUNC_CHECKS_END)
+    assert(endoff >= 0)
+    assert(endoff >= startoff)
+    realdata = alldata[startoff:endoff]
+    crc32val = get_crc32_value(realdata)
+    md5val = get_md5_value(realdata)
+    sha256val = get_sha256_value(realdata)
+    sha3val = get_sha3_value(realdata)
+
+    valuechecksdict = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RANDOM_VALUE,incfile,CHKVAL_VALUE_CHECKS,CHKVAL_VALUE_CHECKS_DICT)
+    assert(valuechecksdict is not None)
+    crc32pos = get_value_check_offset(valuechecksdict,objparser,CHKVAL_STRUCT_CRC32VAL)
+    md5pos = get_value_check_offset(valuechecksdict,objparser,CHKVAL_STRUCT_MD5VAL)
+    sha256pos = get_value_check_offset(valuechecksdict,objparser,CHKVAL_STRUCT_SHA256VAL)
+    sha3pos = get_value_check_offset(valuechecksdict,objparser,CHKVAL_STRUCT_SHA3VAL)
+
+    alldata = set_data_bytes(alldata,format_bytes(crc32val,CHKVAL_STRUCT_CRC32VAL_SIZE,False),crc32pos)
+    alldata = set_data_bytes(alldata,format_bytes(md5val,CHKVAL_STRUCT_MD5VAL_SIZE,True),md5pos)
+    alldata = set_data_bytes(alldata,format_bytes(sha256val,CHKVAL_STRUCT_SHA256VAL_SIZE,True),sha256pos)
+    alldata = set_data_bytes(alldata,format_bytes(sha3val,CHKVAL_STRUCT_SHA3VAL_SIZE,True),sha3pos)
+
+    return odict,alldata
+
+def chkval_fill_inc(args,objparser,exefile,alldata,odict,incfile,win32mode):
+    incodict = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RANDOM_VALUE,incfile)
+    basefuncname = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE,incfile,CHKVAL_BASE_FUNCTION_NAME)
+    logging.info('basefuncname [%s]'%(basefuncname))
+    assert(basefuncname is not None)
+    assert(incodict is not None)
+    basefuncodict = get_odict_value(odict,CHKVAL_RAW_DATA,incfile,basefuncname)
+    assert(basefuncodict is not None)
+    basefuncdata = get_odict_value(basefuncodict,CHKVAL_RDATA_DATAS)
+    basefuncrelocs = get_odict_value(basefuncodict, CHKVAL_RDATA_RELOCS)
+    realf = basefuncname
+    if win32mode:
+        realf = '_%s'%(basefuncname)
+    basefuncoff = objparser.get_text_file_off(basefuncdata,basefuncrelocs,realf)
+    logging.info('basefuncoff 0x%x'%(basefuncoff))
+    assert(basefuncoff >= 0)
+    for o in incodict.keys():
+        logging.debug('o[%s]'%(o))
+        # not exists for the object file , so do not handle this
+        if not os.path.exists(o):
+            continue
+        odict,alldata = chkval_fill_inc_obj(args,objparser,exefile,alldata,odict,incfile,o,basefuncoff,win32mode)
+    odict, alldata = chkval_fill_inc_lastitem(args,objparser,exefile,alldata,odict,incfile,win32mode)
+    odict,alldata = __inc_filled_self(args,objparser,exefile,alldata,odict,incfile,win32mode)
+    return odict,alldata
+
+def chkval_fill_data(args,objtype,odict,exefile,chkobjs=[],win32mode=False):
+    objparser = call_object_parser(objtype,exefile)
+    alldata = objparser.get_data()
+    for f in chkobjs:
+        logging.debug('f[%s]'%(f))
+        odict,alldata = chkval_fill_inc(args,objparser,exefile,alldata,odict,f,win32mode)
+    objparser.close()
+    write_file_ints(alldata, exefile)
+    return odict
 
 ##extractcode_end

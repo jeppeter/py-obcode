@@ -696,5 +696,45 @@ def format_bytes_c(sarr):
         i += 1
     return rets
 
+def zero_bytes(num):
+    sarr = []
+    for i in range(num):
+        sarr.append(0)
+    return sarr
+
+def format_bytes(hexstr,size,bigendian=False):
+    sarr = zero_bytes(size)
+    fillsize = int((len(hexstr)+1)/2)
+    if fillsize > size:
+        raise Exception('filled size [%d] > size[%d]'%(fillsize,size))
+    if bigendian:
+        idx = size - 1
+    else:
+        idx = 0
+    chstr = hexstr
+    while len(chstr) > 0:
+        if len(chstr) > 1:
+            cch = chstr[-2:]
+            chstr = chstr[:-2]
+        else:
+            cch = chstr
+            chstr = ''
+        sarr[idx] = int(cch,16)
+        if bigendian:
+            idx -= 1
+        else:
+            idx += 1
+    return sarr
+
+def set_data_bytes(alldata,data,foff,note=''):
+    assert((foff+ len(data))<= len(alldata))
+    logging.debug('[%s].[0x%x:%d] %s'%(note,foff,foff,format_bytes_c(data)))
+    idx = 0
+    while idx < len(data):
+        alldata[(foff + idx)] = data[idx]
+        idx += 1
+
+    return alldata
+
 
 ##extractcode_end

@@ -290,6 +290,11 @@ def fmtchkval_handler(args,parser):
     curs , odict[CHKVAL_KEY] = chkval.format_c_code_post(odict[CHKVAL_KEY],args.objfile)
     rets += curs
     write_patch_output(args,rets,odict)
+    # now to give the out
+    chkval = ChkVal(args.output,None,None)
+    rets = chkval.expand_chkval_code()
+    # writes with output
+    write_file(rets,args.output)
     sys.exit(0)
     return
 
@@ -337,8 +342,21 @@ def chkvaldumpfuncself_handler(args,parser):
     objs = []
     for k in jdict.keys():
         objs.append(k)
-    odict = dump_object_functions(args,'ElfParser',odict,objs)
+    odict = chkval_dump_object_functions(args,'ElfParser',odict,objs)
     write_json(odict, args.dump)
+    sys.exit(0)
+    return
+
+def chkvalfillelf_handler(args,parser):
+    set_logging_level(args)
+    logging.info('chkvalfillelf')
+    jdict, args = get_jdict(args)
+    odict = get_odict(args, False)
+    objs = []
+    for k in jdict.keys():
+        objs.append(k)
+    odict = chkval_fill_data(args,'ElfParser',odict,args.output,objs)
+    write_json(odict,args.dump)
     sys.exit(0)
     return
 
@@ -433,6 +451,9 @@ def main():
             "$" : "+"
         },
         "chkvaldumpfuncself<chkvaldumpfuncself_handler>##objfile ... to get the byte information for handler##" : {
+            "$" : "+"
+        },
+        "chkvalfillelf<chkvalfillelf_handler>##objfile ... to filled real data into the structure##" : {
             "$" : "+"
         }
     }
