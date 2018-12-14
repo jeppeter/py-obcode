@@ -59,6 +59,11 @@ int OB_RANDOM_NAME(check_crc32_value)(m_check_fail_func_t failfunc)
 	pchkvalue_t pchk;
 	int ret;
 	unsigned char fname[sizeof(pchk->m_namexor1)];
+	ret = OB_RANDOM_NAME(check_chkval_value)(failfunc);
+	if (ret < 0) {
+		return ret;
+	}
+
 	for (i=0;OB_RANDOM_NAME(func_checks)[i].m_size != 0;i++) {
 		pchk = &(OB_RANDOM_NAME(func_checks)[i]);
 		pcurptr = OB_RANDOM_NAME(get_func_address)((unsigned char*)OB_RANDOM_NAME(check_value_func));
@@ -80,6 +85,11 @@ int OB_RANDOM_NAME(check_md5_value)(m_check_fail_func_t failfunc)
 	pchkvalue_t pchk;
 	int ret;
 	unsigned char fname[sizeof(pchk->m_namexor1)];
+	ret = OB_RANDOM_NAME(check_chkval_value)(failfunc);
+	if (ret < 0) {
+		return ret;
+	}
+
 	for (i=0;OB_RANDOM_NAME(func_checks)[i].m_size != 0;i++) {
 		pchk = &(OB_RANDOM_NAME(func_checks)[i]);
 		pcurptr = OB_RANDOM_NAME(get_func_address)((unsigned char*)OB_RANDOM_NAME(check_value_func));
@@ -101,6 +111,12 @@ int OB_RANDOM_NAME(check_sha256_value)(m_check_fail_func_t failfunc)
 	pchkvalue_t pchk;
 	int ret;
 	unsigned char fname[sizeof(pchk->m_namexor1)];
+
+	ret = OB_RANDOM_NAME(check_chkval_value)(failfunc);
+	if (ret < 0) {
+		return ret;
+	}
+
 	for (i=0;OB_RANDOM_NAME(func_checks)[i].m_size != 0;i++) {
 		pchk = &(OB_RANDOM_NAME(func_checks)[i]);
 		pcurptr = OB_RANDOM_NAME(get_func_address)((unsigned char*)OB_RANDOM_NAME(check_value_func));
@@ -122,6 +138,12 @@ int OB_RANDOM_NAME(check_sha3_value)(m_check_fail_func_t failfunc)
 	pchkvalue_t pchk;
 	int ret;
 	unsigned char fname[sizeof(pchk->m_namexor1)];
+
+	ret = OB_RANDOM_NAME(check_chkval_value)(failfunc);
+	if (ret < 0) {
+		return ret;
+	}
+
 	for (i=0;OB_RANDOM_NAME(func_checks)[i].m_size != 0;i++) {
 		pchk = &(OB_RANDOM_NAME(func_checks)[i]);
 		pcurptr = OB_RANDOM_NAME(get_func_address)((unsigned char*)OB_RANDOM_NAME(check_value_func));

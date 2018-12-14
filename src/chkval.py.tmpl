@@ -318,7 +318,6 @@ class ChkVal(COBFileBase):
             retodict = self.__set_retodict(odict,retodict,o,CHKVAL_FUNC_CHECK_MD5_FUNC)
             retodict = self.__set_retodict(odict,retodict,o,CHKVAL_FUNC_CHECK_SHA256_FUNC)
             retodict = self.__set_retodict(odict,retodict,o,CHKVAL_FUNC_CHECK_SHA3_FUNC)
-            retodict = self.__set_retodict(odict,retodict,o,CHKVAL_FUNC_CHECK_CHKVAL_VALUE)
         return retodict
 
     def format_chkval_header(self,odict,objs=[]):
@@ -341,12 +340,10 @@ class ChkVal(COBFileBase):
             md5func = get_odict_value(odict,RANDOM_VARIABLE,o,CHKVAL_FUNC_CHECK_MD5_FUNC)
             sha256func = get_odict_value(odict,RANDOM_VARIABLE,o,CHKVAL_FUNC_CHECK_SHA256_FUNC)
             sha3func = get_odict_value(odict,RANDOM_VARIABLE,o,CHKVAL_FUNC_CHECK_SHA3_FUNC)
-            chkvalfunc = get_odict_value(odict,RANDOM_VARIABLE,o,CHKVAL_FUNC_CHECK_CHKVAL_VALUE)
             rets += self.output_chkval_func(crc32func,o,'crc32')
             rets += self.output_chkval_func(md5func,o,'md5')
             rets += self.output_chkval_func(sha256func,o,'sha256')
             rets += self.output_chkval_func(sha3func,o,'sha3')
-            rets += self.output_chkval_func(chkvalfunc,o,'chkval')
 
         rets += format_line('',0)
         rets += format_line('#ifdef __cplusplus',0)
