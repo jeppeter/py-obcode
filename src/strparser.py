@@ -728,13 +728,49 @@ def format_bytes(hexstr,size,bigendian=False):
 
 def set_data_bytes(alldata,data,foff,note=''):
     assert((foff+ len(data))<= len(alldata))
-    logging.debug('[%s].[0x%x:%d] %s'%(note,foff,foff,format_bytes_c(data)))
+    logging.debug('[%s].[0x%x:%d][0x%x:%d] %s'%(note,foff,foff,len(data),len(data),format_bytes_c(data)))
     idx = 0
     while idx < len(data):
         alldata[(foff + idx)] = data[idx]
         idx += 1
 
     return alldata
+
+def format_bytes_debug(data,note=''):
+    rets = ''
+    if len(note) > 0:
+        rets += note
+    rets += 'data [0x%x:%d]'%(len(data),len(data))
+    idx = 0
+    lastidx = 0
+    while idx < len(data):
+        if (idx % 16) == 0:
+            if lastidx != idx:
+                rets += ' ' * 4
+            while lastidx != idx:
+                if data[lastidx] >= ord(' ') and \
+                    data[lastidx] <= ord('~'):
+                    rets += '%c'%(chr(data[lastidx]))
+                else:
+                    rets += '.'
+                lastidx += 1
+            rets += '\n0x%08x:'%(idx)
+        rets += ' 0x%02x'%(data[idx])
+        idx += 1
+    if idx != lastidx:
+        while (idx % 16) != 0:
+            rets += ' ' * 5
+            idx += 1
+        rets += ' ' * 4
+        while lastidx < len(data):
+            if data[lastidx] >= ord(' ') and \
+                data[lastidx] <= ord('~'):
+                rets += '%c'%(chr(data[lastidx]))
+            else:
+                rets += '.'
+            lastidx += 1
+        rets += '\n'
+    return rets
 
 
 ##extractcode_end

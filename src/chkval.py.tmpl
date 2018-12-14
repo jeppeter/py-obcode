@@ -574,6 +574,23 @@ def get_sha3_value(rawdata):
     m.update(ints_to_bytes(rawdata))
     return m.hexdigest()
 
+def get_crc_sum(rawdata):
+    idx = 0
+    crcval = 0
+    size = len(rawdata)
+    curval = 0
+    while idx < size:
+        curval = 0
+        jdx = 0
+        while jdx < (size - idx) and jdx < 4:
+            curval += ((rawdata[(idx + jdx)]) << (jdx * 8))
+            jdx += 1
+        crcval += curval
+        # not overflow
+        crcval = crcval & 0xffffffff
+        idx += 4
+    return crcval
+
 
 
 def chkval_fill_inc_obj_func(args,objparser,exefile,alldata,odict,incfile,objfile,funcname,basefuncoff,win32mode):
@@ -663,6 +680,15 @@ def get_value_check_offset(valuechecksdict,objparser,name):
     posrelocs = zero_bytes(len(posdata))
     return objparser.get_text_file_off(posdata,posrelocs,name)
 
+def get_function_name_offset(objparser,odict,objname,funcorig):
+    funcname = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE,objname,funcorig)
+    assert(funcname is not None)
+    posdict = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RAW_DATA,objname,funcname)
+    assert(posdict is not None)
+    posdata = get_odict_value(posdict,CHKVAL_RDATA_DATAS)
+    posrelocs = get_odict_value(posdict,CHKVAL_RDATA_RELOCS)
+    return objparser.get_text_file_off(posdata,posrelocs,funcorig)
+
 def __inc_filled_self(args,objparser,exefile,alldata,odict,incfile,win32mode):
     # first to find the crc32_calc function and find 
     startoffdata = get_odict_value(odict,CHKVAL_KEY,CHKVAL_OBJ_DATA,incfile,CHKVAL_FUNC_CHECKS_START)
@@ -676,6 +702,13 @@ def __inc_filled_self(args,objparser,exefile,alldata,odict,incfile,win32mode):
     endoff = objparser.get_text_file_off(endoffdata,endoffrel,CHKVAL_FUNC_CHECKS_END)
     assert(endoff >= 0)
     assert(endoff >= startoff)
+    totalenddata = get_odict_value(odict,CHKVAL_KEY,CHKVAL_OBJ_DATA,incfile,CHKVAL_VALUE_CHECKS_TOTAL_END)
+    assert(totalenddata is not None)
+    totalendoffrel = zero_bytes(len(totalenddata))
+    totalendoff = objparser.get_text_file_off(totalenddata,totalendoffrel,CHKVAL_VALUE_CHECKS_TOTAL_END)
+    assert(totalendoff >= 0)
+    assert(totalendoff >= endoff)
+
     realdata = alldata[startoff:endoff]
     crc32val = get_crc32_value(realdata)
     md5val = get_md5_value(realdata)
@@ -688,11 +721,42 @@ def __inc_filled_self(args,objparser,exefile,alldata,odict,incfile,win32mode):
     md5pos = get_value_check_offset(valuechecksdict,objparser,CHKVAL_STRUCT_MD5VAL)
     sha256pos = get_value_check_offset(valuechecksdict,objparser,CHKVAL_STRUCT_SHA256VAL)
     sha3pos = get_value_check_offset(valuechecksdict,objparser,CHKVAL_STRUCT_SHA3VAL)
+    sizepos = get_value_check_offset(valuechecksdict,objparser, CHKVAL_STRUCT_SIZE)
 
     alldata = set_data_bytes(alldata,format_bytes(crc32val,CHKVAL_STRUCT_CRC32VAL_SIZE,False),crc32pos)
     alldata = set_data_bytes(alldata,format_bytes(md5val,CHKVAL_STRUCT_MD5VAL_SIZE,True),md5pos)
     alldata = set_data_bytes(alldata,format_bytes(sha256val,CHKVAL_STRUCT_SHA256VAL_SIZE,True),sha256pos)
     alldata = set_data_bytes(alldata,format_bytes(sha3val,CHKVAL_STRUCT_SHA3VAL_SIZE,True),sha3pos)
+
+    # to get the position for the sha3 code of the functions
+    namexor1pos = get_value_check_offset(valuechecksdict, objparser, CHKVAL_STRUCT_NAMEXOR1)
+    startfuncpos = get_function_name_offset(objparser,odict,incfile,CHKVAL_START_FUNCTION_NAME)
+    endfuncpos = get_function_name_offset(objparser,odict,incfile,CHKVAL_END_FUNCTION_NAME)
+    realdata = alldata[startfuncpos:endfuncpos]
+    sha3val = get_sha3_value(realdata)
+    sha3bytes = format_bytes(sha3val,CHKVAL_STRUCT_SHA3VAL_SIZE,True)
+    alldata = set_data_bytes(alldata,sha3bytes,namexor1pos)
+
+    realdata = []
+    realdata.extend(alldata[startoff:totalendoff])
+    sizebytes = zero_bytes(CHKVAL_STRUCT_SIZE_SIZE)
+    # clear the bytes ,and it will give clear
+    realdata = set_data_bytes(realdata,sizebytes, (sizepos - startoff))
+    logging.info('sizepos [0x%x:%d]realdata checked\n%s'%((sizepos - startoff),(sizepos - startoff),format_bytes_debug(realdata)))
+    crcval = get_crc_sum(realdata)
+    logging.info('crcval 0x%x'%(crcval))
+    # now we should make change
+    crcval = 0x100000000 - crcval
+    # not overflow
+    crcval = crcval & 0xffffffff
+    crcbytes = format_bytes('%x'%(crcval), 4 , False)
+    # to search for the position
+    setpos = (sizepos - startoff)
+    while (setpos % 4) != 0:
+        setpos += 1
+    logging.info('crcbytes %s'%(crcbytes))
+    realdata = set_data_bytes(realdata,crcbytes, setpos)
+    alldata = set_data_bytes(alldata, realdata,startoff)
 
     return odict,alldata
 
@@ -714,9 +778,6 @@ def chkval_fill_inc(args,objparser,exefile,alldata,odict,incfile,win32mode):
     assert(basefuncoff >= 0)
     for o in incodict.keys():
         logging.debug('o[%s]'%(o))
-        # not exists for the object file , so do not handle this
-        #if not os.path.exists(o):
-        #    continue
         odict,alldata = chkval_fill_inc_obj(args,objparser,exefile,alldata,odict,incfile,o,basefuncoff,win32mode)
     odict, alldata = chkval_fill_inc_lastitem(args,objparser,exefile,alldata,odict,incfile,win32mode)
     odict,alldata = __inc_filled_self(args,objparser,exefile,alldata,odict,incfile,win32mode)

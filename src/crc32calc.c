@@ -53,7 +53,6 @@ int OB_RANDOM_NAME(crc_sum)(unsigned char* message, unsigned int size, unsigned 
         i -= sizeof(unsigned int);
         pival ++;
     }
-    crc = ~crc;
     for (i = 0; i < 4; i++) {
         pval[i] = (unsigned char)((crc >> (i * 8)) & 0xff);
     }

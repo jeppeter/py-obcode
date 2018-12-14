@@ -172,37 +172,38 @@ typedef void (*m_check_fail_func_t)(int errcode,char* name);
   	OB_PRINT_FUNC("[%s:%d] ",__FILE__,__LINE__);                                                  \
   	OB_PRINT_FUNC(__VA_ARGS__);                                                                   \
   	for (__curi=0;__curi < __csize;__curi ++,__pptr ++) {                                         \
-  		if ((__curi % 16) == 0) {                                                                 \
-  			if (__lastptr != __pptr) {                                                            \
-  				OB_PRINT_FUNC("    ");                                                            \
-  				while(__lastptr != __pptr) {                                                      \
-  					if (*__lastptr >= ' ' && *__lastptr <= '~') {                                 \
-  						OB_PRINT_FUNC("%c",*__lastptr);                                           \
-  					} else {                                                                      \
-  						OB_PRINT_FUNC(".");                                                       \
-  					}                                                                             \
-  					__lastptr ++;                                                                 \
-  				}                                                                                 \
-  			}                                                                                     \
-  			OB_PRINT_FUNC("\n[%p]0x%08x:",__pptr,__curi);                                         \
-  		}                                                                                         \
-  		OB_PRINT_FUNC(" 0x%02x", *__pptr);                                                        \
+  		if ((__curi % 16) == 0) {                                                                   \
+  			if (__lastptr != __pptr) {                                                                \
+  				OB_PRINT_FUNC("    ");                                                                  \
+  				while(__lastptr != __pptr) {                                                            \
+  					if (*__lastptr >= ' ' && *__lastptr <= '~') {                                         \
+  						OB_PRINT_FUNC("%c",*__lastptr);                                                     \
+  					} else {                                                                              \
+  						OB_PRINT_FUNC(".");                                                                 \
+  					}                                                                                     \
+  					__lastptr ++;                                                                         \
+  				}                                                                                       \
+  			}                                                                                         \
+  			/*OB_PRINT_FUNC("\n[%p]0x%08x:",__pptr,__curi); */                                        \
+        OB_PRINT_FUNC("\n0x%08x:",__curi);                                                        \
+  		}                                                                                           \
+  		OB_PRINT_FUNC(" 0x%02x", *__pptr);                                                          \
   	}                                                                                             \
   	if (__lastptr != __pptr) {                                                                    \
-  		while((__curi % 16) != 0) {                                                               \
-  			OB_PRINT_FUNC( "     ");                                                              \
-  			__curi ++;                                                                            \
-  		}                                                                                         \
-  		OB_PRINT_FUNC("    ");                                                                    \
-  		while(__lastptr != __pptr) {                                                              \
-  			if (*__lastptr >= ' ' && *__lastptr <= '~') {                                         \
-  				OB_PRINT_FUNC("%c",*__lastptr);                                                   \
-  			} else {                                                                              \
-  				OB_PRINT_FUNC(".");                                                               \
-  			}                                                                                     \
-  			__lastptr ++;                                                                         \
-  		}                                                                                         \
-  		OB_PRINT_FUNC("\n");                                                                      \
+  		while((__curi % 16) != 0) {                                                                 \
+  			OB_PRINT_FUNC( "     ");                                                                  \
+  			__curi ++;                                                                                \
+  		}                                                                                           \
+  		OB_PRINT_FUNC("    ");                                                                      \
+  		while(__lastptr != __pptr) {                                                                \
+  			if (*__lastptr >= ' ' && *__lastptr <= '~') {                                             \
+  				OB_PRINT_FUNC("%c",*__lastptr);                                                         \
+  			} else {                                                                                  \
+  				OB_PRINT_FUNC(".");                                                                     \
+  			}                                                                                         \
+  			__lastptr ++;                                                                             \
+  		}                                                                                           \
+  		OB_PRINT_FUNC("\n");                                                                        \
   	}                                                                                             \
   }while(0)
 #else
