@@ -109,19 +109,19 @@ class ChkVal(COBFileBase):
             idx += 1
         return llval
 
-    def __format_sarr_struct(self,objname,odict,o,f,name,size,tabs,lastone=False):
+
+    def __format_sarr_struct(self,odict,name,size,tabs,lastone,*path):
         rets = ''
-        sarr = get_odict_value(odict,CHKVAL_RANDOM_VALUE,objname,o,f,name)
+        sarr = get_odict_value(odict,*path)
         if sarr is None:
             sarr = get_random_bytes(size)
-            odict = set_odict_value(odict,sarr, CHKVAL_RANDOM_VALUE,objname,o,f,name)
-        rets += format_debug_line('%s'%(name), tabs + 1, 3)
+            odict = set_odict_value(odict,sarr,*path)
+        rets += format_debug_line('%s'%(name),tabs + 1, 3)
         if lastone:
-            rets += format_line('{%s}'%(format_bytes_c(sarr)), tabs+1)
+            rets += format_line('{%s}'%(format_bytes_c(sarr)), tabs + 1)
         else:
             rets += format_line('{%s},'%(format_bytes_c(sarr)), tabs + 1)
-        return rets,odict
-
+        return rets, odict
 
 
     def __format_check_value_single(self,objname,o,odict,f,tabs,lastone):
@@ -138,7 +138,7 @@ class ChkVal(COBFileBase):
         rets += format_line('(signed long long) OB_LL_VALUE(0x%x),'%(llval), tabs+1)
 
 
-        curs , odict = self.__format_sarr_struct(objname,odict,o,f,CHKVAL_STRUCT_NAMEXOR1,CHKVAL_STRUCT_NAMEXOR1_SIZE,tabs,False)
+        curs , odict = self.__format_sarr_struct(odict,CHKVAL_STRUCT_NAMEXOR1,CHKVAL_STRUCT_NAMEXOR1_SIZE,tabs,False,CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_NAMEXOR1)
         rets += curs
 
         sarr1 = get_odict_value(odict,CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_NAMEXOR1)
@@ -172,16 +172,16 @@ class ChkVal(COBFileBase):
         rets += format_debug_line(' %s value'%(CHKVAL_STRUCT_SIZE),tabs+1,3)
         rets += format_line('(unsigned long long) OB_LL_VALUE(0x%x),'%(llval), tabs + 1)
 
-        curs , odict = self.__format_sarr_struct(objname,odict,o,f,CHKVAL_STRUCT_CRC32VAL,CHKVAL_STRUCT_CRC32VAL_SIZE,tabs,False)
+        curs , odict = self.__format_sarr_struct(odict,CHKVAL_STRUCT_CRC32VAL,CHKVAL_STRUCT_CRC32VAL_SIZE,tabs,False,CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_CRC32VAL)
         rets += curs
 
-        curs , odict = self.__format_sarr_struct(objname,odict,o,f,CHKVAL_STRUCT_MD5VAL,CHKVAL_STRUCT_MD5VAL_SIZE,tabs,False)
+        curs , odict = self.__format_sarr_struct(odict,CHKVAL_STRUCT_MD5VAL,CHKVAL_STRUCT_MD5VAL_SIZE,tabs,False,CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_MD5VAL)
         rets += curs
 
-        curs , odict = self.__format_sarr_struct(objname,odict,o,f,CHKVAL_STRUCT_SHA256VAL,CHKVAL_STRUCT_SHA256VAL_SIZE,tabs,False)
+        curs , odict = self.__format_sarr_struct(odict,CHKVAL_STRUCT_SHA256VAL,CHKVAL_STRUCT_SHA256VAL_SIZE,tabs,False,CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_SHA256VAL)
         rets += curs
 
-        curs , odict = self.__format_sarr_struct(objname,odict,o,f,CHKVAL_STRUCT_SHA3VAL,CHKVAL_STRUCT_SHA3VAL_SIZE,tabs,True)
+        curs , odict = self.__format_sarr_struct(odict,CHKVAL_STRUCT_SHA3VAL,CHKVAL_STRUCT_SHA3VAL_SIZE,tabs,False,CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_SHA3VAL)
         rets += curs
 
         if lastone:
