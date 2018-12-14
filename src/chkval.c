@@ -34,6 +34,9 @@ int OB_RANDOM_NAME(check_value_func)(unsigned char* ptr,unsigned int size,m_calc
 
 	for (i=0;i<calcsize;i++) {
 		if (calcvalue[i] != pchkval[i]) {
+			// OB_BUFFER_FMT(ptr,size,"checked buffer[%p][0x%x:%d]", ptr,size,size);
+			// OB_BUFFER_FMT(calcvalue,calcsize,"calculate[%p]", calcvalue);
+			// OB_BUFFER_FMT(pchkval, calcsize,"pchkval[%p]", pchkval);
 			return -3;
 		}
 	}
@@ -172,6 +175,13 @@ int OB_RANDOM_NAME(check_chkval_value)(m_check_fail_func_t failfunc)
 	}
 	ret = OB_RANDOM_NAME(check_value_func)(pcurptr, size,OB_RANDOM_NAME(md5_calc),pchkval->m_md5val,MD5_VALUE_SIZE);
 	if (ret < 0) {
+		// pcurptr = OB_RANDOM_NAME(func_checks_start);
+		// pendptr = OB_RANDOM_NAME(value_checks_total_end);
+		// size = (unsigned int)(pendptr - pcurptr);		
+		// OB_BUFFER_FMT(pcurptr,size,"total buffer[%p]", pcurptr);
+		// pcurptr = pchkval->m_md5val;
+		// size =(unsigned int) (pcurptr - (unsigned char*)pchkval);
+		// OB_BUFFER_FMT(pchkval, sizeof(*pchkval),"pchkval [%p] offset m_md5val [0x%x:%d] [%p]", pchkval, size,size, pcurptr);
 		FAIL_RET(CHECK_VALUE_CHKVAL_MD5_FAILED," ");
 	}
 	ret = OB_RANDOM_NAME(check_value_func)(pcurptr, size,OB_RANDOM_NAME(sha256_calc),pchkval->m_sha256val,SHA256_VALUE_SIZE);

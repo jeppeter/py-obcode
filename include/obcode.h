@@ -41,7 +41,8 @@ extern "C" {
 #if defined(_MSC_VER)
 #include <Windows.h>
 #define  OB_TYPEOF(x)                       decltype(x)
-#define  OB_LL_VALUE(x)                     x##UL
+#define  OB_LL_VALUE(x)                     x##L
+#define  OB_ULL_VALUE(x)                    x##UL
 
 #ifdef _M_X64
 typedef UINT64                              OB_ADDR;
@@ -53,7 +54,8 @@ typedef UINT32                              OB_ADDR;
 #define  OB_TYPEOF(x)                       typeof(x)
 
 #define OB_ADDR                             unsigned long int
-#define OB_LL_VALUE(x)                      x##ULL
+#define OB_LL_VALUE(x)                      x##LL
+#define OB_ULL_VALUE(x)                     x##ULL
 #else
 #error "not supported compilers"
 #endif

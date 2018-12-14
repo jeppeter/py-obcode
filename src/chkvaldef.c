@@ -2,14 +2,14 @@
 
 typedef struct __chkvalue 
 {
-	signed long long m_offset;
-	unsigned char m_namexor1[64];
-	unsigned char m_namexor2[64];
-	unsigned long long m_size;
-	unsigned char m_crc32val[8];
-	unsigned char m_md5val[16];
-	unsigned char m_sha256val[32];
-	unsigned char m_sha3val[64];
+    signed long long m_offset;
+    unsigned long long m_size;
+    unsigned char m_crc32val[16];
+    unsigned char m_sha256val[32];
+    unsigned char m_namexor1[64];
+    unsigned char m_namexor2[64];
+    unsigned char m_sha3val[64];
+    unsigned char m_md5val[32];
 } chkvalue_t,*pchkvalue_t;
 
 #define  CHECK_VALUE_CRC32_FAILED             -1
