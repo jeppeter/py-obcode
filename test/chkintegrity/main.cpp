@@ -30,6 +30,7 @@ int md5_handler(int argc, char* argv[], pextargs_state_t parsestate, void* popt)
 int sha256_handler(int argc, char* argv[], pextargs_state_t parsestate, void* popt);
 int sha3_handler(int argc, char* argv[], pextargs_state_t parsestate, void* popt);
 int check_handler(int argc, char* argv[], pextargs_state_t parsestate, void* popt);
+int aes_handler(int argc, char* argv[], pextargs_state_t parsestate, void* popt);
 
 #ifdef __cplusplus
 };
@@ -43,6 +44,7 @@ int check_handler(int argc, char* argv[], pextargs_state_t parsestate, void* pop
 #include <md5calc.c>
 #include <sha256calc.c>
 #include <sha3calc.c>
+#include <aes.c>
 
 
 unsigned char OB_RANDOM_NAME(func_checks_start)[] = { 0x92,0x62};
@@ -362,6 +364,15 @@ int check_handler(int argc, char* argv[], pextargs_state_t parsestate, void* pop
     fprintf(stdout, "md5_handler %p\n", md5_handler);
     fprintf(stdout, "sha256_handler %p\n", sha256_handler);
 
+    return 0;
+}
+
+int aes_handler(int argc, char* argv[], pextargs_state_t parsestate, void* popt)
+{
+    argc =argc ;
+    argv = argv;
+    parsestate = parsestate;
+    popt = popt;
     return 0;
 }
 

@@ -16,5 +16,8 @@
     },
     "check<check_handler>" : {
         "$" : 0
+    },
+    "aes<aes_handler>##keyfile inputfile ...##" : {
+        "$" : 0
     }
 }

@@ -71,7 +71,7 @@ int OB_RANDOM_NAME(check_crc32_value)(m_check_fail_func_t failfunc)
 		pchk = &(OB_RANDOM_NAME(func_checks)[i]);
 		pcurptr = OB_RANDOM_NAME(get_func_address)((unsigned char*)OB_RANDOM_NAME(check_value_func));
 		pcurptr += pchk->m_offset;
-		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, pchk->m_size, OB_RANDOM_NAME(crc32_calc),pchk->m_crc32val,CRC32_VALUE_SIZE);
+		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, (unsigned int)(pchk->m_size), OB_RANDOM_NAME(crc32_calc),pchk->m_crc32val,CRC32_VALUE_SIZE);
 		if (ret < 0) {
 			OB_RANDOM_NAME(format_name)(fname,sizeof(pchk->m_namexor1), pchk->m_namexor1,pchk->m_namexor2);
 			FAIL_RET(CHECK_VALUE_CRC32_FAILED,fname);
@@ -96,7 +96,7 @@ int OB_RANDOM_NAME(check_md5_value)(m_check_fail_func_t failfunc)
 		pchk = &(OB_RANDOM_NAME(func_checks)[i]);
 		pcurptr = OB_RANDOM_NAME(get_func_address)((unsigned char*)OB_RANDOM_NAME(check_value_func));
 		pcurptr += pchk->m_offset;
-		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, pchk->m_size, OB_RANDOM_NAME(md5_calc),pchk->m_md5val,MD5_VALUE_SIZE);
+		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, (unsigned int)pchk->m_size, OB_RANDOM_NAME(md5_calc),pchk->m_md5val,MD5_VALUE_SIZE);
 		if (ret < 0) {
 			OB_RANDOM_NAME(format_name)(fname,sizeof(pchk->m_namexor1), pchk->m_namexor1,pchk->m_namexor2);
 			FAIL_RET(CHECK_VALUE_MD5_FAILED,fname);
@@ -122,7 +122,7 @@ int OB_RANDOM_NAME(check_sha256_value)(m_check_fail_func_t failfunc)
 		pchk = &(OB_RANDOM_NAME(func_checks)[i]);
 		pcurptr = OB_RANDOM_NAME(get_func_address)((unsigned char*)OB_RANDOM_NAME(check_value_func));
 		pcurptr += pchk->m_offset;
-		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, pchk->m_size, OB_RANDOM_NAME(sha256_calc),pchk->m_sha256val,SHA256_VALUE_SIZE);
+		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, (unsigned int)pchk->m_size, OB_RANDOM_NAME(sha256_calc),pchk->m_sha256val,SHA256_VALUE_SIZE);
 		if (ret < 0) {
 			OB_RANDOM_NAME(format_name)(fname,sizeof(pchk->m_namexor1), pchk->m_namexor1,pchk->m_namexor2);
 			FAIL_RET(CHECK_VALUE_SHA256_FAILED,fname);
@@ -148,7 +148,7 @@ int OB_RANDOM_NAME(check_sha3_value)(m_check_fail_func_t failfunc)
 		pchk = &(OB_RANDOM_NAME(func_checks)[i]);
 		pcurptr = OB_RANDOM_NAME(get_func_address)((unsigned char*)OB_RANDOM_NAME(check_value_func));
 		pcurptr += pchk->m_offset;
-		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, pchk->m_size, OB_RANDOM_NAME(sha3_calc),pchk->m_sha3val,SHA3_VALUE_SIZE);
+		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, (unsigned int)pchk->m_size, OB_RANDOM_NAME(sha3_calc),pchk->m_sha3val,SHA3_VALUE_SIZE);
 		if (ret < 0) {
 			OB_RANDOM_NAME(format_name)(fname,sizeof(pchk->m_namexor1), pchk->m_namexor1,pchk->m_namexor2);
 			FAIL_RET(CHECK_VALUE_SHA3_FAILED,fname);
