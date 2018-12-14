@@ -450,7 +450,7 @@ class ChkVal(COBFileBase):
 
 def chkval_dump_object_function_one(args,objparser,odict,o,f,win32mode=False):
     logging.info('o[%s]f[%s]'%(o,f))
-    fodict = get_odict_value(odict,CHKVAL_RAW_DATA,o,f)
+    fodict = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RAW_DATA,o,f)
     realf = f
     if win32mode:
         realf = '_%s'%(f)
@@ -470,7 +470,7 @@ def chkval_dump_object_function_one(args,objparser,odict,o,f,win32mode=False):
             idx += 1
         fodict = set_odict_value(fodict,alldata[foff:(foff + fsize)],CHKVAL_RDATA_DATAS)
         fodict = set_odict_value(fodict,relocs,CHKVAL_RDATA_RELOCS)
-        odict = set_odict_value(odict,fodict, CHKVAL_RAW_DATA,o,f)
+        odict = set_odict_value(odict,fodict,CHKVAL_KEY, CHKVAL_RAW_DATA,o,f)
     return odict
 
 def chkval_dump_check_functions(args,objtype,odict,outname,win32mode=False):
@@ -553,8 +553,8 @@ def get_sha3_value(rawdata):
 
 def chkval_fill_inc_obj_func(args,objparser,exefile,alldata,odict,incfile,objfile,funcname,basefuncoff,win32mode):
     # now get the k value
-    datas = get_odict_value(odict,CHKVAL_RAW_DATA,objfile,funcname,CHKVAL_RDATA_DATAS)
-    relocs = get_odict_value(odict,CHKVAL_RAW_DATA,objfile,funcname,CHKVAL_RDATA_RELOCS)
+    datas = get_odict_value(odict, CHKVAL_KEY,CHKVAL_RAW_DATA,objfile,funcname,CHKVAL_RDATA_DATAS)
+    relocs = get_odict_value(odict, CHKVAL_KEY,CHKVAL_RAW_DATA,objfile,funcname,CHKVAL_RDATA_RELOCS)
     assert(datas is not None)
     assert(relocs is not None)
     # now to get function store data
@@ -611,7 +611,7 @@ def chkval_fill_inc_obj_func(args,objparser,exefile,alldata,odict,incfile,objfil
     return odict,alldata
 
 def chkval_fill_inc_obj(args,objparser,exefile,alldata,odict,incfile,objfile,basefuncoff,win32mode):
-    funcs = get_odict_value(odict,CHKVAL_RAW_DATA,objfile)
+    funcs = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RAW_DATA,objfile)
     if funcs is not None:
         for f in funcs.keys():
             odict,alldata = chkval_fill_inc_obj_func(args,objparser,exefile,alldata,odict,incfile,objfile,f,basefuncoff,win32mode)
@@ -677,7 +677,7 @@ def chkval_fill_inc(args,objparser,exefile,alldata,odict,incfile,win32mode):
     logging.info('basefuncname [%s]'%(basefuncname))
     assert(basefuncname is not None)
     assert(incodict is not None)
-    basefuncodict = get_odict_value(odict,CHKVAL_RAW_DATA,incfile,basefuncname)
+    basefuncodict = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RAW_DATA,incfile,basefuncname)
     assert(basefuncodict is not None)
     basefuncdata = get_odict_value(basefuncodict,CHKVAL_RDATA_DATAS)
     basefuncrelocs = get_odict_value(basefuncodict, CHKVAL_RDATA_RELOCS)
