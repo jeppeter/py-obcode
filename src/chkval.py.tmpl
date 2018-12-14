@@ -124,24 +124,29 @@ class ChkVal(COBFileBase):
         return rets, odict
 
 
-    def __format_check_value_single(self,objname,o,odict,f,tabs,lastone):
+    def __format_check_value_single(self,odict,f,tabs,lastone,*path):
         rets = ''
-
         rets += format_line('{', tabs)
         rets += format_debug_line('function %s'%(f), tabs + 1, 3)
-        sarr = get_odict_value(odict,CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_OFFSET)
+        curpath = []
+        curpath.extend(path)
+        curpath.append(CHKVAL_STRUCT_OFFSET)
+        sarr = get_odict_value(odict,*curpath)
         if sarr is None:
             sarr = get_random_bytes(CHKVAL_STRUCT_OFFSET_SIZE)
-            odict = set_odict_value(odict,sarr, CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_OFFSET)
+            odict = set_odict_value(odict,sarr, *curpath)
         rets += format_debug_line('%s'%(CHKVAL_STRUCT_OFFSET),tabs+1,3)
         llval = self.__get_ll_value(sarr)
         rets += format_line('(signed long long) OB_LL_VALUE(0x%x),'%(llval), tabs+1)
 
 
-        curs , odict = self.__format_sarr_struct(odict,CHKVAL_STRUCT_NAMEXOR1,CHKVAL_STRUCT_NAMEXOR1_SIZE,tabs,False,CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_NAMEXOR1)
+        curpath = []
+        curpath.extend(path)
+        curpath.append(CHKVAL_STRUCT_NAMEXOR1)
+        curs , odict = self.__format_sarr_struct(odict,CHKVAL_STRUCT_NAMEXOR1,CHKVAL_STRUCT_NAMEXOR1_SIZE,tabs,False,*curpath)
         rets += curs
 
-        sarr1 = get_odict_value(odict,CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_NAMEXOR1)
+        sarr1 = get_odict_value(odict,*curpath)
         assert(sarr1 is not None)
         namexors = string_to_ints(f)
         if len(namexors) >= CHKVAL_STRUCT_NAMEXOR1_SIZE:
@@ -160,28 +165,47 @@ class ChkVal(COBFileBase):
         while idx < CHKVAL_STRUCT_NAMEXOR1_SIZE:
             sarr2[idx] = namexors[idx] ^ sarr1[idx]
             idx += 1
-        odict = set_odict_value(odict,sarr2, CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_NAMEXOR2)
+        curpath = []
+        curpath.extend(path)
+        curpath.append(CHKVAL_STRUCT_NAMEXOR2)
+        odict = set_odict_value(odict,sarr2, *curpath)
         rets += format_debug_line('%s'%(CHKVAL_STRUCT_NAMEXOR2), tabs+ 1, 3)
         rets += format_line('{%s},'%(format_bytes_c(sarr2)), tabs+1)
 
-        sarr = get_odict_value(odict,CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_SIZE)
+        curpath = []
+        curpath.extend(path)
+        curpath.append(CHKVAL_STRUCT_SIZE)
+        sarr = get_odict_value(odict,*curpath)
         if sarr is None:
             sarr = get_random_bytes(CHKVAL_STRUCT_SIZE_SIZE)
-            odict = set_odict_value(odict,sarr,CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_SIZE)
+            odict = set_odict_value(odict,sarr,*curpath)
         llval = self.__get_ll_value(sarr)
         rets += format_debug_line(' %s value'%(CHKVAL_STRUCT_SIZE),tabs+1,3)
         rets += format_line('(unsigned long long) OB_LL_VALUE(0x%x),'%(llval), tabs + 1)
 
-        curs , odict = self.__format_sarr_struct(odict,CHKVAL_STRUCT_CRC32VAL,CHKVAL_STRUCT_CRC32VAL_SIZE,tabs,False,CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_CRC32VAL)
+
+        curpath = []
+        curpath.extend(path)
+        curpath.append(CHKVAL_STRUCT_CRC32VAL)
+        curs , odict = self.__format_sarr_struct(odict,CHKVAL_STRUCT_CRC32VAL,CHKVAL_STRUCT_CRC32VAL_SIZE,tabs,False,*curpath)
         rets += curs
 
-        curs , odict = self.__format_sarr_struct(odict,CHKVAL_STRUCT_MD5VAL,CHKVAL_STRUCT_MD5VAL_SIZE,tabs,False,CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_MD5VAL)
+        curpath = []
+        curpath.extend(path)
+        curpath.append(CHKVAL_STRUCT_MD5VAL)
+        curs , odict = self.__format_sarr_struct(odict,CHKVAL_STRUCT_MD5VAL,CHKVAL_STRUCT_MD5VAL_SIZE,tabs,False,*curpath)
         rets += curs
 
-        curs , odict = self.__format_sarr_struct(odict,CHKVAL_STRUCT_SHA256VAL,CHKVAL_STRUCT_SHA256VAL_SIZE,tabs,False,CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_SHA256VAL)
+        curpath = []
+        curpath.extend(path)
+        curpath.append(CHKVAL_STRUCT_SHA256VAL)
+        curs , odict = self.__format_sarr_struct(odict,CHKVAL_STRUCT_SHA256VAL,CHKVAL_STRUCT_SHA256VAL_SIZE,tabs,False,*curpath)
         rets += curs
 
-        curs , odict = self.__format_sarr_struct(odict,CHKVAL_STRUCT_SHA3VAL,CHKVAL_STRUCT_SHA3VAL_SIZE,tabs,False,CHKVAL_RANDOM_VALUE,objname,o,f,CHKVAL_STRUCT_SHA3VAL)
+        curpath = []
+        curpath.extend(path)
+        curpath.append(CHKVAL_STRUCT_SHA3VAL)
+        curs , odict = self.__format_sarr_struct(odict,CHKVAL_STRUCT_SHA3VAL,CHKVAL_STRUCT_SHA3VAL_SIZE,tabs,True,*curpath)
         rets += curs
 
         if lastone:
@@ -189,7 +213,6 @@ class ChkVal(COBFileBase):
         else:
             rets += format_line('},', tabs)
         return rets,odict
-
 
 
     def __format_check_value(self,odict,objname,o,chkfuncs=[]):
@@ -202,7 +225,7 @@ class ChkVal(COBFileBase):
 
         idx = 0
         for f in chkfuncs:
-            curs , odict = self.__format_check_value_single(objname,o,odict,f,1,False)
+            curs, odict = self.__format_check_value_single(odict,f,1,False,CHKVAL_RANDOM_VALUE,objname,o,f)
 
         curs ,odict = self.__format_char_array(objname,odict,CHKVAL_FUNC_CHECKS_END,16)
 
@@ -211,7 +234,7 @@ class ChkVal(COBFileBase):
             valuechecks = get_random_name(20)
             odict = set_odict_value(odict,valuechecks, RANDOM_VARIABLE,objname,CHKVAL_VALUE_CHECKS)
 
-        curs , odict = self.__format_check_value_single(objname,CHKVAL_VALUE_CHECKS,odict,CHKVAL_VALUE_CHECKS_DICT,1,True)
+        curs , odict = self.__format_check_value_single(odict,CHKVAL_VALUE_CHECKS_DICT,1,True,CHKVAL_RANDOM_VALUE,objname,CHKVAL_VALUE_CHECKS,CHKVAL_VALUE_CHECKS_DICT)
         return odict
 
     def format_c_code_pre(self,odict,objname):
@@ -256,10 +279,11 @@ class ChkVal(COBFileBase):
         for o in jdict.keys():
             chkfuncs = jdict[o]
             for f in chkfuncs:
-                curs , odict = self.__format_check_value_single(objname,o,odict,f,1,False)
+                curs, odict = self.__format_check_value_single(odict,f,1,False,CHKVAL_RANDOM_VALUE,objname,o,f)
                 rets += curs
 
-        curs,odict = self.__format_check_value_single(objname,CHKVAL_STRUCT_LASTONE,odict,'',1,True)
+        #curs,odict = self.__format_check_value_single(odict,'',1,True,CHKVAL_RANDOM_VALUE,objname,CHKVAL_STRUCT_LASTONE,'')
+        curs,odict = self.__format_check_value_single(odict,CHKVAL_STRUCT_LASTONE,1,True,CHKVAL_OBJ_DATA,objname,CHKVAL_STRUCT_LASTONE)
         rets += curs
         rets += format_line('};', 0)
 
@@ -272,7 +296,7 @@ class ChkVal(COBFileBase):
         valuechecks = get_odict_value(odict,RANDOM_VARIABLE,objname,CHKVAL_VALUE_CHECKS)
         assert(valuechecks is not None)
         rets += format_line('chkvalue_t %s[1] = {'%(valuechecks),0)
-        curs , odict = self.__format_check_value_single(objname,CHKVAL_VALUE_CHECKS,odict,CHKVAL_VALUE_CHECKS_DICT,1,True)
+        curs , odict = self.__format_check_value_single(odict,CHKVAL_VALUE_CHECKS_DICT,1,True,CHKVAL_RANDOM_VALUE,objname,CHKVAL_VALUE_CHECKS,CHKVAL_VALUE_CHECKS_DICT)
         rets += curs
         rets += format_line('};',0)
 
@@ -620,17 +644,18 @@ def chkval_fill_inc_obj(args,objparser,exefile,alldata,odict,incfile,objfile,bas
     return odict,alldata
 
 def chkval_fill_inc_lastitem(args,objparser,exefile,alldata,odict,incfile,win32mode):
-    funcodict = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RANDOM_VALUE,incfile,CHKVAL_STRUCT_LASTONE.upper(),'')
+    #funcodict = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RANDOM_VALUE,incfile,CHKVAL_STRUCT_LASTONE.upper(),'')
+    funcodict = get_odict_value(odict,CHKVAL_KEY,CHKVAL_OBJ_DATA,incfile,CHKVAL_STRUCT_LASTONE)
     assert(funcodict is not None)
     sizedata = get_odict_value(funcodict,CHKVAL_STRUCT_SIZE)
     relocs = zero_bytes(len(sizedata))
-    realf = CHKVAL_STRUCT_LASTONE.upper()
+    realf = CHKVAL_STRUCT_LASTONE
     if win32mode:
         realf = '_%s'%(realf)
     foff = objparser.get_text_file_off(sizedata,relocs,realf)
     assert(foff >= 0)
     zerobytes = format_bytes('0',CHKVAL_STRUCT_SIZE_SIZE,False)
-    alldata = set_data_bytes(alldata,zerobytes,foff,'[%s].[%s]'%(incfile,CHKVAL_STRUCT_LASTONE.upper()))
+    alldata = set_data_bytes(alldata,zerobytes,foff,'[%s].[%s]'%(incfile,CHKVAL_STRUCT_LASTONE))
     return odict,alldata
 
 def get_value_check_offset(valuechecksdict,objparser,name):

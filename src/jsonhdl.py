@@ -64,6 +64,7 @@ CHKVAL_RAW_DATA='rawdata'
 CHKVAL_RDATA_DATAS='data'
 CHKVAL_RDATA_RELOCS='relocs'
 
+CHKVAL_OBJ_DATA='objdata'
 
 def set_odict_value(odict,val,*path):
     curodict = odict

@@ -67,45 +67,54 @@ def read_odict(infile=None):
 	fin = None
 	return Utf8Encode(odict).get_val()
 
-def write_odict(odict,outfile=None):
-	fout = sys.stdout
-	if outfile is not None:
-		fout = open(outfile,'w')
-	json.dump(odict,fout)
-	if fout != sys.stdout:
-		fout.close()
-	fout = None
-	return
+def set_odict_value(odict,val,*path):
+    curodict = odict
+    idx = 0
+    while idx < len(path) - 1:
+        if path[idx] not in curodict.keys():
+            curodict[path[idx]] = dict()
+        curodict = curodict[path[idx]]
+        idx += 1
+    curodict[path[idx]] = val
+    return odict    
 
-def set_odict(odict,val,*path):
-	curodict = odict
-	idx = 0
-	while idx < len(path) - 1:
-		if path[idx] not in curodict.keys():
-			curodict[path[idx]] = dict()
-		curodict = curodict[path[idx]]
-		idx += 1
-	curodict[path[idx]] = val
-	return odict
+def get_odict_value(odict,*path):
+    idx = 0
+    curodict = odict
+    while idx < (len(path) - 1):
+        if path[idx] not in curodict.keys():
+            return None
+        curodict = curodict[path[idx]]
+        idx += 1
+    if path[idx] not in curodict.keys():
+        return None
+    return curodict[path[idx]]
 
-def get_odict(odict,*path):
-	idx = 0
-	curodict = odict
-	while idx < (len(path) - 1):
-		if path[idx] not in curodict.keys():
-			return None
-		curodict = curodict[path[idx]]
-		idx += 1
-	logging.info('%s [%d][%s]'%(curodict,idx, path[idx]))
-	if path[idx] not in curodict.keys():
-		return None
-	return curodict[path[idx]]
+def append_odict_value(odict,val,*path):
+    nval = get_odict_value(odict,*path)
+    if nval is None:
+        nval = []
+    nval.append(val)
+    return set_odict_value(odict,nval,*path)
 
 def create_odict_is_none(odict,*path):
-    if get_odict(odict,*path) is None:
+    if get_odict_value(odict,*path) is None:
         val = dict()
-        return set_odict(odict,val, *path)
+        return set_odict_value(odict,val, *path)
     return odict
+
+def write_json(odict,outfile=None):
+    if outfile is None:
+        fout = sys.stderr
+    else:
+        fout = open(outfile,'w+b')
+    write_file_direct(json.dumps(odict,sort_keys=True,indent=4), fout)
+    if fout != sys.stderr:
+        fout.close()
+    else:
+        fout.flush()
+    fout = None
+    return
 
 
 def set_handler(args,parser):
@@ -113,7 +122,7 @@ def set_handler(args,parser):
 	if len(args.subnargs) < 2:
 		raise Exception('need at least val path...')
 	odict = read_odict(args.input)
-	odict = set_odict(odict,args.subnargs[0],*args.subnargs[1:])
+	odict = set_odict_value(odict,args.subnargs[0],*args.subnargs[1:])
 	write_odict(odict,args.output)
 	return
 
@@ -121,7 +130,7 @@ def set_handler(args,parser):
 def get_handler(args,parser):
 	set_logging_level(args)
 	odict = read_odict(args.input)
-	val = get_odict(odict,*args.subnargs)
+	val = get_odict_value(odict,*args.subnargs)
 	sys.stdout.write('%s value [%s]\n'%(args.subnargs,val))
 	return
 
@@ -132,6 +141,14 @@ def create_handler(args,parser):
 	sys.stdout.write('%s\n'%(odict))
 	return
 
+def moreadd_handler(args,parser):
+	set_logging_level(args)
+	if len(args.subnargs) < 3:
+		raise Exception('need value lastpath path...')
+	odict = read_odict(args.input)
+	odict = set_odict_value(odict,args.subnargs[0] ,*args.subnargs[2:], args.subnargs[1])
+	sys.stdout.write('%s\n'%(odict))
+	return
 
 
 def main():
@@ -147,6 +164,9 @@ def main():
 			"$" : "+"
 		},
 		"create<create_handler>##path ... create dict when not exists##" : {
+			"$" : "+"
+		},
+		"moreadd<moreadd_handler>##value lastpath path... set more value on value##" : {
 			"$" : "+"
 		}
 	}
