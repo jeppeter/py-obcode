@@ -34,9 +34,6 @@ int OB_RANDOM_NAME(check_value_func)(unsigned char* ptr,unsigned int size,m_calc
 
 	for (i=0;i<calcsize;i++) {
 		if (calcvalue[i] != pchkval[i]) {
-			// OB_BUFFER_FMT(ptr,size,"checked buffer[%p][0x%x:%d]", ptr,size,size);
-			// OB_BUFFER_FMT(calcvalue,calcsize,"calculate[%p]", calcvalue);
-			// OB_BUFFER_FMT(pchkval, calcsize,"pchkval[%p]", pchkval);
 			return -3;
 		}
 	}
@@ -55,6 +52,24 @@ unsigned char* OB_RANDOM_NAME(get_func_address)(unsigned char* ptr)
 	return pretval;
 }
 
+int OB_RANDOM_NAME(aes_decrypt_block)(pchkvalue_t pinput,pchkvalue_t poutput,unsigned char* pkey,unsigned char* piv)
+{
+	unsigned int schedkeys[64];
+	unsigned char* plastiv;
+	if ((sizeof(*pinput) % AES_BLOCK_SIZE) != 0) {
+		return -1;
+	}
+	OB_RANDOM_NAME(aes_key_setup)(pkey,schedkeys,256);
+	OB_RANDOM_NAME(aes_decrypt_cbc)((unsigned char*)pinput,sizeof(*pinput),(unsigned char*)poutput,schedkeys,256,piv);
+	/*to copy the initial vector for next use*/
+	plastiv = (unsigned char*) pinput;
+	plastiv += sizeof(*pinput);
+	plastiv -= AES_BLOCK_SIZE;
+
+	aes_memcpy(piv,plastiv,AES_BLOCK_SIZE);
+	return (int)sizeof(*poutput);
+}
+
 int OB_RANDOM_NAME(check_crc32_value)(m_check_fail_func_t failfunc)
 {
 	unsigned char* pcurptr;
@@ -62,13 +77,27 @@ int OB_RANDOM_NAME(check_crc32_value)(m_check_fail_func_t failfunc)
 	pchkvalue_t pchk;
 	int ret;
 	unsigned char fname[sizeof(pchk->m_namexor1)];
+	chkvalue_t outval;
+	unsigned char ivval[AES_BLOCK_SIZE];
+	unsigned char* pkeyptr;
 	ret = OB_RANDOM_NAME(check_chkval_value)(failfunc);
 	if (ret < 0) {
 		return ret;
 	}
 
-	for (i=0;OB_RANDOM_NAME(func_checks)[i].m_size != 0;i++) {
+	aes_memcpy(ivval,&(OB_RANDOM_NAME(func_checks_end)[0]),AES_BLOCK_SIZE);
+	pkeyptr = (unsigned char*)&(OB_RANDOM_NAME(func_checks_start)[0]);
+
+	for (i=0;;i++){
 		pchk = &(OB_RANDOM_NAME(func_checks)[i]);
+		ret = OB_RANDOM_NAME(aes_decrypt_block)(pchk,&outval,pkeyptr,ivval);
+		if (ret < 0) {
+			FAIL_RET(CHECK_VALUE_CHKVAL_AES_FAILED,failfunc);
+		}
+		pchk = &outval;
+		if (pchk->m_size == 0) {
+			break;
+		}
 		pcurptr = OB_RANDOM_NAME(get_func_address)((unsigned char*)OB_RANDOM_NAME(check_value_func));
 		pcurptr += pchk->m_offset;
 		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, (unsigned int)(pchk->m_size), OB_RANDOM_NAME(crc32_calc),pchk->m_crc32val,CRC32_VALUE_SIZE);
@@ -87,13 +116,27 @@ int OB_RANDOM_NAME(check_md5_value)(m_check_fail_func_t failfunc)
 	pchkvalue_t pchk;
 	int ret;
 	unsigned char fname[sizeof(pchk->m_namexor1)];
+	chkvalue_t outval;
+	unsigned char ivval[AES_BLOCK_SIZE];
+	unsigned char* pkeyptr;
 	ret = OB_RANDOM_NAME(check_chkval_value)(failfunc);
 	if (ret < 0) {
 		return ret;
 	}
 
-	for (i=0;OB_RANDOM_NAME(func_checks)[i].m_size != 0;i++) {
+	aes_memcpy(ivval,&(OB_RANDOM_NAME(func_checks_end)[0]),AES_BLOCK_SIZE);
+	pkeyptr = (unsigned char*)&(OB_RANDOM_NAME(func_checks_start)[0]);
+
+	for (i=0;;i++){
 		pchk = &(OB_RANDOM_NAME(func_checks)[i]);
+		ret = OB_RANDOM_NAME(aes_decrypt_block)(pchk,&outval,pkeyptr,ivval);
+		if (ret < 0) {
+			FAIL_RET(CHECK_VALUE_CHKVAL_AES_FAILED,failfunc);
+		}
+		pchk = &outval;
+		if (pchk->m_size == 0) {
+			break;
+		}
 		pcurptr = OB_RANDOM_NAME(get_func_address)((unsigned char*)OB_RANDOM_NAME(check_value_func));
 		pcurptr += pchk->m_offset;
 		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, (unsigned int)pchk->m_size, OB_RANDOM_NAME(md5_calc),pchk->m_md5val,MD5_VALUE_SIZE);
@@ -112,14 +155,27 @@ int OB_RANDOM_NAME(check_sha256_value)(m_check_fail_func_t failfunc)
 	pchkvalue_t pchk;
 	int ret;
 	unsigned char fname[sizeof(pchk->m_namexor1)];
-
+	chkvalue_t outval;
+	unsigned char ivval[AES_BLOCK_SIZE];
+	unsigned char* pkeyptr;
 	ret = OB_RANDOM_NAME(check_chkval_value)(failfunc);
 	if (ret < 0) {
 		return ret;
 	}
 
-	for (i=0;OB_RANDOM_NAME(func_checks)[i].m_size != 0;i++) {
+	aes_memcpy(ivval,&(OB_RANDOM_NAME(func_checks_end)[0]),AES_BLOCK_SIZE);
+	pkeyptr = (unsigned char*)&(OB_RANDOM_NAME(func_checks_start)[0]);
+
+	for (i=0;;i++){
 		pchk = &(OB_RANDOM_NAME(func_checks)[i]);
+		ret = OB_RANDOM_NAME(aes_decrypt_block)(pchk,&outval,pkeyptr,ivval);
+		if (ret < 0) {
+			FAIL_RET(CHECK_VALUE_CHKVAL_AES_FAILED,failfunc);
+		}
+		pchk = &outval;
+		if (pchk->m_size == 0) {
+			break;
+		}
 		pcurptr = OB_RANDOM_NAME(get_func_address)((unsigned char*)OB_RANDOM_NAME(check_value_func));
 		pcurptr += pchk->m_offset;
 		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, (unsigned int)pchk->m_size, OB_RANDOM_NAME(sha256_calc),pchk->m_sha256val,SHA256_VALUE_SIZE);
@@ -138,14 +194,27 @@ int OB_RANDOM_NAME(check_sha3_value)(m_check_fail_func_t failfunc)
 	pchkvalue_t pchk;
 	int ret;
 	unsigned char fname[sizeof(pchk->m_namexor1)];
-
+	chkvalue_t outval;
+	unsigned char ivval[AES_BLOCK_SIZE];
+	unsigned char* pkeyptr;
 	ret = OB_RANDOM_NAME(check_chkval_value)(failfunc);
 	if (ret < 0) {
 		return ret;
 	}
 
-	for (i=0;OB_RANDOM_NAME(func_checks)[i].m_size != 0;i++) {
+	aes_memcpy(ivval,&(OB_RANDOM_NAME(func_checks_end)[0]),AES_BLOCK_SIZE);
+	pkeyptr = (unsigned char*)&(OB_RANDOM_NAME(func_checks_start)[0]);
+
+	for (i=0;;i++){
 		pchk = &(OB_RANDOM_NAME(func_checks)[i]);
+		ret = OB_RANDOM_NAME(aes_decrypt_block)(pchk,&outval,pkeyptr,ivval);
+		if (ret < 0) {
+			FAIL_RET(CHECK_VALUE_CHKVAL_AES_FAILED,failfunc);
+		}
+		pchk = &outval;
+		if (pchk->m_size == 0) {
+			break;
+		}
 		pcurptr = OB_RANDOM_NAME(get_func_address)((unsigned char*)OB_RANDOM_NAME(check_value_func));
 		pcurptr += pchk->m_offset;
 		ret = OB_RANDOM_NAME(check_value_func)(pcurptr, (unsigned int)pchk->m_size, OB_RANDOM_NAME(sha3_calc),pchk->m_sha3val,SHA3_VALUE_SIZE);
@@ -175,13 +244,6 @@ int OB_RANDOM_NAME(check_chkval_value)(m_check_fail_func_t failfunc)
 	}
 	ret = OB_RANDOM_NAME(check_value_func)(pcurptr, size,OB_RANDOM_NAME(md5_calc),pchkval->m_md5val,MD5_VALUE_SIZE);
 	if (ret < 0) {
-		// pcurptr = OB_RANDOM_NAME(func_checks_start);
-		// pendptr = OB_RANDOM_NAME(value_checks_total_end);
-		// size = (unsigned int)(pendptr - pcurptr);		
-		// OB_BUFFER_FMT(pcurptr,size,"total buffer[%p]", pcurptr);
-		// pcurptr = pchkval->m_md5val;
-		// size =(unsigned int) (pcurptr - (unsigned char*)pchkval);
-		// OB_BUFFER_FMT(pchkval, sizeof(*pchkval),"pchkval [%p] offset m_md5val [0x%x:%d] [%p]", pchkval, size,size, pcurptr);
 		FAIL_RET(CHECK_VALUE_CHKVAL_MD5_FAILED," ");
 	}
 	ret = OB_RANDOM_NAME(check_value_func)(pcurptr, size,OB_RANDOM_NAME(sha256_calc),pchkval->m_sha256val,SHA256_VALUE_SIZE);

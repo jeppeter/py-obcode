@@ -54,13 +54,13 @@ rm -f $script_dir/src/chkval.py
 
 $PYTHON -m pip install --quiet -r $script_dir/pip.txt
 
-$PYTHON -m insertcode -p '%C_CODE_CRC32CALC%' -i $script_dir/src/chkval.py.tmpl pythonc $script_dir/src/crc32calc.c | \
+$PYTHON -m insertcode -p '%C_CODE_CRC32CALC%' -i $script_dir/src/obchkvallib.py.tmpl pythonc $script_dir/src/crc32calc.c | \
 $PYTHON -m insertcode -p '%C_CODE_MD5CALC%' pythonc $script_dir/src/md5calc.c | \
 $PYTHON -m insertcode -p '%C_CODE_SHA256CALC%' pythonc $script_dir/src/sha256calc.c | \
 $PYTHON -m insertcode -p '%C_CODE_SHA3CALC%' pythonc $script_dir/src/sha3calc.c | \
 $PYTHON -m insertcode -p '%C_CODE_AES%' pythonc $script_dir/src/aes.c | \
 $PYTHON -m insertcode -p '%C_CODE_CHKVALDEF%' pythonc $script_dir/src/chkvaldef.c | \
-$PYTHON -m insertcode -p '%C_CODE_CHKVAL%' -o $script_dir/src/chkval.py pythonc $script_dir/src/chkval.c
+$PYTHON -m insertcode -p '%C_CODE_CHKVAL%' -o $script_dir/src/obchkvallib.py pythonc $script_dir/src/chkval.c
 
 $PYTHON $script_dir/src/obcode_debug.py --release
 wait_file_until "$script_dir/obcode.py.touched"

@@ -12,4 +12,4 @@ rmdir /Q /S %script_dir%src\__pycache__ 2>NUL
 del /Q /F %script_dir%obcode.mak 2>NUL
 del /Q /F %script_dir%obmak.py 2>NUL
 del /Q /F %script_dir%obpatch.py 2>NUL
-del /Q /F %script_dir%src\chkval.py 2>NUL
+del /Q /F %script_dir%src\obchkvallib.py 2>NUL

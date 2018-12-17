@@ -8,6 +8,8 @@ import random
 import zlib
 import sha3
 import hashlib
+from Crypto.Cipher import AES
+
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from strparser import *
@@ -217,7 +219,7 @@ class ChkVal(COBFileBase):
 
     def __format_check_value(self,odict,objname,o,chkfuncs=[]):
         odict = create_odict_is_none(odict,CHKVAL_RANDOM_VALUE,objname,o)
-        curs , odict = self.__format_char_array(odict,16,objname,CHKVAL_FUNC_CHECKS_START)
+        curs , odict = self.__format_char_array(odict,CHKVAL_AES_KEY_SIZE,objname,CHKVAL_FUNC_CHECKS_START)
         funcchecks = get_odict_value(odict,RANDOM_VARIABLE,objname,CHKVAL_FUNC_CHECKS)
         if funcchecks is None:
             funcchecks = get_random_name(20)
@@ -227,7 +229,7 @@ class ChkVal(COBFileBase):
         for f in chkfuncs:
             curs, odict = self.__format_check_value_single(odict,f,1,False,CHKVAL_RANDOM_VALUE,objname,o,f)
 
-        curs ,odict = self.__format_char_array(odict,16,objname,CHKVAL_FUNC_CHECKS_END)
+        curs ,odict = self.__format_char_array(odict,CHKVAL_AES_IV_SIZE,objname,CHKVAL_FUNC_CHECKS_END)
 
         valuechecks = get_odict_value(odict,RANDOM_VARIABLE,objname,CHKVAL_VALUE_CHECKS)
         if valuechecks is None:
@@ -270,7 +272,7 @@ class ChkVal(COBFileBase):
 
     def __write_check_value(self,odict,objname,jdict):
         rets = ''
-        curs , odict = self.__format_char_array(odict,16,objname,CHKVAL_FUNC_CHECKS_START)
+        curs , odict = self.__format_char_array(odict,CHKVAL_AES_KEY_SIZE,objname,CHKVAL_FUNC_CHECKS_START)
         rets += curs
 
         func_checks = get_odict_value(odict,RANDOM_VARIABLE,objname,CHKVAL_FUNC_CHECKS)
@@ -291,7 +293,7 @@ class ChkVal(COBFileBase):
         rets += format_line('};', 0)
 
         rets += format_line('', 0)
-        curs ,odict = self.__format_char_array(odict,16,objname,CHKVAL_FUNC_CHECKS_END)
+        curs ,odict = self.__format_char_array(odict,CHKVAL_AES_IV_SIZE,objname,CHKVAL_FUNC_CHECKS_END)
         rets += curs
 
         rets += format_line('', 0)
@@ -597,7 +599,7 @@ def format_calc_bytes(alldata,val,storesize,calcsize,pos,bigendian=False,note=''
     b = format_bytes(val,calcsize,bigendian)
     assert(calcsize <= storesize)
     if storesize > calcsize:
-        b.extend(zero_bytes(storesize - calcsize))
+        b.extend(get_random_bytes(storesize - calcsize))
     return set_data_bytes(alldata,b,pos,note)
 
 
@@ -712,6 +714,24 @@ def __inc_filled_self(args,objparser,exefile,alldata,odict,incfile,win32mode):
     assert(totalendoff >= endoff)
 
     realdata = alldata[startoff:endoff]
+    # now we should give the encryption
+    assert((len(realdata) % CHKVAL_AES_IV_SIZE) == 0)
+    # now we should get the aes key
+    aesdata = realdata[CHKVAL_AES_KEY_SIZE:]
+    aesbytes = ints_to_bytes(aesdata)
+    ivdata = alldata[endoff:(endoff+CHKVAL_AES_IV_SIZE)]
+    logging.info('ivdata\n%s'%(format_bytes_debug(ivdata)))
+    ivbytes = ints_to_bytes(ivdata)
+    keydata = realdata[:CHKVAL_AES_KEY_SIZE]
+    logging.info('keydata\n%s'%(format_bytes_debug(keydata)))
+    keybytes = ints_to_bytes(keydata)
+    aes = AES.new(keybytes,AES.MODE_CBC,ivbytes)
+    encbytes = aes.encrypt(aesbytes)
+    assert(len(encbytes) == len(aesbytes))
+    aesdata = bytes_to_ints(encbytes)
+    realdata = set_data_bytes(realdata,aesdata,CHKVAL_AES_KEY_SIZE,'[%s]encrypted data'%(incfile))
+    alldata = set_data_bytes(alldata, realdata, startoff)
+
     crc32val = get_crc32_value(realdata)
     md5val = get_md5_value(realdata)
     sha256val = get_sha256_value(realdata)
@@ -735,6 +755,8 @@ def __inc_filled_self(args,objparser,exefile,alldata,odict,incfile,win32mode):
     startfuncpos = get_function_name_offset(objparser,odict,incfile,CHKVAL_START_FUNCTION_NAME)
     endfuncpos = get_function_name_offset(objparser,odict,incfile,CHKVAL_END_FUNCTION_NAME)
     realdata = alldata[startfuncpos:endfuncpos]
+
+
     sha3val = get_sha3_value(realdata)
     sha3bytes = format_bytes(sha3val,CHKVAL_STRUCT_SHA3VAL_SIZE,True)
     alldata = set_data_bytes(alldata,sha3bytes,namexor1pos)

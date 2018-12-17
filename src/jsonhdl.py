@@ -73,6 +73,9 @@ CHKVAL_RDATA_RELOCS='relocs'
 
 CHKVAL_OBJ_DATA='objdata'
 
+CHKVAL_AES_KEY_SIZE=32
+CHKVAL_AES_IV_SIZE=16
+
 def set_odict_value(odict,val,*path):
     curodict = odict
     idx = 0

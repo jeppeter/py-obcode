@@ -22,6 +22,7 @@ typedef struct __chkvalue
 #define  CHECK_VALUE_CHKVAL_SHA3_FAILED       -9
 #define  CHECK_VALUE_CHKVAL_FUNCS_FAILED      -10
 #define  CHECK_VALUE_CHKVAL_DATAS_FAILED      -11
+#define  CHECK_VALUE_CHKVAL_AES_FAILED        -12
 
 #define  CRC32_VALUE_SIZE                     4
 #define  MD5_VALUE_SIZE                       16

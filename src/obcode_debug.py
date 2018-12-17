@@ -26,7 +26,7 @@ from cobfile import *
 from obmaklib import *
 from extract_ob import *
 from obpatchlib import *
-from chkval import *
+from obchkvallib import *
 ##importdebugend
 
 REPLACE_IMPORT_LIB=1
@@ -45,7 +45,7 @@ REPLACE_COB_FILE=1
 REPLACE_OBMAK_LIB=1
 REPLACE_EXTRACT_OB=1
 REPLACE_OB_PATCH_LIB=1
-REPLACE_CHKVAL=1
+REPLACE_OB_CHKVAL_LIB=1
 
 
 def handle_c_file(sfile,dfile,args,param):
@@ -498,7 +498,7 @@ def debug_release():
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'objparser.py')),r'REPLACE_OBJ_PARSER=1')
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'obpatchlib.py')),r'REPLACE_OB_PATCH_LIB=1')
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'cobfilebase.py')),r'REPLACE_COB_FILE_BASE=1')
-    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'chkval.py')),r'REPLACE_CHKVAL=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'obchkvallib.py')),r'REPLACE_OB_CHKVAL_LIB=1')
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'jsonhdl.py')),r'REPLACE_JSON_HDL=1')
 
     if len(sys.argv) > 2:
