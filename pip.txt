@@ -1,0 +1,9 @@
+extargsparse>=1.1.6
+disttools>=0.1.6
+cmdpack>=0.4.6
+insertcode>=0.1.2
+coff>=0.0.6
+pyelftools>=0.25
+pefile>=2018.8.8
+pysha3>=1.0.2
+pycrypto>=2.6.1
