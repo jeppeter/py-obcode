@@ -906,4 +906,53 @@ def chkvalfillelf_handler(args,parser):
     write_json(odict,args.dump)
     sys.exit(0)
     return
+
+def chkvalfillforge_handler(args,parser):
+    set_logging_level(args)
+    sys.exit(0)
+    return
+
+
+def chkvaldumpfuncsforge_handler(args,parser):
+    set_logging_level(args)
+    sys.exit(0)
+    return
+
+def chkvalheaderforge_handler(args,parser):
+    set_logging_level(args)
+    jdict, args = get_jdict(args)
+    guardval = '__%s__'%(get_random_name(random.randint(10,30)))
+    rets =  ''
+    rets += format_line('#ifndef %s'%(guardval),0)
+    rets += format_line('#define %s'%(guardval),0)
+    rets += format_line('',0)
+    rets += format_line('#endif /*%s*/'%(guardval),0)
+
+    if args.output is None:
+        write_file_direct(rets,sys.stdout)
+    else:
+        write_file(rets,args.output)
+    sys.exit(0)
+    return
+
+def fmtchkvalforge_handler(args,parser):
+    set_logging_level(args)
+    jdict, args = get_jdict(args)
+    # output file ok
+    rets =  ''
+    if args.output is None:
+        write_file_direct(rets,sys.stdout)
+    else:
+        write_file(rets,args.output)
+    sys.exit(0)
+    return
+
+def replchkvalforge_handler(args,parser):
+    set_logging_level(args)
+    jdict, args = get_jdict(args)
+    rets = read_file(args.input)
+    write_file(rets,args.output)
+    sys.exit(0)
+    return
+
 ##extractcode_end

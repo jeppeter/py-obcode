@@ -65,7 +65,23 @@ def main():
         },
         "chkvalfillelf<chkvalfillelf_handler>##objfile ... to filled real data into the structure##" : {
             "$" : "+"
-        }
+        },
+        "chkvalfillforge<chkvalfillforge_handler>##objfile ... to forge filled real data##" : {
+            "$" : "+"
+        },
+        "chkvaldumpfuncsforge<chkvaldumpfuncsforge_handler>##objfile ... to get the byte information for handler forge##" : {
+            "$" : "+"
+        },
+        "chkvalheaderforge<chkvalheaderforge_handler>##objfile ... to format chkval header file##" : {
+            "$" : "+"
+        },
+        "fmtchkvalforge<fmtchkvalforge_handler>##objfile;func1,func2 ... to format chkval file forge##" : {
+            "$" : "+"
+        },
+        "replchkvalforge<replchkvalforge_handler>##objfile ... to replace chkval into new header##" : {
+            "$" : "+"
+        } 
+
     }
     '''
     d = dict()
