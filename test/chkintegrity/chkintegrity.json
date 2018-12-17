@@ -17,7 +17,17 @@
     "check<check_handler>" : {
         "$" : 0
     },
-    "aes<aes_handler>##keyfile inputfile ...##" : {
-        "$" : 0
+    "aesenc<aesenc_handler>##keyfile inputfile ...##" : {
+        "$" : "+"
+    },
+    "aesdec<aesdec_handler>##keyfile inputfile ...##" : {
+        "$" : "+"
+    },
+    "aesenccbc<aesenccbc_handler>##keyfile ivfile inputfile ...##" : {
+        "$" : "+"
+    },
+    "aesdeccbc<aesdeccbc_handler>##keyfile ivfile inputfile ...##" : {
+        "$" : "+"
     }
+
 }
