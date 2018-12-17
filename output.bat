@@ -36,7 +36,7 @@ call :check_file %script_dir%obmak.py.touched
 %PYTHON% %script_dir%src\obpatch_debug.py --release
 call :check_file %script_dir%obpatch.py.touched
 
-%PYTHON% -m insertcode -p %%OBMAK_CODE%% -i  %script_dir%src\obcode.mak.tmpl   bz2base64mak %script_dir%obmak.py  | %PYTHON% -m insertcode -p %%OBPATCH_CODE%% -o %script_dir%obcode.mak bz2base64mak %script_dir%obpatch.py
+%PYTHON% -m insertcode -p %%OBMAK_CODE%% -i  %script_dir%src\obcode.mak.tmpl   bz2base64mak %script_dir%obmak.py  | %PYTHON% -m insertcode -p %%OBCHKVAL_CODE%% bz2base64mak %script_dir%obchkval.py | %PYTHON% -m insertcode -p %%OBPATCH_CODE%% -o %script_dir%obcode.mak bz2base64mak %script_dir%obpatch.py
 
 if not errorlevel 0 (
 	echo "can not insert code" >&2

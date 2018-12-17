@@ -80,5 +80,62 @@ endef
 
 endif
 
+
+ifeq (${OB_CHKVAL},)
+
+
+define  OB_CHKVAL_REPLS
+${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} replchkvalforge $(1)
+endif
+
+define OB_CHKVAL_FILL_FUNCS_ELF
+${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} chkvalfillforge $(1)
+endif
+
+
+define OB_CHKVAL_FMT_CHKVAL
+${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} fmtchkvalforge $(1)
+endif
+
+define OB_CHKVAL_FMT_HEADER
+${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} chkvalheaderforge $(1)
+endif
+
+
+define OB_CHKVAL_DUMP_FUNCS_ELF
+${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} chkvaldumpfuncsforge $(1)
+endif
+
+# else ${OB_CHKVAL}
+
+else
+
+define  OB_CHKVAL_REPLS
+${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} replchkval $(1)
+endif
+
+
+
+define OB_CHKVAL_FMT_HEADER
+${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} chkvalheader $(1)
+endif
+
+define OB_CHKVAL_FMT_CHKVAL
+${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} fmtchkval $(1)
+endif
+
+define OB_CHKVAL_FILL_FUNCS_ELF
+${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} chkvalfillelf $(1)
+endif
+
+
+define OB_CHKVAL_DUMP_FUNCS_ELF
+${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} chkvaldumpfuncself $(1)
+endif
+
+
+#endof ${OB_CHKVAL}
+endif
+
 # __OBCODE_MAK__
 endif 
