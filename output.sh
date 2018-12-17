@@ -65,6 +65,8 @@ if [ $? -ne 0 ]
 	exit 4
 fi
 
+$PYTHON $script_dir/src/obchkval_debug.py --release
+wait_file_until "$script_dir/obchkval.py.touched"
 $PYTHON $script_dir/src/obcode_debug.py --release
 wait_file_until "$script_dir/obcode.py.touched"
 $PYTHON $script_dir/src/obmak_debug.py --release

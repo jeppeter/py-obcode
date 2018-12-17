@@ -4,6 +4,14 @@
 import sys
 import os
 import logging
+import re
+
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+from strparser import *
+from elfparser import *
+from coffparser import *
+from peparser import *
+
 
 ##extractcode_start
 FORMAT_FUNC_NAME_KEY='funcname'
@@ -124,4 +132,97 @@ def write_json(odict,outfile=None):
         fout.flush()
     fout = None
     return
+
+def get_jdict(args):
+    jdict = dict()
+    win32 = False
+    includes = []
+    includefiles = []
+    for a in args.subnargs:
+        if a.startswith('includefiles;'):
+            sarr = re.split(';',a)
+            if len(sarr) > 1 and len(sarr[1]) > 0:
+                sarr = re.split(',', sarr[1])
+                if args.includefiles is None:
+                    args.includefiles = []
+                args.includefiles.extend(sarr)
+        elif a.startswith('includes;'):
+            sarr = re.split(';',a)
+            if len(sarr) > 1 and len(sarr[1]) > 0:
+                sarr = re.split(',', sarr[1])
+                if args.includes is None:
+                    args.includes = []
+                args.includes.extend(sarr)
+        elif a.startswith('win32;'):
+            args.win32 = True
+        elif a.startswith('verbose;'):
+            sarr = re.split(';',a)
+            if len(sarr) > 1 and len(sarr[1]) > 0:
+                args.verbose = int(sarr[1])
+        elif a.startswith('output;'):
+            sarr = re.split(';',a)
+            if len(sarr) > 1 and len(sarr[1]) > 0:
+                args.output = sarr[1]
+        elif a.startswith('dump;'):
+            sarr = re.split(';',a)
+            if len(sarr) > 1 and len(sarr[1]) > 0:
+                args.dump = sarr[1]
+        elif a.startswith('unpatchfunc;'):
+            sarr = re.split(';',a)
+            if len(sarr) > 1 and len(sarr[1]) > 0:
+                args.unpatchfunc = sarr[1]
+        elif a.startswith('objfile;'):
+            sarr = re.split(';',a)
+            if len(sarr) > 1 and len(sarr[1]) > 0:
+                args.objfile = sarr[1]
+        else:
+            sarr = re.split(';',a)
+            if len(sarr) < 2:
+                jdict[sarr[0]] = []
+                continue
+            carr = re.split(',',sarr[1])
+            jdict[sarr[0]] = carr
+    return jdict , args
+
+def get_odict(args,force):
+    if args.dump is None or (not os.path.exists(args.dump) and not force):
+        odict = dict()
+    else:
+        with open(args.dump) as fin:
+            odict = json.load(fin)
+            odict = Utf8Encode(odict).get_val()
+    return odict
+
+def format_includes(args):
+    rets = ''
+    rets += format_line('#include <obcode.h>',0)
+    for s in args.includes:
+        rets += format_line('#include <%s>'%(s),0)
+
+    for s in args.includefiles:
+        rets += format_line('#include "%s"'%(s),0)
+    return rets
+
+def write_patch_output(args,rets,odict):
+    if args.output is None:
+        fout = sys.stdout
+    else:
+        fout = open(args.output,'w+b')
+
+    write_file_direct(rets,fout)
+    if fout != sys.stdout:
+        fout.close()
+    else:
+        fout.flush()
+    fout = None
+
+    write_json(odict,args.dump)
+    return
+
+def call_object_parser(clsname,f):
+    m = __import__(__name__)
+    cls_ = getattr(m,clsname)
+    if cls_ is None:
+        raise Exception('cannot find [%s]'%(clsname))
+    return cls_(f)
 ##extractcode_end

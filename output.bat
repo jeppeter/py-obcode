@@ -23,6 +23,9 @@ if not errorlevel 0 (
 	goto :fail
 )
 
+%PYTHON% %script_dir%src\obchkval_debug.py --release
+call :check_file %script_dir%obchkval.py.touched
+
 
 %PYTHON% %script_dir%src\obcode_debug.py --release
 call :check_file %script_dir%obcode.py.touched

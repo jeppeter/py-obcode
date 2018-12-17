@@ -62,6 +62,8 @@ $PYTHON -m insertcode -p '%C_CODE_AES%' pythonc $script_dir/src/aes.c | \
 $PYTHON -m insertcode -p '%C_CODE_CHKVALDEF%' pythonc $script_dir/src/chkvaldef.c | \
 $PYTHON -m insertcode -p '%C_CODE_CHKVAL%' -o $script_dir/src/obchkvallib.py pythonc $script_dir/src/chkval.c
 
+$PYTHON $script_dir/src/obchkval_debug.py --release
+wait_file_until "$script_dir/obchkval.py.touched"
 $PYTHON $script_dir/src/obcode_debug.py --release
 wait_file_until "$script_dir/obcode.py.touched"
 $PYTHON $script_dir/src/obmak_debug.py --release

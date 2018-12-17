@@ -15,3 +15,4 @@ rm -f $script_dir/obmak.py.touched
 rm -f $script_dir/obpatch.py
 rm -f $script_dir/obpatch.py.touched
 rm -f $script_dir/src/obchkvallib.py
+rm -f $script_dir/obchkval.py
