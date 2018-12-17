@@ -23,6 +23,7 @@ C_CODE_SHA256CALC='''%C_CODE_SHA256CALC%'''
 C_CODE_SHA3CALC='''%C_CODE_SHA3CALC%'''
 C_CODE_CHKVALDEF='''%C_CODE_CHKVALDEF%'''
 C_CODE_CHKVAL='''%C_CODE_CHKVAL%'''
+C_CODE_AES='''%C_CODE_AES%'''
 
 
 class ChkVal(COBFileBase):
@@ -253,6 +254,9 @@ class ChkVal(COBFileBase):
         curs , odict = self.__format_multi_lines(C_CODE_SHA256CALC,objname,odict)
         rets += curs
         curs , odict = self.__format_multi_lines(C_CODE_SHA3CALC, objname,odict)
+        rets += curs
+
+        curs , odict = self.__format_multi_lines(C_CODE_AES,objname,odict)
         rets += curs
 
         return rets,odict
