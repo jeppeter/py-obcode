@@ -7,9 +7,10 @@ import os
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from objparser import *
 from jsonhdl import *
+from objparser import *
 from elfparser import *
 from coffparser import *
-
+from peparser import *
 ##extractcode_start
 
 

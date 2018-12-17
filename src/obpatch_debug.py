@@ -16,6 +16,7 @@ from extract_ob import *
 from objparser import *
 from elfparser import *
 from coffparser import *
+from peparser import *
 from obpatchlib import *
 ##importdebugend
 
@@ -30,6 +31,7 @@ REPLACE_EXTRACT_OB=1
 REPLACE_OBJ_PARSER=1
 REPLACE_ELF_PARSER=1
 REPLACE_COFF_PARSER=1
+REPLACE_PE_PARSER=1
 REPLACE_OB_PATCH_LIB=1
 
 
@@ -108,6 +110,7 @@ def debug_release():
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'elfparser.py')),r'REPLACE_ELF_PARSER=1')
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'coffparser.py')),r'REPLACE_COFF_PARSER=1')
     rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'jsonhdl.py')),r'REPLACE_JSON_HDL=1')
+    rlfiles.add_python_file(os.path.abspath(os.path.join(curdir,'peparser.py')),r'REPLACE_PE_PARSER=1')
     if len(sys.argv) > 2:
         for k in sys.argv[1:]:
             if not k.startswith('-'):
