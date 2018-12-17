@@ -31,7 +31,7 @@
 /**************************** VARIABLES *****************************/
 // This is the specified AES SBox. To look up a substitution value, put the first
 // nibble in the first index (row) and the second nibble in the second index (column).
-static const unsigned char aes_sbox[16][16] = {
+static const unsigned char OB_RANDOM_NAME(aes_sbox)[16][16] = {
 	{0x63,0x7C,0x77,0x7B,0xF2,0x6B,0x6F,0xC5,0x30,0x01,0x67,0x2B,0xFE,0xD7,0xAB,0x76},
 	{0xCA,0x82,0xC9,0x7D,0xFA,0x59,0x47,0xF0,0xAD,0xD4,0xA2,0xAF,0x9C,0xA4,0x72,0xC0},
 	{0xB7,0xFD,0x93,0x26,0x36,0x3F,0xF7,0xCC,0x34,0xA5,0xE5,0xF1,0x71,0xD8,0x31,0x15},
@@ -50,7 +50,7 @@ static const unsigned char aes_sbox[16][16] = {
 	{0x8C,0xA1,0x89,0x0D,0xBF,0xE6,0x42,0x68,0x41,0x99,0x2D,0x0F,0xB0,0x54,0xBB,0x16}
 };
 
-static const unsigned char aes_invsbox[16][16] = {
+static const unsigned char OB_RANDOM_NAME(aes_invsbox)[16][16] = {
 	{0x52,0x09,0x6A,0xD5,0x30,0x36,0xA5,0x38,0xBF,0x40,0xA3,0x9E,0x81,0xF3,0xD7,0xFB},
 	{0x7C,0xE3,0x39,0x82,0x9B,0x2F,0xFF,0x87,0x34,0x8E,0x43,0x44,0xC4,0xDE,0xE9,0xCB},
 	{0x54,0x7B,0x94,0x32,0xA6,0xC2,0x23,0x3D,0xEE,0x4C,0x95,0x0B,0x42,0xFA,0xC3,0x4E},
@@ -75,7 +75,7 @@ static const unsigned char aes_invsbox[16][16] = {
 // coefficients are used: 0x01, 0x02, 0x03, 0x09, 0x0b, 0x0d, 0x0e, but multiplication by
 // 1 is negligible leaving only 6 coefficients. Each column of the table is devoted to one
 // of these coefficients, in the ascending order of value, from values 0x00 to 0xFF.
-static const unsigned char gf_mul[256][6] = {
+static const unsigned char OB_RANDOM_NAME(gf_mul)[256][6] = {
 	{0x00,0x00,0x00,0x00,0x00,0x00},{0x02,0x03,0x09,0x0b,0x0d,0x0e},
 	{0x04,0x06,0x12,0x16,0x1a,0x1c},{0x06,0x05,0x1b,0x1d,0x17,0x12},
 	{0x08,0x0c,0x24,0x2c,0x34,0x38},{0x0a,0x0f,0x2d,0x27,0x39,0x36},
@@ -206,12 +206,12 @@ static const unsigned char gf_mul[256][6] = {
 	{0xe7,0x19,0x4f,0xa8,0x9a,0x83},{0xe5,0x1a,0x46,0xa3,0x97,0x8d}
 };
 
-void aes_encrypt(const unsigned char in[], unsigned char out[], const unsigned int key[], int keysize);
-void aes_decrypt(const unsigned char in[], unsigned char out[], const unsigned int key[], int keysize);
+void OB_RANDOM_NAME(aes_encrypt)(const unsigned char in[], unsigned char out[], const unsigned int key[], int keysize);
+void OB_RANDOM_NAME(aes_decrypt)(const unsigned char in[], unsigned char out[], const unsigned int key[], int keysize);
 
 /*********************** FUNCTION DEFINITIONS ***********************/
 // XORs the in and out buffers, storing the result in out. Length is in bytes.
-void xor_buf(const unsigned char in[], unsigned char out[], size_t len)
+void OB_RANDOM_NAME(xor_buf)(const unsigned char in[], unsigned char out[], size_t len)
 {
 	size_t idx;
 
@@ -219,10 +219,21 @@ void xor_buf(const unsigned char in[], unsigned char out[], size_t len)
 		out[idx] ^= in[idx];
 }
 
+#define aes_memcpy(pdst, psrc, size)                                                              \
+do{                                                                                               \
+    unsigned char* __dst=(unsigned char*) (pdst);                                                 \
+    unsigned char* __src=(unsigned char*) (psrc);                                                 \
+    int __size=(int)(size);                                                                       \
+    int __i;                                                                                      \
+    for (__i=0;__i<__size;__i++) {                                                                \
+        __dst[__i] = __src[__i];                                                                  \
+    }                                                                                             \
+}while(0)
+
 /*******************
 * AES - CBC
 *******************/
-int aes_encrypt_cbc(const unsigned char in[], size_t in_len, unsigned char out[], const unsigned int key[], int keysize, const unsigned char iv[])
+int OB_RANDOM_NAME(aes_encrypt_cbc)(const unsigned char in[], size_t in_len, unsigned char out[], const unsigned int key[], int keysize, const unsigned char iv[])
 {
 	unsigned char buf_in[AES_BLOCK_SIZE], buf_out[AES_BLOCK_SIZE], iv_buf[AES_BLOCK_SIZE];
 	int blocks, idx;
@@ -232,20 +243,20 @@ int aes_encrypt_cbc(const unsigned char in[], size_t in_len, unsigned char out[]
 
 	blocks = (int)(in_len / AES_BLOCK_SIZE);
 
-	memcpy(iv_buf, iv, AES_BLOCK_SIZE);
+	aes_memcpy(iv_buf, iv, AES_BLOCK_SIZE);
 
 	for (idx = 0; idx < blocks; idx++) {
-		memcpy(buf_in, &in[idx * AES_BLOCK_SIZE], AES_BLOCK_SIZE);
-		xor_buf(iv_buf, buf_in, AES_BLOCK_SIZE);
-		aes_encrypt(buf_in, buf_out, key, keysize);
-		memcpy(&out[idx * AES_BLOCK_SIZE], buf_out, AES_BLOCK_SIZE);
-		memcpy(iv_buf, buf_out, AES_BLOCK_SIZE);
+		aes_memcpy(buf_in, &in[idx * AES_BLOCK_SIZE], AES_BLOCK_SIZE);
+		OB_RANDOM_NAME(xor_buf)(iv_buf, buf_in, AES_BLOCK_SIZE);
+		OB_RANDOM_NAME(aes_encrypt)(buf_in, buf_out, key, keysize);
+		aes_memcpy(&out[idx * AES_BLOCK_SIZE], buf_out, AES_BLOCK_SIZE);
+		aes_memcpy(iv_buf, buf_out, AES_BLOCK_SIZE);
 	}
 
 	return(TRUE);
 }
 
-int aes_encrypt_cbc_mac(const unsigned char in[], size_t in_len, unsigned char out[], const unsigned int key[], int keysize, const unsigned char iv[])
+int OB_RANDOM_NAME(aes_encrypt_cbc_mac)(const unsigned char in[], size_t in_len, unsigned char out[], const unsigned int key[], int keysize, const unsigned char iv[])
 {
 	unsigned char buf_in[AES_BLOCK_SIZE], buf_out[AES_BLOCK_SIZE], iv_buf[AES_BLOCK_SIZE];
 	int blocks, idx;
@@ -255,22 +266,22 @@ int aes_encrypt_cbc_mac(const unsigned char in[], size_t in_len, unsigned char o
 
 	blocks = (int)(in_len / AES_BLOCK_SIZE);
 
-	memcpy(iv_buf, iv, AES_BLOCK_SIZE);
+	aes_memcpy(iv_buf, iv, AES_BLOCK_SIZE);
 
 	for (idx = 0; idx < blocks; idx++) {
-		memcpy(buf_in, &in[idx * AES_BLOCK_SIZE], AES_BLOCK_SIZE);
-		xor_buf(iv_buf, buf_in, AES_BLOCK_SIZE);
-		aes_encrypt(buf_in, buf_out, key, keysize);
-		memcpy(iv_buf, buf_out, AES_BLOCK_SIZE);
+		aes_memcpy(buf_in, &in[idx * AES_BLOCK_SIZE], AES_BLOCK_SIZE);
+		OB_RANDOM_NAME(xor_buf)(iv_buf, buf_in, AES_BLOCK_SIZE);
+		OB_RANDOM_NAME(aes_encrypt)(buf_in, buf_out, key, keysize);
+		aes_memcpy(iv_buf, buf_out, AES_BLOCK_SIZE);
 		// Do not output all encrypted blocks.
 	}
 
-	memcpy(out, buf_out, AES_BLOCK_SIZE);   // Only output the last block.
+	aes_memcpy(out, buf_out, AES_BLOCK_SIZE);   // Only output the last block.
 
 	return(TRUE);
 }
 
-int aes_decrypt_cbc(const unsigned char in[], size_t in_len, unsigned char out[], const unsigned int key[], int keysize, const unsigned char iv[])
+int OB_RANDOM_NAME(aes_decrypt_cbc)(const unsigned char in[], size_t in_len, unsigned char out[], const unsigned int key[], int keysize, const unsigned char iv[])
 {
 	unsigned char buf_in[AES_BLOCK_SIZE], buf_out[AES_BLOCK_SIZE], iv_buf[AES_BLOCK_SIZE];
 	int blocks, idx;
@@ -280,64 +291,19 @@ int aes_decrypt_cbc(const unsigned char in[], size_t in_len, unsigned char out[]
 
 	blocks = (int)(in_len / AES_BLOCK_SIZE);
 
-	memcpy(iv_buf, iv, AES_BLOCK_SIZE);
+	aes_memcpy(iv_buf, iv, AES_BLOCK_SIZE);
 
 	for (idx = 0; idx < blocks; idx++) {
-		memcpy(buf_in, &in[idx * AES_BLOCK_SIZE], AES_BLOCK_SIZE);
-		aes_decrypt(buf_in, buf_out, key, keysize);
-		xor_buf(iv_buf, buf_out, AES_BLOCK_SIZE);
-		memcpy(&out[idx * AES_BLOCK_SIZE], buf_out, AES_BLOCK_SIZE);
-		memcpy(iv_buf, buf_in, AES_BLOCK_SIZE);
+		aes_memcpy(buf_in, &in[idx * AES_BLOCK_SIZE], AES_BLOCK_SIZE);
+		OB_RANDOM_NAME(aes_decrypt)(buf_in, buf_out, key, keysize);
+		OB_RANDOM_NAME(xor_buf)(iv_buf, buf_out, AES_BLOCK_SIZE);
+		aes_memcpy(&out[idx * AES_BLOCK_SIZE], buf_out, AES_BLOCK_SIZE);
+		aes_memcpy(iv_buf, buf_in, AES_BLOCK_SIZE);
 	}
 
 	return(TRUE);
 }
 
-/*******************
-* AES - CTR
-*******************/
-void increment_iv(unsigned char iv[], int counter_size)
-{
-	int idx;
-
-	// Use counter_size bytes at the end of the IV as the big-endian integer to increment.
-	for (idx = AES_BLOCK_SIZE - 1; idx >= AES_BLOCK_SIZE - counter_size; idx--) {
-		iv[idx]++;
-		if (iv[idx] != 0 || idx == AES_BLOCK_SIZE - counter_size)
-			break;
-	}
-}
-
-// Performs the encryption in-place, the input and output buffers may be the same.
-// Input may be an arbitrary length (in bytes).
-void aes_encrypt_ctr(const unsigned char in[], size_t in_len, unsigned char out[], const unsigned int key[], int keysize, const unsigned char iv[])
-{
-	size_t idx = 0, last_block_length;
-	unsigned char iv_buf[AES_BLOCK_SIZE], out_buf[AES_BLOCK_SIZE];
-
-	if (in != out)
-		memcpy(out, in, in_len);
-
-	memcpy(iv_buf, iv, AES_BLOCK_SIZE);
-	last_block_length = in_len - AES_BLOCK_SIZE;
-
-	if (in_len > AES_BLOCK_SIZE) {
-		for (idx = 0; idx < last_block_length; idx += AES_BLOCK_SIZE) {
-			aes_encrypt(iv_buf, out_buf, key, keysize);
-			xor_buf(out_buf, &out[idx], AES_BLOCK_SIZE);
-			increment_iv(iv_buf, AES_BLOCK_SIZE);
-		}
-	}
-
-	aes_encrypt(iv_buf, out_buf, key, keysize);
-	xor_buf(out_buf, &out[idx], in_len - idx);   // Use the Most Significant bytes.
-}
-
-void aes_decrypt_ctr(const unsigned char in[], size_t in_len, unsigned char out[], const unsigned int key[], int keysize, const unsigned char iv[])
-{
-	// CTR encryption is its own inverse function.
-	aes_encrypt_ctr(in, in_len, out, key, keysize, iv);
-}
 
 /*******************
 * AES
@@ -347,21 +313,21 @@ void aes_decrypt_ctr(const unsigned char in[], size_t in_len, unsigned char out[
 /////////////////
 
 // Substitutes a unsigned int using the AES S-Box.
-unsigned int SubWord(unsigned int word)
+unsigned int OB_RANDOM_NAME(SubWord)(unsigned int word)
 {
 	unsigned int result;
 
-	result = (unsigned int)((int)aes_sbox[(word >> 4) & 0x0000000F][word & 0x0000000F]);
-	result += (int)aes_sbox[(word >> 12) & 0x0000000F][(word >> 8) & 0x0000000F] << 8;
-	result += (int)aes_sbox[(word >> 20) & 0x0000000F][(word >> 16) & 0x0000000F] << 16;
-	result += (int)aes_sbox[(word >> 28) & 0x0000000F][(word >> 24) & 0x0000000F] << 24;
+	result = (unsigned int)((int)OB_RANDOM_NAME(aes_sbox)[(word >> 4) & 0x0000000F][word & 0x0000000F]);
+	result += (int)OB_RANDOM_NAME(aes_sbox)[(word >> 12) & 0x0000000F][(word >> 8) & 0x0000000F] << 8;
+	result += (int)OB_RANDOM_NAME(aes_sbox)[(word >> 20) & 0x0000000F][(word >> 16) & 0x0000000F] << 16;
+	result += (int)OB_RANDOM_NAME(aes_sbox)[(word >> 28) & 0x0000000F][(word >> 24) & 0x0000000F] << 24;
 	return(result);
 }
 
 // Performs the action of generating the keys that will be used in every round of
 // encryption. "key" is the user-supplied input key, "w" is the output key schedule,
 // "keysize" is the length in bits of "key", must be 128, 192, or 256.
-void aes_key_setup(const unsigned char key[], unsigned int w[], int keysize)
+void OB_RANDOM_NAME(aes_key_setup)(const unsigned char key[], unsigned int w[], int keysize)
 {
 	int Nb=4,Nr,Nk,idx;
 	unsigned int temp,Rcon[]={0x01000000,0x02000000,0x04000000,0x08000000,0x10000000,0x20000000,
@@ -383,9 +349,9 @@ void aes_key_setup(const unsigned char key[], unsigned int w[], int keysize)
 	for (idx = Nk; idx < Nb * (Nr+1); ++idx) {
 		temp = w[idx - 1];
 		if ((idx % Nk) == 0)
-			temp = SubWord(KE_ROTWORD(temp)) ^ Rcon[(idx-1)/Nk];
+			temp = OB_RANDOM_NAME(SubWord)(KE_ROTWORD(temp)) ^ Rcon[(idx-1)/Nk];
 		else if (Nk > 6 && (idx % Nk) == 4)
-			temp = SubWord(temp);
+			temp = OB_RANDOM_NAME(SubWord)(temp);
 		w[idx] = w[idx-Nk] ^ temp;
 	}
 }
@@ -396,9 +362,9 @@ void aes_key_setup(const unsigned char key[], unsigned int w[], int keysize)
 
 // Performs the AddRoundKey step. Each round has its own pre-generated 16-byte key in the
 // form of 4 integers (the "w" array). Each integer is XOR'd by one column of the state.
-// Also performs the job of InvAddRoundKey(); since the function is a simple XOR process,
+// Also performs the job of InvOB_RANDOM_NAME(AddRoundKey)(); since the function is a simple XOR process,
 // it is its own inverse.
-void AddRoundKey(unsigned char state[][4], const unsigned int w[])
+void OB_RANDOM_NAME(AddRoundKey)(unsigned char state[][4], const unsigned int w[])
 {
 	unsigned char subkey[4];
 
@@ -447,44 +413,44 @@ void AddRoundKey(unsigned char state[][4], const unsigned int w[])
 
 // Performs the SubBytes step. All bytes in the state are substituted with a
 // pre-calculated value from a lookup table.
-void SubBytes(unsigned char state[][4])
+void OB_RANDOM_NAME(SubBytes)(unsigned char state[][4])
 {
-	state[0][0] = aes_sbox[state[0][0] >> 4][state[0][0] & 0x0F];
-	state[0][1] = aes_sbox[state[0][1] >> 4][state[0][1] & 0x0F];
-	state[0][2] = aes_sbox[state[0][2] >> 4][state[0][2] & 0x0F];
-	state[0][3] = aes_sbox[state[0][3] >> 4][state[0][3] & 0x0F];
-	state[1][0] = aes_sbox[state[1][0] >> 4][state[1][0] & 0x0F];
-	state[1][1] = aes_sbox[state[1][1] >> 4][state[1][1] & 0x0F];
-	state[1][2] = aes_sbox[state[1][2] >> 4][state[1][2] & 0x0F];
-	state[1][3] = aes_sbox[state[1][3] >> 4][state[1][3] & 0x0F];
-	state[2][0] = aes_sbox[state[2][0] >> 4][state[2][0] & 0x0F];
-	state[2][1] = aes_sbox[state[2][1] >> 4][state[2][1] & 0x0F];
-	state[2][2] = aes_sbox[state[2][2] >> 4][state[2][2] & 0x0F];
-	state[2][3] = aes_sbox[state[2][3] >> 4][state[2][3] & 0x0F];
-	state[3][0] = aes_sbox[state[3][0] >> 4][state[3][0] & 0x0F];
-	state[3][1] = aes_sbox[state[3][1] >> 4][state[3][1] & 0x0F];
-	state[3][2] = aes_sbox[state[3][2] >> 4][state[3][2] & 0x0F];
-	state[3][3] = aes_sbox[state[3][3] >> 4][state[3][3] & 0x0F];
+	state[0][0] = OB_RANDOM_NAME(aes_sbox)[state[0][0] >> 4][state[0][0] & 0x0F];
+	state[0][1] = OB_RANDOM_NAME(aes_sbox)[state[0][1] >> 4][state[0][1] & 0x0F];
+	state[0][2] = OB_RANDOM_NAME(aes_sbox)[state[0][2] >> 4][state[0][2] & 0x0F];
+	state[0][3] = OB_RANDOM_NAME(aes_sbox)[state[0][3] >> 4][state[0][3] & 0x0F];
+	state[1][0] = OB_RANDOM_NAME(aes_sbox)[state[1][0] >> 4][state[1][0] & 0x0F];
+	state[1][1] = OB_RANDOM_NAME(aes_sbox)[state[1][1] >> 4][state[1][1] & 0x0F];
+	state[1][2] = OB_RANDOM_NAME(aes_sbox)[state[1][2] >> 4][state[1][2] & 0x0F];
+	state[1][3] = OB_RANDOM_NAME(aes_sbox)[state[1][3] >> 4][state[1][3] & 0x0F];
+	state[2][0] = OB_RANDOM_NAME(aes_sbox)[state[2][0] >> 4][state[2][0] & 0x0F];
+	state[2][1] = OB_RANDOM_NAME(aes_sbox)[state[2][1] >> 4][state[2][1] & 0x0F];
+	state[2][2] = OB_RANDOM_NAME(aes_sbox)[state[2][2] >> 4][state[2][2] & 0x0F];
+	state[2][3] = OB_RANDOM_NAME(aes_sbox)[state[2][3] >> 4][state[2][3] & 0x0F];
+	state[3][0] = OB_RANDOM_NAME(aes_sbox)[state[3][0] >> 4][state[3][0] & 0x0F];
+	state[3][1] = OB_RANDOM_NAME(aes_sbox)[state[3][1] >> 4][state[3][1] & 0x0F];
+	state[3][2] = OB_RANDOM_NAME(aes_sbox)[state[3][2] >> 4][state[3][2] & 0x0F];
+	state[3][3] = OB_RANDOM_NAME(aes_sbox)[state[3][3] >> 4][state[3][3] & 0x0F];
 }
 
-void InvSubBytes(unsigned char state[][4])
+void OB_RANDOM_NAME(InvSubBytes)(unsigned char state[][4])
 {
-	state[0][0] = aes_invsbox[state[0][0] >> 4][state[0][0] & 0x0F];
-	state[0][1] = aes_invsbox[state[0][1] >> 4][state[0][1] & 0x0F];
-	state[0][2] = aes_invsbox[state[0][2] >> 4][state[0][2] & 0x0F];
-	state[0][3] = aes_invsbox[state[0][3] >> 4][state[0][3] & 0x0F];
-	state[1][0] = aes_invsbox[state[1][0] >> 4][state[1][0] & 0x0F];
-	state[1][1] = aes_invsbox[state[1][1] >> 4][state[1][1] & 0x0F];
-	state[1][2] = aes_invsbox[state[1][2] >> 4][state[1][2] & 0x0F];
-	state[1][3] = aes_invsbox[state[1][3] >> 4][state[1][3] & 0x0F];
-	state[2][0] = aes_invsbox[state[2][0] >> 4][state[2][0] & 0x0F];
-	state[2][1] = aes_invsbox[state[2][1] >> 4][state[2][1] & 0x0F];
-	state[2][2] = aes_invsbox[state[2][2] >> 4][state[2][2] & 0x0F];
-	state[2][3] = aes_invsbox[state[2][3] >> 4][state[2][3] & 0x0F];
-	state[3][0] = aes_invsbox[state[3][0] >> 4][state[3][0] & 0x0F];
-	state[3][1] = aes_invsbox[state[3][1] >> 4][state[3][1] & 0x0F];
-	state[3][2] = aes_invsbox[state[3][2] >> 4][state[3][2] & 0x0F];
-	state[3][3] = aes_invsbox[state[3][3] >> 4][state[3][3] & 0x0F];
+	state[0][0] = OB_RANDOM_NAME(aes_invsbox)[state[0][0] >> 4][state[0][0] & 0x0F];
+	state[0][1] = OB_RANDOM_NAME(aes_invsbox)[state[0][1] >> 4][state[0][1] & 0x0F];
+	state[0][2] = OB_RANDOM_NAME(aes_invsbox)[state[0][2] >> 4][state[0][2] & 0x0F];
+	state[0][3] = OB_RANDOM_NAME(aes_invsbox)[state[0][3] >> 4][state[0][3] & 0x0F];
+	state[1][0] = OB_RANDOM_NAME(aes_invsbox)[state[1][0] >> 4][state[1][0] & 0x0F];
+	state[1][1] = OB_RANDOM_NAME(aes_invsbox)[state[1][1] >> 4][state[1][1] & 0x0F];
+	state[1][2] = OB_RANDOM_NAME(aes_invsbox)[state[1][2] >> 4][state[1][2] & 0x0F];
+	state[1][3] = OB_RANDOM_NAME(aes_invsbox)[state[1][3] >> 4][state[1][3] & 0x0F];
+	state[2][0] = OB_RANDOM_NAME(aes_invsbox)[state[2][0] >> 4][state[2][0] & 0x0F];
+	state[2][1] = OB_RANDOM_NAME(aes_invsbox)[state[2][1] >> 4][state[2][1] & 0x0F];
+	state[2][2] = OB_RANDOM_NAME(aes_invsbox)[state[2][2] >> 4][state[2][2] & 0x0F];
+	state[2][3] = OB_RANDOM_NAME(aes_invsbox)[state[2][3] >> 4][state[2][3] & 0x0F];
+	state[3][0] = OB_RANDOM_NAME(aes_invsbox)[state[3][0] >> 4][state[3][0] & 0x0F];
+	state[3][1] = OB_RANDOM_NAME(aes_invsbox)[state[3][1] >> 4][state[3][1] & 0x0F];
+	state[3][2] = OB_RANDOM_NAME(aes_invsbox)[state[3][2] >> 4][state[3][2] & 0x0F];
+	state[3][3] = OB_RANDOM_NAME(aes_invsbox)[state[3][3] >> 4][state[3][3] & 0x0F];
 }
 
 /////////////////
@@ -492,7 +458,7 @@ void InvSubBytes(unsigned char state[][4])
 /////////////////
 
 // Performs the ShiftRows step. All rows are shifted cylindrically to the left.
-void ShiftRows(unsigned char state[][4])
+void OB_RANDOM_NAME(ShiftRows)(unsigned char state[][4])
 {
 	int t;
 
@@ -518,7 +484,7 @@ void ShiftRows(unsigned char state[][4])
 }
 
 // All rows are shifted cylindrically to the right.
-void InvShiftRows(unsigned char state[][4])
+void OB_RANDOM_NAME(InvShiftRows)(unsigned char state[][4])
 {
 	int t;
 
@@ -551,7 +517,7 @@ void InvShiftRows(unsigned char state[][4])
 // multiplication in a Galios Field 2^8. All multiplication is pre-computed in a table.
 // Addition is equivilent to XOR. (Must always make a copy of the column as the original
 // values will be destoyed.)
-void MixColumns(unsigned char state[][4])
+void OB_RANDOM_NAME(MixColumns)(unsigned char state[][4])
 {
 	unsigned char col[4];
 
@@ -560,88 +526,88 @@ void MixColumns(unsigned char state[][4])
 	col[1] = state[1][0];
 	col[2] = state[2][0];
 	col[3] = state[3][0];
-	state[0][0] = gf_mul[col[0]][0];
-	state[0][0] ^= gf_mul[col[1]][1];
+	state[0][0] = OB_RANDOM_NAME(gf_mul)[col[0]][0];
+	state[0][0] ^= OB_RANDOM_NAME(gf_mul)[col[1]][1];
 	state[0][0] ^= col[2];
 	state[0][0] ^= col[3];
 	state[1][0] = col[0];
-	state[1][0] ^= gf_mul[col[1]][0];
-	state[1][0] ^= gf_mul[col[2]][1];
+	state[1][0] ^= OB_RANDOM_NAME(gf_mul)[col[1]][0];
+	state[1][0] ^= OB_RANDOM_NAME(gf_mul)[col[2]][1];
 	state[1][0] ^= col[3];
 	state[2][0] = col[0];
 	state[2][0] ^= col[1];
-	state[2][0] ^= gf_mul[col[2]][0];
-	state[2][0] ^= gf_mul[col[3]][1];
-	state[3][0] = gf_mul[col[0]][1];
+	state[2][0] ^= OB_RANDOM_NAME(gf_mul)[col[2]][0];
+	state[2][0] ^= OB_RANDOM_NAME(gf_mul)[col[3]][1];
+	state[3][0] = OB_RANDOM_NAME(gf_mul)[col[0]][1];
 	state[3][0] ^= col[1];
 	state[3][0] ^= col[2];
-	state[3][0] ^= gf_mul[col[3]][0];
+	state[3][0] ^= OB_RANDOM_NAME(gf_mul)[col[3]][0];
 	// Column 2
 	col[0] = state[0][1];
 	col[1] = state[1][1];
 	col[2] = state[2][1];
 	col[3] = state[3][1];
-	state[0][1] = gf_mul[col[0]][0];
-	state[0][1] ^= gf_mul[col[1]][1];
+	state[0][1] = OB_RANDOM_NAME(gf_mul)[col[0]][0];
+	state[0][1] ^= OB_RANDOM_NAME(gf_mul)[col[1]][1];
 	state[0][1] ^= col[2];
 	state[0][1] ^= col[3];
 	state[1][1] = col[0];
-	state[1][1] ^= gf_mul[col[1]][0];
-	state[1][1] ^= gf_mul[col[2]][1];
+	state[1][1] ^= OB_RANDOM_NAME(gf_mul)[col[1]][0];
+	state[1][1] ^= OB_RANDOM_NAME(gf_mul)[col[2]][1];
 	state[1][1] ^= col[3];
 	state[2][1] = col[0];
 	state[2][1] ^= col[1];
-	state[2][1] ^= gf_mul[col[2]][0];
-	state[2][1] ^= gf_mul[col[3]][1];
-	state[3][1] = gf_mul[col[0]][1];
+	state[2][1] ^= OB_RANDOM_NAME(gf_mul)[col[2]][0];
+	state[2][1] ^= OB_RANDOM_NAME(gf_mul)[col[3]][1];
+	state[3][1] = OB_RANDOM_NAME(gf_mul)[col[0]][1];
 	state[3][1] ^= col[1];
 	state[3][1] ^= col[2];
-	state[3][1] ^= gf_mul[col[3]][0];
+	state[3][1] ^= OB_RANDOM_NAME(gf_mul)[col[3]][0];
 	// Column 3
 	col[0] = state[0][2];
 	col[1] = state[1][2];
 	col[2] = state[2][2];
 	col[3] = state[3][2];
-	state[0][2] = gf_mul[col[0]][0];
-	state[0][2] ^= gf_mul[col[1]][1];
+	state[0][2] = OB_RANDOM_NAME(gf_mul)[col[0]][0];
+	state[0][2] ^= OB_RANDOM_NAME(gf_mul)[col[1]][1];
 	state[0][2] ^= col[2];
 	state[0][2] ^= col[3];
 	state[1][2] = col[0];
-	state[1][2] ^= gf_mul[col[1]][0];
-	state[1][2] ^= gf_mul[col[2]][1];
+	state[1][2] ^= OB_RANDOM_NAME(gf_mul)[col[1]][0];
+	state[1][2] ^= OB_RANDOM_NAME(gf_mul)[col[2]][1];
 	state[1][2] ^= col[3];
 	state[2][2] = col[0];
 	state[2][2] ^= col[1];
-	state[2][2] ^= gf_mul[col[2]][0];
-	state[2][2] ^= gf_mul[col[3]][1];
-	state[3][2] = gf_mul[col[0]][1];
+	state[2][2] ^= OB_RANDOM_NAME(gf_mul)[col[2]][0];
+	state[2][2] ^= OB_RANDOM_NAME(gf_mul)[col[3]][1];
+	state[3][2] = OB_RANDOM_NAME(gf_mul)[col[0]][1];
 	state[3][2] ^= col[1];
 	state[3][2] ^= col[2];
-	state[3][2] ^= gf_mul[col[3]][0];
+	state[3][2] ^= OB_RANDOM_NAME(gf_mul)[col[3]][0];
 	// Column 4
 	col[0] = state[0][3];
 	col[1] = state[1][3];
 	col[2] = state[2][3];
 	col[3] = state[3][3];
-	state[0][3] = gf_mul[col[0]][0];
-	state[0][3] ^= gf_mul[col[1]][1];
+	state[0][3] = OB_RANDOM_NAME(gf_mul)[col[0]][0];
+	state[0][3] ^= OB_RANDOM_NAME(gf_mul)[col[1]][1];
 	state[0][3] ^= col[2];
 	state[0][3] ^= col[3];
 	state[1][3] = col[0];
-	state[1][3] ^= gf_mul[col[1]][0];
-	state[1][3] ^= gf_mul[col[2]][1];
+	state[1][3] ^= OB_RANDOM_NAME(gf_mul)[col[1]][0];
+	state[1][3] ^= OB_RANDOM_NAME(gf_mul)[col[2]][1];
 	state[1][3] ^= col[3];
 	state[2][3] = col[0];
 	state[2][3] ^= col[1];
-	state[2][3] ^= gf_mul[col[2]][0];
-	state[2][3] ^= gf_mul[col[3]][1];
-	state[3][3] = gf_mul[col[0]][1];
+	state[2][3] ^= OB_RANDOM_NAME(gf_mul)[col[2]][0];
+	state[2][3] ^= OB_RANDOM_NAME(gf_mul)[col[3]][1];
+	state[3][3] = OB_RANDOM_NAME(gf_mul)[col[0]][1];
 	state[3][3] ^= col[1];
 	state[3][3] ^= col[2];
-	state[3][3] ^= gf_mul[col[3]][0];
+	state[3][3] ^= OB_RANDOM_NAME(gf_mul)[col[3]][0];
 }
 
-void InvMixColumns(unsigned char state[][4])
+void OB_RANDOM_NAME(InvMixColumns)(unsigned char state[][4])
 {
 	unsigned char col[4];
 
@@ -650,92 +616,92 @@ void InvMixColumns(unsigned char state[][4])
 	col[1] = state[1][0];
 	col[2] = state[2][0];
 	col[3] = state[3][0];
-	state[0][0] = gf_mul[col[0]][5];
-	state[0][0] ^= gf_mul[col[1]][3];
-	state[0][0] ^= gf_mul[col[2]][4];
-	state[0][0] ^= gf_mul[col[3]][2];
-	state[1][0] = gf_mul[col[0]][2];
-	state[1][0] ^= gf_mul[col[1]][5];
-	state[1][0] ^= gf_mul[col[2]][3];
-	state[1][0] ^= gf_mul[col[3]][4];
-	state[2][0] = gf_mul[col[0]][4];
-	state[2][0] ^= gf_mul[col[1]][2];
-	state[2][0] ^= gf_mul[col[2]][5];
-	state[2][0] ^= gf_mul[col[3]][3];
-	state[3][0] = gf_mul[col[0]][3];
-	state[3][0] ^= gf_mul[col[1]][4];
-	state[3][0] ^= gf_mul[col[2]][2];
-	state[3][0] ^= gf_mul[col[3]][5];
+	state[0][0] = OB_RANDOM_NAME(gf_mul)[col[0]][5];
+	state[0][0] ^= OB_RANDOM_NAME(gf_mul)[col[1]][3];
+	state[0][0] ^= OB_RANDOM_NAME(gf_mul)[col[2]][4];
+	state[0][0] ^= OB_RANDOM_NAME(gf_mul)[col[3]][2];
+	state[1][0] = OB_RANDOM_NAME(gf_mul)[col[0]][2];
+	state[1][0] ^= OB_RANDOM_NAME(gf_mul)[col[1]][5];
+	state[1][0] ^= OB_RANDOM_NAME(gf_mul)[col[2]][3];
+	state[1][0] ^= OB_RANDOM_NAME(gf_mul)[col[3]][4];
+	state[2][0] = OB_RANDOM_NAME(gf_mul)[col[0]][4];
+	state[2][0] ^= OB_RANDOM_NAME(gf_mul)[col[1]][2];
+	state[2][0] ^= OB_RANDOM_NAME(gf_mul)[col[2]][5];
+	state[2][0] ^= OB_RANDOM_NAME(gf_mul)[col[3]][3];
+	state[3][0] = OB_RANDOM_NAME(gf_mul)[col[0]][3];
+	state[3][0] ^= OB_RANDOM_NAME(gf_mul)[col[1]][4];
+	state[3][0] ^= OB_RANDOM_NAME(gf_mul)[col[2]][2];
+	state[3][0] ^= OB_RANDOM_NAME(gf_mul)[col[3]][5];
 	// Column 2
 	col[0] = state[0][1];
 	col[1] = state[1][1];
 	col[2] = state[2][1];
 	col[3] = state[3][1];
-	state[0][1] = gf_mul[col[0]][5];
-	state[0][1] ^= gf_mul[col[1]][3];
-	state[0][1] ^= gf_mul[col[2]][4];
-	state[0][1] ^= gf_mul[col[3]][2];
-	state[1][1] = gf_mul[col[0]][2];
-	state[1][1] ^= gf_mul[col[1]][5];
-	state[1][1] ^= gf_mul[col[2]][3];
-	state[1][1] ^= gf_mul[col[3]][4];
-	state[2][1] = gf_mul[col[0]][4];
-	state[2][1] ^= gf_mul[col[1]][2];
-	state[2][1] ^= gf_mul[col[2]][5];
-	state[2][1] ^= gf_mul[col[3]][3];
-	state[3][1] = gf_mul[col[0]][3];
-	state[3][1] ^= gf_mul[col[1]][4];
-	state[3][1] ^= gf_mul[col[2]][2];
-	state[3][1] ^= gf_mul[col[3]][5];
+	state[0][1] = OB_RANDOM_NAME(gf_mul)[col[0]][5];
+	state[0][1] ^= OB_RANDOM_NAME(gf_mul)[col[1]][3];
+	state[0][1] ^= OB_RANDOM_NAME(gf_mul)[col[2]][4];
+	state[0][1] ^= OB_RANDOM_NAME(gf_mul)[col[3]][2];
+	state[1][1] = OB_RANDOM_NAME(gf_mul)[col[0]][2];
+	state[1][1] ^= OB_RANDOM_NAME(gf_mul)[col[1]][5];
+	state[1][1] ^= OB_RANDOM_NAME(gf_mul)[col[2]][3];
+	state[1][1] ^= OB_RANDOM_NAME(gf_mul)[col[3]][4];
+	state[2][1] = OB_RANDOM_NAME(gf_mul)[col[0]][4];
+	state[2][1] ^= OB_RANDOM_NAME(gf_mul)[col[1]][2];
+	state[2][1] ^= OB_RANDOM_NAME(gf_mul)[col[2]][5];
+	state[2][1] ^= OB_RANDOM_NAME(gf_mul)[col[3]][3];
+	state[3][1] = OB_RANDOM_NAME(gf_mul)[col[0]][3];
+	state[3][1] ^= OB_RANDOM_NAME(gf_mul)[col[1]][4];
+	state[3][1] ^= OB_RANDOM_NAME(gf_mul)[col[2]][2];
+	state[3][1] ^= OB_RANDOM_NAME(gf_mul)[col[3]][5];
 	// Column 3
 	col[0] = state[0][2];
 	col[1] = state[1][2];
 	col[2] = state[2][2];
 	col[3] = state[3][2];
-	state[0][2] = gf_mul[col[0]][5];
-	state[0][2] ^= gf_mul[col[1]][3];
-	state[0][2] ^= gf_mul[col[2]][4];
-	state[0][2] ^= gf_mul[col[3]][2];
-	state[1][2] = gf_mul[col[0]][2];
-	state[1][2] ^= gf_mul[col[1]][5];
-	state[1][2] ^= gf_mul[col[2]][3];
-	state[1][2] ^= gf_mul[col[3]][4];
-	state[2][2] = gf_mul[col[0]][4];
-	state[2][2] ^= gf_mul[col[1]][2];
-	state[2][2] ^= gf_mul[col[2]][5];
-	state[2][2] ^= gf_mul[col[3]][3];
-	state[3][2] = gf_mul[col[0]][3];
-	state[3][2] ^= gf_mul[col[1]][4];
-	state[3][2] ^= gf_mul[col[2]][2];
-	state[3][2] ^= gf_mul[col[3]][5];
+	state[0][2] = OB_RANDOM_NAME(gf_mul)[col[0]][5];
+	state[0][2] ^= OB_RANDOM_NAME(gf_mul)[col[1]][3];
+	state[0][2] ^= OB_RANDOM_NAME(gf_mul)[col[2]][4];
+	state[0][2] ^= OB_RANDOM_NAME(gf_mul)[col[3]][2];
+	state[1][2] = OB_RANDOM_NAME(gf_mul)[col[0]][2];
+	state[1][2] ^= OB_RANDOM_NAME(gf_mul)[col[1]][5];
+	state[1][2] ^= OB_RANDOM_NAME(gf_mul)[col[2]][3];
+	state[1][2] ^= OB_RANDOM_NAME(gf_mul)[col[3]][4];
+	state[2][2] = OB_RANDOM_NAME(gf_mul)[col[0]][4];
+	state[2][2] ^= OB_RANDOM_NAME(gf_mul)[col[1]][2];
+	state[2][2] ^= OB_RANDOM_NAME(gf_mul)[col[2]][5];
+	state[2][2] ^= OB_RANDOM_NAME(gf_mul)[col[3]][3];
+	state[3][2] = OB_RANDOM_NAME(gf_mul)[col[0]][3];
+	state[3][2] ^= OB_RANDOM_NAME(gf_mul)[col[1]][4];
+	state[3][2] ^= OB_RANDOM_NAME(gf_mul)[col[2]][2];
+	state[3][2] ^= OB_RANDOM_NAME(gf_mul)[col[3]][5];
 	// Column 4
 	col[0] = state[0][3];
 	col[1] = state[1][3];
 	col[2] = state[2][3];
 	col[3] = state[3][3];
-	state[0][3] = gf_mul[col[0]][5];
-	state[0][3] ^= gf_mul[col[1]][3];
-	state[0][3] ^= gf_mul[col[2]][4];
-	state[0][3] ^= gf_mul[col[3]][2];
-	state[1][3] = gf_mul[col[0]][2];
-	state[1][3] ^= gf_mul[col[1]][5];
-	state[1][3] ^= gf_mul[col[2]][3];
-	state[1][3] ^= gf_mul[col[3]][4];
-	state[2][3] = gf_mul[col[0]][4];
-	state[2][3] ^= gf_mul[col[1]][2];
-	state[2][3] ^= gf_mul[col[2]][5];
-	state[2][3] ^= gf_mul[col[3]][3];
-	state[3][3] = gf_mul[col[0]][3];
-	state[3][3] ^= gf_mul[col[1]][4];
-	state[3][3] ^= gf_mul[col[2]][2];
-	state[3][3] ^= gf_mul[col[3]][5];
+	state[0][3] = OB_RANDOM_NAME(gf_mul)[col[0]][5];
+	state[0][3] ^= OB_RANDOM_NAME(gf_mul)[col[1]][3];
+	state[0][3] ^= OB_RANDOM_NAME(gf_mul)[col[2]][4];
+	state[0][3] ^= OB_RANDOM_NAME(gf_mul)[col[3]][2];
+	state[1][3] = OB_RANDOM_NAME(gf_mul)[col[0]][2];
+	state[1][3] ^= OB_RANDOM_NAME(gf_mul)[col[1]][5];
+	state[1][3] ^= OB_RANDOM_NAME(gf_mul)[col[2]][3];
+	state[1][3] ^= OB_RANDOM_NAME(gf_mul)[col[3]][4];
+	state[2][3] = OB_RANDOM_NAME(gf_mul)[col[0]][4];
+	state[2][3] ^= OB_RANDOM_NAME(gf_mul)[col[1]][2];
+	state[2][3] ^= OB_RANDOM_NAME(gf_mul)[col[2]][5];
+	state[2][3] ^= OB_RANDOM_NAME(gf_mul)[col[3]][3];
+	state[3][3] = OB_RANDOM_NAME(gf_mul)[col[0]][3];
+	state[3][3] ^= OB_RANDOM_NAME(gf_mul)[col[1]][4];
+	state[3][3] ^= OB_RANDOM_NAME(gf_mul)[col[2]][2];
+	state[3][3] ^= OB_RANDOM_NAME(gf_mul)[col[3]][5];
 }
 
 /////////////////
 // (En/De)Crypt
 /////////////////
 
-void aes_encrypt(const unsigned char in[], unsigned char out[], const unsigned int key[], int keysize)
+void OB_RANDOM_NAME(aes_encrypt)(const unsigned char in[], unsigned char out[], const unsigned int key[], int keysize)
 {
 	unsigned char state[4][4];
 
@@ -763,30 +729,30 @@ void aes_encrypt(const unsigned char in[], unsigned char out[], const unsigned i
 
 	// Perform the necessary number of rounds. The round key is added first.
 	// The last round does not perform the MixColumns step.
-	AddRoundKey(state,&key[0]);
-	SubBytes(state); ShiftRows(state); MixColumns(state); AddRoundKey(state,&key[4]);
-	SubBytes(state); ShiftRows(state); MixColumns(state); AddRoundKey(state,&key[8]);
-	SubBytes(state); ShiftRows(state); MixColumns(state); AddRoundKey(state,&key[12]);
-	SubBytes(state); ShiftRows(state); MixColumns(state); AddRoundKey(state,&key[16]);
-	SubBytes(state); ShiftRows(state); MixColumns(state); AddRoundKey(state,&key[20]);
-	SubBytes(state); ShiftRows(state); MixColumns(state); AddRoundKey(state,&key[24]);
-	SubBytes(state); ShiftRows(state); MixColumns(state); AddRoundKey(state,&key[28]);
-	SubBytes(state); ShiftRows(state); MixColumns(state); AddRoundKey(state,&key[32]);
-	SubBytes(state); ShiftRows(state); MixColumns(state); AddRoundKey(state,&key[36]);
+	OB_RANDOM_NAME(AddRoundKey)(state,&key[0]);
+	OB_RANDOM_NAME(SubBytes)(state); OB_RANDOM_NAME(ShiftRows)(state); OB_RANDOM_NAME(MixColumns)(state); OB_RANDOM_NAME(AddRoundKey)(state,&key[4]);
+	OB_RANDOM_NAME(SubBytes)(state); OB_RANDOM_NAME(ShiftRows)(state); OB_RANDOM_NAME(MixColumns)(state); OB_RANDOM_NAME(AddRoundKey)(state,&key[8]);
+	OB_RANDOM_NAME(SubBytes)(state); OB_RANDOM_NAME(ShiftRows)(state); OB_RANDOM_NAME(MixColumns)(state); OB_RANDOM_NAME(AddRoundKey)(state,&key[12]);
+	OB_RANDOM_NAME(SubBytes)(state); OB_RANDOM_NAME(ShiftRows)(state); OB_RANDOM_NAME(MixColumns)(state); OB_RANDOM_NAME(AddRoundKey)(state,&key[16]);
+	OB_RANDOM_NAME(SubBytes)(state); OB_RANDOM_NAME(ShiftRows)(state); OB_RANDOM_NAME(MixColumns)(state); OB_RANDOM_NAME(AddRoundKey)(state,&key[20]);
+	OB_RANDOM_NAME(SubBytes)(state); OB_RANDOM_NAME(ShiftRows)(state); OB_RANDOM_NAME(MixColumns)(state); OB_RANDOM_NAME(AddRoundKey)(state,&key[24]);
+	OB_RANDOM_NAME(SubBytes)(state); OB_RANDOM_NAME(ShiftRows)(state); OB_RANDOM_NAME(MixColumns)(state); OB_RANDOM_NAME(AddRoundKey)(state,&key[28]);
+	OB_RANDOM_NAME(SubBytes)(state); OB_RANDOM_NAME(ShiftRows)(state); OB_RANDOM_NAME(MixColumns)(state); OB_RANDOM_NAME(AddRoundKey)(state,&key[32]);
+	OB_RANDOM_NAME(SubBytes)(state); OB_RANDOM_NAME(ShiftRows)(state); OB_RANDOM_NAME(MixColumns)(state); OB_RANDOM_NAME(AddRoundKey)(state,&key[36]);
 	if (keysize != 128) {
-		SubBytes(state); ShiftRows(state); MixColumns(state); AddRoundKey(state,&key[40]);
-		SubBytes(state); ShiftRows(state); MixColumns(state); AddRoundKey(state,&key[44]);
+		OB_RANDOM_NAME(SubBytes)(state); OB_RANDOM_NAME(ShiftRows)(state); OB_RANDOM_NAME(MixColumns)(state); OB_RANDOM_NAME(AddRoundKey)(state,&key[40]);
+		OB_RANDOM_NAME(SubBytes)(state); OB_RANDOM_NAME(ShiftRows)(state); OB_RANDOM_NAME(MixColumns)(state); OB_RANDOM_NAME(AddRoundKey)(state,&key[44]);
 		if (keysize != 192) {
-			SubBytes(state); ShiftRows(state); MixColumns(state); AddRoundKey(state,&key[48]);
-			SubBytes(state); ShiftRows(state); MixColumns(state); AddRoundKey(state,&key[52]);
-			SubBytes(state); ShiftRows(state); AddRoundKey(state,&key[56]);
+			OB_RANDOM_NAME(SubBytes)(state); OB_RANDOM_NAME(ShiftRows)(state); OB_RANDOM_NAME(MixColumns)(state); OB_RANDOM_NAME(AddRoundKey)(state,&key[48]);
+			OB_RANDOM_NAME(SubBytes)(state); OB_RANDOM_NAME(ShiftRows)(state); OB_RANDOM_NAME(MixColumns)(state); OB_RANDOM_NAME(AddRoundKey)(state,&key[52]);
+			OB_RANDOM_NAME(SubBytes)(state); OB_RANDOM_NAME(ShiftRows)(state); OB_RANDOM_NAME(AddRoundKey)(state,&key[56]);
 		}
 		else {
-			SubBytes(state); ShiftRows(state); AddRoundKey(state,&key[48]);
+			OB_RANDOM_NAME(SubBytes)(state); OB_RANDOM_NAME(ShiftRows)(state); OB_RANDOM_NAME(AddRoundKey)(state,&key[48]);
 		}
 	}
 	else {
-		SubBytes(state); ShiftRows(state); AddRoundKey(state,&key[40]);
+		OB_RANDOM_NAME(SubBytes)(state); OB_RANDOM_NAME(ShiftRows)(state); OB_RANDOM_NAME(AddRoundKey)(state,&key[40]);
 	}
 
 	// Copy the state to the output array.
@@ -808,7 +774,7 @@ void aes_encrypt(const unsigned char in[], unsigned char out[], const unsigned i
 	out[15] = state[3][3];
 }
 
-void aes_decrypt(const unsigned char in[], unsigned char out[], const unsigned int key[], int keysize)
+void OB_RANDOM_NAME(aes_decrypt)(const unsigned char in[], unsigned char out[], const unsigned int key[], int keysize)
 {
 	unsigned char state[4][4];
 
@@ -834,29 +800,29 @@ void aes_decrypt(const unsigned char in[], unsigned char out[], const unsigned i
 	// The last round does not perform the MixColumns step.
 	if (keysize > 128) {
 		if (keysize > 192) {
-			AddRoundKey(state,&key[56]);
-			InvShiftRows(state);InvSubBytes(state);AddRoundKey(state,&key[52]);InvMixColumns(state);
-			InvShiftRows(state);InvSubBytes(state);AddRoundKey(state,&key[48]);InvMixColumns(state);
+			OB_RANDOM_NAME(AddRoundKey)(state,&key[56]);
+			OB_RANDOM_NAME(InvShiftRows)(state);OB_RANDOM_NAME(InvSubBytes)(state);OB_RANDOM_NAME(AddRoundKey)(state,&key[52]);OB_RANDOM_NAME(InvMixColumns)(state);
+			OB_RANDOM_NAME(InvShiftRows)(state);OB_RANDOM_NAME(InvSubBytes)(state);OB_RANDOM_NAME(AddRoundKey)(state,&key[48]);OB_RANDOM_NAME(InvMixColumns)(state);
 		}
 		else {
-			AddRoundKey(state,&key[48]);
+			OB_RANDOM_NAME(AddRoundKey)(state,&key[48]);
 		}
-		InvShiftRows(state);InvSubBytes(state);AddRoundKey(state,&key[44]);InvMixColumns(state);
-		InvShiftRows(state);InvSubBytes(state);AddRoundKey(state,&key[40]);InvMixColumns(state);
+		OB_RANDOM_NAME(InvShiftRows)(state);OB_RANDOM_NAME(InvSubBytes)(state);OB_RANDOM_NAME(AddRoundKey)(state,&key[44]);OB_RANDOM_NAME(InvMixColumns)(state);
+		OB_RANDOM_NAME(InvShiftRows)(state);OB_RANDOM_NAME(InvSubBytes)(state);OB_RANDOM_NAME(AddRoundKey)(state,&key[40]);OB_RANDOM_NAME(InvMixColumns)(state);
 	}
 	else {
-		AddRoundKey(state,&key[40]);
+		OB_RANDOM_NAME(AddRoundKey)(state,&key[40]);
 	}
-	InvShiftRows(state);InvSubBytes(state);AddRoundKey(state,&key[36]);InvMixColumns(state);
-	InvShiftRows(state);InvSubBytes(state);AddRoundKey(state,&key[32]);InvMixColumns(state);
-	InvShiftRows(state);InvSubBytes(state);AddRoundKey(state,&key[28]);InvMixColumns(state);
-	InvShiftRows(state);InvSubBytes(state);AddRoundKey(state,&key[24]);InvMixColumns(state);
-	InvShiftRows(state);InvSubBytes(state);AddRoundKey(state,&key[20]);InvMixColumns(state);
-	InvShiftRows(state);InvSubBytes(state);AddRoundKey(state,&key[16]);InvMixColumns(state);
-	InvShiftRows(state);InvSubBytes(state);AddRoundKey(state,&key[12]);InvMixColumns(state);
-	InvShiftRows(state);InvSubBytes(state);AddRoundKey(state,&key[8]);InvMixColumns(state);
-	InvShiftRows(state);InvSubBytes(state);AddRoundKey(state,&key[4]);InvMixColumns(state);
-	InvShiftRows(state);InvSubBytes(state);AddRoundKey(state,&key[0]);
+	OB_RANDOM_NAME(InvShiftRows)(state);OB_RANDOM_NAME(InvSubBytes)(state);OB_RANDOM_NAME(AddRoundKey)(state,&key[36]);OB_RANDOM_NAME(InvMixColumns)(state);
+	OB_RANDOM_NAME(InvShiftRows)(state);OB_RANDOM_NAME(InvSubBytes)(state);OB_RANDOM_NAME(AddRoundKey)(state,&key[32]);OB_RANDOM_NAME(InvMixColumns)(state);
+	OB_RANDOM_NAME(InvShiftRows)(state);OB_RANDOM_NAME(InvSubBytes)(state);OB_RANDOM_NAME(AddRoundKey)(state,&key[28]);OB_RANDOM_NAME(InvMixColumns)(state);
+	OB_RANDOM_NAME(InvShiftRows)(state);OB_RANDOM_NAME(InvSubBytes)(state);OB_RANDOM_NAME(AddRoundKey)(state,&key[24]);OB_RANDOM_NAME(InvMixColumns)(state);
+	OB_RANDOM_NAME(InvShiftRows)(state);OB_RANDOM_NAME(InvSubBytes)(state);OB_RANDOM_NAME(AddRoundKey)(state,&key[20]);OB_RANDOM_NAME(InvMixColumns)(state);
+	OB_RANDOM_NAME(InvShiftRows)(state);OB_RANDOM_NAME(InvSubBytes)(state);OB_RANDOM_NAME(AddRoundKey)(state,&key[16]);OB_RANDOM_NAME(InvMixColumns)(state);
+	OB_RANDOM_NAME(InvShiftRows)(state);OB_RANDOM_NAME(InvSubBytes)(state);OB_RANDOM_NAME(AddRoundKey)(state,&key[12]);OB_RANDOM_NAME(InvMixColumns)(state);
+	OB_RANDOM_NAME(InvShiftRows)(state);OB_RANDOM_NAME(InvSubBytes)(state);OB_RANDOM_NAME(AddRoundKey)(state,&key[8]);OB_RANDOM_NAME(InvMixColumns)(state);
+	OB_RANDOM_NAME(InvShiftRows)(state);OB_RANDOM_NAME(InvSubBytes)(state);OB_RANDOM_NAME(AddRoundKey)(state,&key[4]);OB_RANDOM_NAME(InvMixColumns)(state);
+	OB_RANDOM_NAME(InvShiftRows)(state);OB_RANDOM_NAME(InvSubBytes)(state);OB_RANDOM_NAME(AddRoundKey)(state,&key[0]);
 
 	// Copy the state to the output array.
 	out[0] = state[0][0];
