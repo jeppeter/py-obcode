@@ -467,7 +467,7 @@ class ChkVal(COBFileBase):
         for l in self.in_lines:
             self.cur_line += 1
             l = l.rstrip('\r\n')
-            logging.debug('[%d][%s]'%(self.cur_line, l))
+            logging.info('[%d][%s]'%(self.cur_line, l))
             if self.get_filter_expr_not_defined(l,self.__ob_expand_code_expr):
                 rets += self.__format_ob_expand_code(l)
             elif self.get_filter_expr_not_defined(l,self.__ob_expand_code_spec_expr):
