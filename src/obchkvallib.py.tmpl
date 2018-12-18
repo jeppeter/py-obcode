@@ -30,7 +30,7 @@ C_CODE_AES='''%C_CODE_AES%'''
 
 class ChkVal(COBFileBase):
     def __init__(self,sfile,dfile=None,cfg=None):
-        COBFileBase.__init__(self,sfile,dfile,cfg)      
+        COBFileBase.__init__(self,sfile,dfile,cfg)
         self.__ob_random_name_expr = re.compile('.*(OB_RANDOM_NAME\s*(\(.*))$')
         self.__ob_random_name_spec_expr = re.compile('.*(OB_RANDOM_NAME_SPEC\s*(\(.*))$')
         self.__ob_chkval_func_expr = re.compile('.*(OB_CHKVAL_FUNC\s*(\(.*))$')
@@ -50,10 +50,13 @@ class ChkVal(COBFileBase):
             assert(lbyte[0] == 0)
         rs = ints_to_string(sbyte)
 
-        rndname = get_odict_value(odict,RANDOM_VARIABLE,objname,rs)
+        rndname = None
+        if objname is not None and odict is not None:
+            rndname = get_odict_value(odict,RANDOM_VARIABLE,objname,rs)
         if rndname is None:
             rndname = get_random_name(random.randint(cfg.namemin,cfg.namemax))
-            odict = set_odict_value(odict,rndname,RANDOM_VARIABLE,objname,rs)
+            if objname is not None and odict is not None:
+                odict = set_odict_value(odict,rndname,RANDOM_VARIABLE,objname,rs)
             #odict[RANDOM_VARIABLE][objname][rs] = get_random_name(random.randint(cfg.namemin,cfg.namemax))
         newc = before
         newc += rndname
@@ -79,6 +82,7 @@ class ChkVal(COBFileBase):
                 newc, odict = self.__format_ob_random_name_spec_func(newc,objname,odict)
             else:
                 break
+        newc += '\n'
         return newc,odict
 
     def __format_multi_lines(self,mlines,objname,odict):
@@ -461,7 +465,7 @@ class ChkVal(COBFileBase):
         return rets
 
 
-    def expand_chkval_code(self):
+    def expand_chkval_code(self,objname=None,odict=None):
         self.cur_line = 0
         rets = ''
         for l in self.in_lines:
@@ -472,9 +476,12 @@ class ChkVal(COBFileBase):
                 rets += self.__format_ob_expand_code(l)
             elif self.get_filter_expr_not_defined(l,self.__ob_expand_code_spec_expr):
                 rets += self.__format_ob_expand_code_spec(l)
+            elif self.get_filter_expr_not_defined(l,self.__ob_random_name_expr) or self.get_filter_expr_not_defined(l,self.__ob_random_name_spec_expr):
+                curs,odict = self.__format_c_line(l,objname,odict)
+                rets += curs
             else:
                 rets += '%s\n'%(l)
-        return rets
+        return rets,odict
 
 
 def chkval_dump_object_function_one(args,objparser,odict,o,f,win32mode=False):
@@ -839,7 +846,7 @@ def fmtchkval_handler(args,parser):
     write_patch_output(args,rets,odict)
     # now to give the out
     chkval = ChkVal(args.output,None,None)
-    rets = chkval.expand_chkval_code()
+    rets,dummydict = chkval.expand_chkval_code()
     # writes with output
     write_file(rets,args.output)
     sys.exit(0)
@@ -918,16 +925,19 @@ def chkvaldumpfuncsforge_handler(args,parser):
     sys.exit(0)
     return
 
-def chkvalheaderforge_handler(args,parser):
-    set_logging_level(args)
-    jdict, args = get_jdict(args)
-    guardval = '__%s__'%(get_random_name(random.randint(10,30)))
+def __format_header_empty(namelen):
+    guardval = '__%s__'%(get_random_name(namelen))
     rets =  ''
     rets += format_line('#ifndef %s'%(guardval),0)
     rets += format_line('#define %s'%(guardval),0)
     rets += format_line('',0)
     rets += format_line('#endif /*%s*/'%(guardval),0)
+    return rets
 
+def chkvalheaderforge_handler(args,parser):
+    set_logging_level(args)
+    jdict, args = get_jdict(args)
+    rets = __format_header_empty(random.randint(10,30))
     if args.output is None:
         write_file_direct(rets,sys.stdout)
     else:
@@ -951,6 +961,77 @@ def replchkvalforge_handler(args,parser):
     set_logging_level(args)
     jdict, args = get_jdict(args)
     rets = read_file(args.input)
+    write_file(rets,args.output)
+    sys.exit(0)
+    return
+
+def chkvalexitfmtforge_handler(args,parser):
+    set_logging_level(args)    
+    jdict, args = get_jdict(args)
+    rets = ''
+    write_file(rets,args.output)
+    sys.exit(0)
+    return
+
+
+def chkvalexitfmt_handler(args,parser):
+    set_logging_level(args)
+    jdict, args = get_jdict(args)
+    odict = get_odict(args,False)
+    chkval = ChkVal(args.input,None,None)
+    odict = create_odict_is_none(odict,CHKVAL_KEY)
+    rets,odict[CHKVAL_KEY] = chkval.expand_chkval_code(args.objfile,odict[CHKVAL_KEY])
+    write_file(rets,args.output)
+    write_json(odict,args.dump)
+    sys.exit(0)
+    return
+
+def exitheaderfmtforge_handler(args,parser):
+    set_logging_level(args)
+    jdict, args= get_jdict(args)
+    rets = __format_header_empty(random.randint(10,30))
+    write_file(rets,args.output)
+    sys.exit(0)
+    return
+
+def format_exit_header(args,odict,objs=[]):
+    rets = ''
+    guardval = '__%s__'%(get_random_name(random.randint(10,30)))
+    rets += format_line('#ifndef %s'%(guardval),0)
+    rets += format_line('#define %s'%(guardval),0)
+    rets += format_line('',0)
+    rets += format_line('#ifdef __cplusplus',0)
+    rets += format_line('extern "C" {', 0)
+    rets += format_line('#endif /*__cplusplus*/',0)
+    for f in objs:
+        funcname = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE,f,args.failfunc)
+        if funcname is not None:
+            rets += format_line('',0)
+            rets += format_debug_line('from [%s] file for [%s]'%(f,args.failfunc),0,3)
+            rets += format_line('void %s(int errcode, char* fmt);'%(funcname),0)
+
+    rets += format_line('',0)
+    rets += format_line('#ifdef __cplusplus',0)
+    rets += format_line('};', 0)
+    rets += format_line('#endif /*__cplusplus*/',0)
+
+    rets += format_line('',0)
+    rets += format_line('#endif /*%s*/'%(guardval),0)
+    return rets
+
+def exitheaderfmt_handler(args,parser):
+    set_logging_level(args)
+    jdict, args = get_jdict(args)
+    odict = get_odict(args,False)
+    objfiles = []
+    for k in jdict.keys():
+        objfiles.append(k)
+    if len(objfiles) == 0:
+        varobjs = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE)
+        if varobjs is not None:
+            for k in varobjs.keys():
+                objfiles.append(k)
+    rets = format_exit_header(args,odict,objfiles)
     write_file(rets,args.output)
     sys.exit(0)
     return

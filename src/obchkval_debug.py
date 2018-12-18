@@ -51,6 +51,7 @@ def main():
         "includes|I" : [],
         "includefiles" : [],
         "unpatchfunc|U" : "unpatch_handler",
+        "failfunc" : "failfunc_handler",
         "fmtchkval<fmtchkval_handler>##objfile;func1,func2 ... to format chkval file##" : {
             "$" : "+"
         },
@@ -80,8 +81,19 @@ def main():
         },
         "replchkvalforge<replchkvalforge_handler>##objfile ... to replace chkval into new header##" : {
             "$" : "+"
-        } 
-
+        },
+        "chkvalexitfmt<chkvalexitfmt_handler>##-i templatefile -o cfile 'objfile:objecthandle'##" : {
+            "$" : "*"
+        },
+        "chkvalexitfmtforge<chkvalexitfmtforge_handler>##-i templatefile -o cfile 'objfile:objecthandle'##" : {
+            "$" : "*"
+        },
+        "exitheaderfmt<exitheaderfmt_handler>##-o headerfile -D dumpjson [objfiles...]##" : {
+            "$" : "*"
+        },
+        "exitheaderfmtforge<exitheaderfmtforge_handler>##-o headerfile -D dumpjson [objfiles...] forge##" : {
+            "$" : "*"
+        }        
     }
     '''
     d = dict()

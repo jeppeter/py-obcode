@@ -285,6 +285,7 @@ def main():
         "includes|I" : [],
         "includefiles" : [],
         "unpatchfunc|U" : "unpatch_handler",
+        "failfunc" : "failfunc_handler",
         "cob<cob_handler>##srcdir dstdir to obfuscated code in c mode##" : {
             "handles" : ["\\\\.c$","\\\\.h$","\\\\.cpp$","\\\\.cxx$"],
             "filters" : ["\\\\.git$"],
@@ -366,6 +367,18 @@ def main():
         },
         "chkvalfillelf<chkvalfillelf_handler>##objfile ... to filled real data into the structure##" : {
             "$" : "+"
+        },
+        "chkvalexitfmt<chkvalexitfmt_handler>##-i templatefile -o cfile 'objfile:objecthandle'##" : {
+            "$" : "*"
+        },
+        "chkvalexitfmtforge<chkvalexitfmtforge_handler>##-i templatefile -o cfile 'objfile:objecthandle'##" : {
+            "$" : "*"
+        },
+        "exitheaderfmt<exitheaderfmt_handler>##-o headerfile -D dumpjson [objfiles...]##" : {
+            "$" : "*"
+        },
+        "exitheaderfmtforge<exitheaderfmtforge_handler>##-o headerfile -D dumpjson [objfiles...] forge##" : {
+            "$" : "*"
         }
     }
     '''
