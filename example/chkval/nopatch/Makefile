@@ -64,16 +64,16 @@ ${CURDIR}/chk_main2_2.cpp:
 	$(call OB_CHKVAL_FMT_CHKVAL,-o $@ 'objfile;${CURDIR}/chk_main2_2.o' 'includefiles;chk_main2.h' 'includefiles;main2.h' 'dump;${CURDIR}/dump.json' 'includefiles;callc.h' '${CURDIR}/callc2.o;callc_a${COMMA}callc_b${COMMA}callc_c' '${CURDIR}/main2.o;print_out2_a${COMMA}print_out2_b${COMMA}print_out2_c')
 
 ${CURDIR}/main.cpp:${CURDIR}/main_bak.cpp ${CURDIR}/chk_main.h
-	$(call OB_CHKVAL_REPLS,-o $@ -i ${CURDIR}/main_bak.cpp 'dump;${CURDIR}/dump.json' '${CURDIR}/chk_main_1.o' '${CURDIR}/chk_main_2.o')
+	$(call OB_CHKVAL_REPLS,-o $@ -i ${CURDIR}/main_bak.cpp 'dump;${CURDIR}/dump.json' '${CURDIR}/chk_main_1.o' '${CURDIR}/chk_main_2.o' 'includefiles;${CURDIR}/main_exit_1.o' 'includefiles;${CURDIR}/main_exit_2.o')
 
 ${CURDIR}/main2.cpp:${CURDIR}/main2_bak.cpp ${CURDIR}/chk_main2.h 
-	$(call OB_CHKVAL_REPLS,-o $@ -i ${CURDIR}/main2_bak.cpp 'dump;${CURDIR}/dump.json' '${CURDIR}/chk_main2_1.o' '${CURDIR}/chk_main2_2.o')
+	$(call OB_CHKVAL_REPLS,-o $@ -i ${CURDIR}/main2_bak.cpp 'dump;${CURDIR}/dump.json' '${CURDIR}/chk_main2_1.o' '${CURDIR}/chk_main2_2.o' 'includefiles;${CURDIR}/main2_exit_1.o' 'includefiles;${CURDIR}/main2_exit_2.o')
 
 ${CURDIR}/callc.cpp:${CURDIR}/callc_bak.cpp ${CURDIR}/chk_main.h
-	$(call OB_CHKVAL_REPLS,-o $@ -i ${CURDIR}/callc_bak.cpp 'dump;${CURDIR}/dump.json' '${CURDIR}/chk_main_1.o' '${CURDIR}/chk_main_2.o')
+	$(call OB_CHKVAL_REPLS,-o $@ -i ${CURDIR}/callc_bak.cpp 'dump;${CURDIR}/dump.json' '${CURDIR}/chk_main_1.o' '${CURDIR}/chk_main_2.o' 'includefiles;${CURDIR}/main_exit_1.o' 'includefiles;${CURDIR}/main_exit_2.o')
 
 ${CURDIR}/callc2.cpp:${CURDIR}/callc_bak.cpp ${CURDIR}/chk_main2.h
-	$(call OB_CHKVAL_REPLS, -o $@ -i ${CURDIR}/callc_bak.cpp 'dump;${CURDIR}/dump.json' '${CURDIR}/chk_main2_1.o' '${CURDIR}/chk_main2_2.o')
+	$(call OB_CHKVAL_REPLS, -o $@ -i ${CURDIR}/callc_bak.cpp 'dump;${CURDIR}/dump.json' '${CURDIR}/chk_main2_1.o' '${CURDIR}/chk_main2_2.o' 'includefiles;${CURDIR}/main2_exit_1.o' 'includefiles;${CURDIR}/main2_exit_2.o')
 
 ${CURDIR}/handle_exit.h:${CURDIR}/main_exit_1.cpp ${CURDIR}/main_exit_2.cpp ${CURDIR}/main2_exit_1.cpp ${CURDIR}/main2_exit_2.cpp
 ifeq (${OB_CHKVAL},)

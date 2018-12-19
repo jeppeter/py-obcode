@@ -1,6 +1,7 @@
 #include "callc.h"
 #include "chk_main.h"
 #include "chk_main2.h"
+#include "handle_exit.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -14,35 +15,6 @@ void failfunc_c1(int exitcode, char* name)
 	exit(exitcode);
 }
 
-void failfunc_c2(int exitcode, char* name)
-{
-	OUTP("fail [%d] [%s]", exitcode, name);
-	exit(exitcode);
-}
-
-void failfunc_c3(int exitcode, char* name)
-{
-	OUTP("fail [%d] [%s]", exitcode, name);
-	exit(exitcode);
-}
-
-void failfunc_c4(int exitcode, char* name)
-{
-	OUTP("fail [%d] [%s]", exitcode, name);
-	exit(exitcode);
-}
-
-void failfunc_c5(int exitcode, char* name)
-{
-	OUTP("fail [%d] [%s]", exitcode, name);
-	exit(exitcode);
-}
-
-void failfunc_c6(int exitcode, char* name)
-{
-	OUTP("fail [%d] [%s]", exitcode, name);
-	exit(exitcode);
-}
 
 
 int callc_a(void)
@@ -65,7 +37,7 @@ int callc_b(void)
 	int a=1,b=2,c=3;
 	int ret;
 	OB_CODE(a,b,c);
-	ret = OB_CHKVAL_FUNC(failfunc_c2);
+	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;
 	}
@@ -80,7 +52,7 @@ int callc_c(void)
 	int a=1,b=2,c=3;
 	int ret;
 	OB_CODE(a,b,c);
-	ret = OB_CHKVAL_FUNC(failfunc_c3);
+	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;
 	}
@@ -95,7 +67,7 @@ int callc_d(void)
 	int a=1,b=2,c=3;
 	int ret;
 	OB_CODE(a,b,c);
-	ret = OB_CHKVAL_FUNC(failfunc_c4);
+	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;
 	}
@@ -110,7 +82,7 @@ int callc_e(void)
 	int a=1,b=2,c=3;
 	int ret;
 	OB_CODE(a,b,c);
-	ret = OB_CHKVAL_FUNC(failfunc_c5);
+	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;
 	}
@@ -125,7 +97,7 @@ int callc_f(void)
 	int a=1,b=2,c=3;
 	int ret;
 	OB_CODE(a,b,c);
-	ret = OB_CHKVAL_FUNC(failfunc_c6);
+	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;
 	}

@@ -149,6 +149,10 @@ int ux_map_prot(void* addr, int size, int prot)                                 
 
 #define   OB_CHKVAL_FUNC(failfunc)                         0
 #define   OB_CHKVAL_FUNC_SPEC(cfg,failfunc)                0
+#define   OB_CHKVAL_TOTAL_FUNC()                           0
+#define   OB_CHKVAL_TOTAL_FUNC_SPEC(cfg)                   0
+
+
 
 typedef void (*m_check_fail_func_t)(int errcode,char* name);
 

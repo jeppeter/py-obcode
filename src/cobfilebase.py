@@ -33,7 +33,7 @@ class COBFileBase(object):
         if cfg is not None:
             self.base_cfg = cfg
         else:
-            self.base_cfg = COBAttr()
+            self.base_cfg = CompoundAttr()
         if sfile is not None:
             self.in_lines = get_file_lines(sfile)
         else:

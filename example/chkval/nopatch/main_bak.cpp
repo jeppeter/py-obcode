@@ -1,6 +1,7 @@
 #include "main.h"
 #include "callc.h"
 #include "chk_main.h"
+#include "handle_exit.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -9,42 +10,6 @@ OB_INSERT();
 #define OUTP(...) do{fprintf(stdout,"[%s:%d] ",__FILE__,__LINE__); fprintf(stdout,__VA_ARGS__);fprintf(stdout,"\n");}while(0)
 
 void failfunc_main_1(int exitcode, char* name)
-{
-	OUTP("fail [%d] [%s]", exitcode, name);
-	exit(exitcode);
-}
-
-void failfunc_main_2(int exitcode, char* name)
-{
-	OUTP("fail [%d] [%s]", exitcode, name);
-	exit(exitcode);
-}
-
-void failfunc_main_3(int exitcode, char* name)
-{
-	OUTP("fail [%d] [%s]", exitcode, name);
-	exit(exitcode);
-}
-
-void failfunc_main_4(int exitcode, char* name)
-{
-	OUTP("fail [%d] [%s]", exitcode, name);
-	exit(exitcode);
-}
-
-void failfunc_main_5(int exitcode, char* name)
-{
-	OUTP("fail [%d] [%s]", exitcode, name);
-	exit(exitcode);
-}
-
-void failfunc_main_6(int exitcode, char* name)
-{
-	OUTP("fail [%d] [%s]", exitcode, name);
-	exit(exitcode);
-}
-
-void failfunc_main_7(int exitcode, char* name)
 {
 	OUTP("fail [%d] [%s]", exitcode, name);
 	exit(exitcode);
@@ -71,7 +36,7 @@ int print_out_b(void)
 	int a=1,b=2,c=3;
 	int ret;
 	OB_CODE(a,b,c);
-	ret = OB_CHKVAL_FUNC(failfunc_main_2);
+	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;
 	}
@@ -86,7 +51,7 @@ int print_out_c(void)
 	int a=1,b=2,c=3;
 	int ret;
 	OB_CODE(a,b,c);
-	ret = OB_CHKVAL_FUNC(failfunc_main_3);
+	ret = OB_CHKVAL_TOTAL_FUNC_SPEC("namemin=10");
 	if (ret < 0) {
 		return ret;
 	}
@@ -102,7 +67,7 @@ int print_out_d(void)
 	int a=1,b=2,c=3;
 	int ret;
 	OB_CODE(a,b,c);
-	ret = OB_CHKVAL_FUNC(failfunc_main_4);
+	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;
 	}
@@ -117,7 +82,7 @@ int print_out_e(void)
 	int a=1,b=2,c=3;
 	int ret;
 	OB_CODE(a,b,c);
-	ret = OB_CHKVAL_FUNC(failfunc_main_5);
+	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;
 	}
@@ -132,7 +97,7 @@ int print_out_f(void)
 	int a=1,b=2,c=3;
 	int ret;
 	OB_CODE(a,b,c);
-	ret = OB_CHKVAL_FUNC(failfunc_main_6);
+	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;
 	}
@@ -147,7 +112,7 @@ int print_out_g(void)
 	int a=1,b=2,c=3;
 	int ret;
 	OB_CODE(a,b,c);
-	ret = OB_CHKVAL_FUNC(failfunc_main_7);
+	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;
 	}
@@ -160,7 +125,7 @@ int print_out_g(void)
 int main(int argc,char* argv[])
 {
 	int ret;
-	ret = OB_CHKVAL_FUNC(failfunc_main_4);
+	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;
 	}

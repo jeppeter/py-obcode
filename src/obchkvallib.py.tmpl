@@ -37,6 +37,8 @@ class ChkVal(COBFileBase):
         self.__ob_chkval_func_spec_expr = re.compile('.*(OB_CHKVAL_FUNC_SPEC\s*(\(.*))$')
         self.__ob_expand_code_expr = re.compile('\s+(OB_EXPAND_CODE\s*(\\\x28.*))$')
         self.__ob_expand_code_spec_expr = re.compile('\s+(OB_EXPAND_CODE_SPEC\s*(\\\x28.*))$')
+        self.__ob_chkval_total_func_expr = re.compile('.*(OB_CHKVAL_TOTAL_FUNC\s*(\(.*))$')
+        self.__ob_chkval_total_func_spec_expr = re.compile('.*(OB_CHKVAL_TOTAL_FUNC_SPEC\s*(\(.*))$')
         return
 
     def __format_ob_random_name_inner(self,objname,odict,cfg,params,before,after):
@@ -417,6 +419,43 @@ class ChkVal(COBFileBase):
         cfg ,params,before ,after = self.get_spec_config_variables(l,self.__ob_chkval_func_spec_expr)
         return self.__format_ob_chkval_func_inner(l,retodict,cfg,params,before,after)
 
+    def __format_ob_chkval_total_func_inner(self,l,retodict,cfg,params,before,after):
+        idx = -1
+        jdx = -1
+        logging.info('')
+        if len(retodict['FUNCS']) > 0:
+            idx = random.randint(0,len(retodict['FUNCS']) - 1)
+        if len(retodict['FAILFUNC']) > 0:
+            jdx = random.randint(0,len(retodict['FAILFUNC']) - 1)
+        logging.info('idx [%d]'%(idx))
+        if idx < 0 or jdx < 0:
+            # we do not have the functions ,so just keep 
+            return '%s\n'%(l)
+        typecall = retodict['TYPES'][idx]
+        file = retodict['FILES'][idx]
+        funcname = retodict['FUNCS'][idx]
+        failfunc = retodict['FAILFUNC'][jdx]
+        tabs = count_tabs(l)
+        rets = ''
+        rets += format_debug_line(' in [%s] for [%s] '%(file,typecall),tabs,3)
+        rets += format_line('#line %d'%(self.cur_line),0)
+        rets += before
+        rets += '%s(%s)'%(funcname,failfunc)
+        rets += after
+        rets += '\n'
+        return rets
+
+
+
+    def __format_ob_chkval_total_func(self,l,retodict):
+        cfg ,params,before ,after = self.get_variables(l,self.__ob_chkval_total_func_expr)
+        return self.__format_ob_chkval_total_func_inner(l,retodict,cfg,params,before,after)
+
+    def __format_ob_chkval_total_func_spec(self,l,retodict):
+        cfg ,params,before ,after = self.get_spec_config_variables(l,self.__ob_chkval_total_func_spec_expr)
+        return self.__format_ob_chkval_total_func_inner(l,retodict,cfg,params,before,after)
+
+
     def __format_ob_expand_code_inner(self,l,params,cfg,before,after):
         rets = ''
         rets += self.expand_code(l,params,cfg,before,after)
@@ -432,7 +471,16 @@ class ChkVal(COBFileBase):
         cfg ,params,before ,after = self.get_spec_config_variables(l,self.__ob_chkval_func_spec_expr)
         return self.__format_ob_expand_code_inner(l,params,cfg,before,after)
 
-    def replace_functions(self,odict,objs=[]):
+    def get_failfunc_objects(self,odict,exitobjs=[],failfunc=''):
+        failfuncs = []
+        for f in exitobjs:
+            curfunc = get_odict_value(odict,RANDOM_VARIABLE,f,failfunc)
+            if curfunc is not None:
+                failfuncs.append(curfunc)
+        return failfuncs
+
+
+    def replace_functions(self,odict,objs=[],exitobjs=[],failfunc=''):
         logging.info('objs %s'%(objs))
         retodict = self.get_functions_odict(odict,objs)
         funccalls = []
@@ -443,10 +491,12 @@ class ChkVal(COBFileBase):
                 funccalls.append(retodict[k][v])
                 funcnames.append(v)
                 funcfiles.append(k)
+        failfuncs = self.get_failfunc_objects(odict,exitobjs,failfunc)
         retodict = dict()
         retodict['FILES'] = funcfiles
         retodict['FUNCS'] = funccalls
         retodict['TYPES'] = funcnames
+        retodict['FAILFUNC'] = failfuncs
         rets = ''
         self.cur_line = 0
         for l in self.in_lines:
@@ -459,6 +509,12 @@ class ChkVal(COBFileBase):
             elif self.get_filter_expr_not_defined(l, self.__ob_chkval_func_spec_expr):
                 logging.debug('')
                 rets += self.__format_ob_chkval_func_spec(l,retodict)
+            elif self.get_filter_expr_not_defined(l, self.__ob_chkval_total_func_expr):
+                logging.debug('')
+                rets += self.__format_ob_chkval_total_func(l,retodict)
+            elif self.get_filter_expr_not_defined(l, self.__ob_chkval_total_func_spec_expr):
+                logging.debug('')
+                rets += self.__format_ob_chkval_total_func_spec(l,retodict)
             else:
                 rets += '%s\n'%(l)
         return rets
@@ -882,7 +938,7 @@ def replchkval_handler(args,parser):
         logging.info('k[%s]'%(k))
         objs.append(k)
     rets = ''
-    rets += chkval.replace_functions(odict[CHKVAL_KEY],objs)
+    rets += chkval.replace_functions(odict[CHKVAL_KEY],objs,args.includefiles,args.failfunc)
     write_file(rets, args.output)
     sys.exit(0)
     return
