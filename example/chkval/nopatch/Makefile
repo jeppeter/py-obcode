@@ -84,8 +84,6 @@ $(shell ${PYTHON} ${TOPDIR}/obchkval.py  chkvaldatafiles main2):
 
 
 clean:
-	/bin/echo "main_data_SRCS" ${main_data_SRCS}
-	/bin/echo "main_exit_SRCS" ${main_exit_SRCS}
 	rm -f ${CURDIR}/main ${CURDIR}/main2
 	rm -f ${main_OBJS} ${main2_OBJS}
 	rm -f $(shell ${PYTHON} ${TOPDIR}/obchkval.py chkvalexitfiles main) 
