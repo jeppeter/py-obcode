@@ -419,7 +419,9 @@ def main():
     }
     '''
     if sys.platform == 'win32':
-        commandline = commandline_fmt%(os.getcwd(),'obj','cpp',format_cob_config(4))
+        curdir = os.getcwd()
+        curdir = curdir.replace('\\','\\\\')
+        commandline = commandline_fmt%(curdir,'obj','cpp',format_cob_config(4))
     else:
         commandline = commandline_fmt%(os.getcwd(),'o','c',format_cob_config(4))
     d = dict()

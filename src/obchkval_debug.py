@@ -118,7 +118,9 @@ def main():
     }
     '''
     if sys.platform == 'win32':
-        commandline=commandline_fmt%(os.getcwd(),'obj','cpp')
+        curdir = os.getcwd()
+        curdir = curdir.replace('\\','\\\\')
+        commandline=commandline_fmt%(curdir,'obj','cpp')
     else:
         commandline=commandline_fmt%(os.getcwd(),'o','c')
     d = dict()
