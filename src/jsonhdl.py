@@ -84,6 +84,9 @@ CHKVAL_OBJ_DATA='objdata'
 CHKVAL_AES_KEY_SIZE=32
 CHKVAL_AES_IV_SIZE=16
 
+CHKVAL_EXIT_HANDLER_FILES='exit_handler_files'
+CHKVAL_DATA_FILES='data_files'
+
 def set_odict_value(odict,val,*path):
     curodict = odict
     idx = 0
@@ -175,6 +178,14 @@ def get_jdict(args):
             sarr = re.split(';',a)
             if len(sarr) > 1 and len(sarr[1]) > 0:
                 args.objfile = sarr[1]
+        elif a.startswith('objsuffix;'):
+            sarr = re.split(';',a)
+            if len(sarr) > 1 and len(sarr[1]) > 0:
+                args.objsuffix = sarr[1]
+        elif a.startswith('csuffix;'):
+            sarr = re.split(';',a)
+            if len(sarr) > 1 and len(sarr[1]) > 0:
+                args.csuffix = sarr[1]
         else:
             sarr = re.split(';',a)
             if len(sarr) < 2:

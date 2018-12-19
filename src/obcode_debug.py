@@ -281,11 +281,20 @@ def main():
         "output|o" : null,
         "input|i" : null,
         "times|T" : 0,
-        "dump|D" : null,
+        "chkval_times" : 5,
+        "dump|D" : "obcode.json",
         "includes|I" : [],
         "includefiles" : [],
         "unpatchfunc|U" : "unpatch_handler",
         "failfunc" : "failfunc_handler",
+        "fileprefix" : null,
+        "appendpath" : "%s",
+        "objsuffix" : "%s",
+        "csuffix" : "%s",
+        "objpattern" : null,
+        "cpattern" : null,
+        "obchkkey" : "obchkval",
+        "with_quote" : false,
         "cob<cob_handler>##srcdir dstdir to obfuscated code in c mode##" : {
             "handles" : ["\\\\.c$","\\\\.h$","\\\\.cpp$","\\\\.cxx$"],
             "filters" : ["\\\\.git$"],
@@ -353,36 +362,66 @@ def main():
         "obrepatchpe<obrepatchpe_handler>##objfiles ... to replay patchelf##" : {
             "$" : "+"
         },
-        "fmtchkval<fmtchkval_handler>##objfile;func1,func2 ... to format chkval file##" : {
+        "fmtchkval<fmtchkval_handler>##--obchkkey key objfile;func1,func2 ... to format chkval file##" : {
             "$" : "+"
         },
-        "chkvalheader<chkvalheader_handler>##objfile ... to format chkval header file##" : {
+        "fmtchkvalforge<fmtchkvalforge_handler>##--obchkkey key objfile;func1,func2 ... to format chkval file forge##" : {
             "$" : "+"
         },
-        "replchkval<replchkval_handler>##objfile ... to replace chkval into new header##" : {
-            "$" : "+"
-        },
-        "chkvaldumpfuncself<chkvaldumpfuncself_handler>##objfile ... to get the byte information for handler##" : {
-            "$" : "+"
-        },
-        "chkvalfillelf<chkvalfillelf_handler>##objfile ... to filled real data into the structure##" : {
-            "$" : "+"
-        },
-        "chkvalexitfmt<chkvalexitfmt_handler>##-i templatefile -o cfile 'objfile:objecthandle'##" : {
+        "chkvalheader<chkvalheader_handler>##--obchkkey key to format chkval header file##" : {
             "$" : "*"
         },
-        "chkvalexitfmtforge<chkvalexitfmtforge_handler>##-i templatefile -o cfile 'objfile:objecthandle'##" : {
+        "chkvalheaderforge<chkvalheaderforge_handler>##--obchkkey key to format chkval header file forge##" : {
             "$" : "*"
         },
-        "exitheaderfmt<exitheaderfmt_handler>##-o headerfile -D dumpjson [objfiles...]##" : {
+        "replchkval<replchkval_handler>##--obchkkey key  to replace chkval into new header##" : {
             "$" : "*"
         },
-        "exitheaderfmtforge<exitheaderfmtforge_handler>##-o headerfile -D dumpjson [objfiles...] forge##" : {
+        "replchkvalforge<replchkvalforge_handler>##--obchkkey key  to replace chkval into new header forge##" : {
             "$" : "*"
+        },
+        "chkvaldumpfuncself<chkvaldumpfuncself_handler>##--obchkkey key to get the byte information for handler##" : {
+            "$" : "*"
+        },
+        "chkvaldumpfuncsforge<chkvaldumpfuncsforge_handler>##--obchkkey key to get the byte information for handler forge##" : {
+            "$" : "*"
+        },
+        "chkvalfillelf<chkvalfillelf_handler>##--obchkkey key  to filled real data into the structure##" : {
+            "$" : "*"
+        },
+        "chkvalfillforge<chkvalfillforge_handler>##--obchkkey key  to filled real data into the structure forge##" : {
+            "$" : "*"
+        },
+        "chkvalexitfmt<chkvalexitfmt_handler>##-i templatefile -o cfile --obchkkey key##" : {
+            "$" : "*"
+        },
+        "chkvalexitfmtforge<chkvalexitfmtforge_handler>##-i templatefile -o cfile --obchkkey key##" : {
+            "$" : "*"
+        },
+        "exitheaderfmt<exitheaderfmt_handler>##-o headerfile -D dumpjson --obchkkey key##" : {
+            "$" : "*"
+        },
+        "exitheaderfmtforge<exitheaderfmtforge_handler>##-o headerfile -D dumpjson --obchkkey key forge##" : {
+            "$" : "*"
+        },
+        "chkvalexitfiles<chkvalexitfiles_handler>##obchkkeys... to get the exit files list##" : {
+            "$" : "+"
+        },
+        "chkvalexitobjs<chkvalexitobjs_handler>##obchkkey... to get  the exit objs list##" : {
+            "$" : "+"
+        },
+        "chkvaldatafiles<chkvaldatafiles_handler>##obchkkey... to get the data files list##" : {
+            "$" : "+"
+        },
+        "chkvaldataobjs<chkvaldataobjs_handler>##obchkkey... to get the data objs list##" : {
+            "$" : "+"
         }
     }
     '''
-    commandline = commandline_fmt%(format_cob_config(4))
+    if sys.platform == 'win32':
+        commandline = commandline_fmt%(os.getcwd(),'obj','cpp',format_cob_config(4))
+    else:
+        commandline = commandline_fmt%(os.getcwd(),'o','c',format_cob_config(4))
     d = dict()
     d['version'] = "VERSION_RELACE_STRING"
     options = extargsparse.ExtArgsOptions(d)

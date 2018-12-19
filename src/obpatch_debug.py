@@ -44,7 +44,7 @@ def main():
         "output|o" : null,
         "input|i" : null,
         "times|T" : 0,
-        "dump|D" : null,
+        "dump|D" : "obcode.json",
         "includes|I" : [],
         "includefiles" : [],
         "unpatchfunc|U" : "unpatch_handler",

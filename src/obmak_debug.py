@@ -28,6 +28,7 @@ def main():
     {
         "verbose|v" : "+",
         "version|V" : false,
+        "dump|D" : "obcode.json",
         "makob<makob_handler>##srcfile to give the other code file ,this need environment variable MAKOB_FILE to get the default (makob.json)##" : {
             "namemin" : 5,
             "namemax" : 20,

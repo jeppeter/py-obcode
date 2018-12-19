@@ -773,5 +773,21 @@ def format_bytes_debug(data,note=''):
         rets += '\n'
     return rets
 
+def output_list(files,fout=None,withquote=False):
+    if fout is None:
+        fout = sys.stdout
+    idx = 0
+    for f in files:
+        if idx > 0:
+            fout.write(' ')
+        if withquote:
+            fout.write('"%s"'%(quote_string(f)))
+        else:
+            fout.write('%s'%(f))
+        idx += 1
+    fout.write('\n')
+    fout.flush()
+    return
+
 
 ##extractcode_end

@@ -107,6 +107,14 @@ define OB_CHKVAL_DUMP_FUNCS_ELF
 ${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} chkvaldumpfuncsforge $(1)
 endef
 
+define OB_CHKVAL_FMT_EXIT_HEADER
+${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} exitheaderfmtforge $(1)
+endef
+
+define OB_CHKVAL_EXIT_FMT
+${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} chkvalexitfmtforge $(1)
+endef
+
 # else ${OB_CHKVAL}
 
 else
@@ -130,6 +138,15 @@ endef
 define OB_CHKVAL_DUMP_FUNCS_ELF
 ${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} chkvaldumpfuncself $(1)
 endef
+
+define OB_CHKVAL_FMT_EXIT_HEADER
+${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} exitheaderfmt $(1)
+endef
+
+define OB_CHKVAL_EXIT_FMT
+${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} chkvalexitfmt $(1)
+endef
+
 
 #endof ${OB_CHKVAL}
 endif

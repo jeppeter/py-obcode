@@ -565,6 +565,7 @@ def chkval_dump_object_function_one(args,objparser,odict,o,f,win32mode=False):
     return odict
 
 def chkval_dump_check_functions(args,objtype,odict,outname,win32mode=False):
+    logging.debug('[%s]'%(outname))
     startfunc = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE,outname,CHKVAL_START_FUNCTION_NAME)
     endfunc = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE,outname,CHKVAL_END_FUNCTION_NAME)
     basefunc = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE,outname,CHKVAL_BASE_FUNCTION_NAME)
@@ -616,6 +617,51 @@ def chkval_get_realdata(objparser,exefile,odict,rawdata,objname,funcname,win32mo
                 logging.debug('[%s].[%s].[0x%x:%d] [0x%02x] ^ [0x%02x] = [0x%02x]'%(objname,funcname,offi,offi,realdata[offi],xors[offk],(realdata[offi] ^ xors[offk])))
                 realdata[offi] = realdata[offi] ^ xors[offk]
     return realdata
+
+def chkval_cfiles(args,odict,*path):
+    d = args.appendpath
+    d = os.path.abspath(d)
+    files = get_odict_value(odict,CHKVAL_KEY,*path)
+    if files is None:
+        fnum = args.chkval_times
+        files = []
+        if fnum == 0:
+            fnum = random.randint(4,10)
+        idx = 0
+        while idx < fnum:
+            curname = '%s.%s'%(get_random_name(random.randint(10,20)),args.csuffix)
+            curname = os.path.join(d,curname)
+            if os.path.exists(curname) or curname in files:
+                continue
+            files.append(curname)
+            idx += 1
+        odict = set_odict_value(odict,files , CHKVAL_KEY,*path)
+        write_json(odict,args.dump)
+    return files
+
+
+def chkval_objs(args,odict,*path):
+    files = chkval_cfiles(args,odict,*path)
+    objs = []
+    for f in files:
+        if args.objpattern is not None and args.cpattern is not None:
+            f = re.sub(args.cpattern,args.objpattern,f)
+        o = re.sub('\.%s$'%(args.csuffix), '.%s'%(args.objsuffix),f)
+        objs.append(o)
+    return objs
+
+
+def chkval_exit_files(args,odict,keyval):
+    return chkval_cfiles(args,odict,CHKVAL_EXIT_HANDLER_FILES,keyval)
+
+def chkval_exit_objs(args,odict,keyval):
+    return chkval_objs(args,odict,CHKVAL_EXIT_HANDLER_FILES,keyval)
+
+def chkval_data_files(args,odict,keyval):
+    return chkval_cfiles(args,odict,CHKVAL_DATA_FILES,keyval)
+
+def chkval_data_objs(args,odict,keyval):
+    return chkval_objs(args,odict,CHKVAL_DATA_FILES,keyval)
 
 def get_crc32_value(rawdata):
     crc32val = zlib.crc32(ints_to_bytes(rawdata))
@@ -879,10 +925,7 @@ def chkval_fill_data(args,objtype,odict,exefile,chkobjs=[],win32mode=False):
     write_file_ints(alldata, exefile)
     return odict
 
-def fmtchkval_handler(args,parser):
-    set_logging_level(args)
-    jdict,args = get_jdict(args)
-    odict = get_odict(args,False)
+def single_chkval_data_format(args,objfile,odict,jdict):
     chkval = ChkVal(args.input,None,None)
     if CHKVAL_KEY not in odict.keys():
         odict[CHKVAL_KEY] = dict()
@@ -890,20 +933,33 @@ def fmtchkval_handler(args,parser):
     rets += format_includes(args)
     rets += format_line('',0)
 
-    curs, odict[CHKVAL_KEY] = chkval.format_c_code_pre(odict[CHKVAL_KEY],args.objfile)
+    curs, odict[CHKVAL_KEY] = chkval.format_c_code_pre(odict[CHKVAL_KEY],objfile)
     rets += curs
 
-    curs , odict[CHKVAL_KEY] = chkval.format_c_code(odict[CHKVAL_KEY],args.objfile,jdict)
+    curs , odict[CHKVAL_KEY] = chkval.format_c_code(odict[CHKVAL_KEY],objfile,jdict)
     rets += curs
 
-    curs , odict[CHKVAL_KEY] = chkval.format_c_code_post(odict[CHKVAL_KEY],args.objfile)
+    curs , odict[CHKVAL_KEY] = chkval.format_c_code_post(odict[CHKVAL_KEY],objfile)
     rets += curs
-    write_patch_output(args,rets,odict)
-    # now to give the out
-    chkval = ChkVal(args.output,None,None)
-    rets,dummydict = chkval.expand_chkval_code()
-    # writes with output
-    write_file(rets,args.output)
+
+    return rets,odict
+
+
+def fmtchkval_handler(args,parser):
+    set_logging_level(args)
+    jdict,args = get_jdict(args)
+    odict = get_odict(args,False)
+    files = chkval_data_files(args,odict,args.obchkkey)
+    objs = chkval_data_objs(args,odict,args.obchkkey)
+    idx = 0
+    while idx < len(files):
+        rets,odict = single_chkval_data_format(args,objs[idx],odict,jdict)
+        write_file(rets,files[idx])
+        chkval = ChkVal(files[idx],None,None)
+        rets , dummydict = chkval.expand_chkval_code()
+        write_file(rets,files[idx])
+        idx += 1
+    write_json(odict,args.dump)
     sys.exit(0)
     return
 
@@ -911,18 +967,15 @@ def chkvalheader_handler(args,parser):
     set_logging_level(args)
     jdict, args = get_jdict(args)
     odict = get_odict(args,False)
-
-    objs = []
-    for k in jdict.keys():
-        objs.append(k)
+    objs = chkval_data_objs(args,odict,args.obchkkey)
     if CHKVAL_KEY not in odict.keys():
         odict[CHKVAL_KEY] = dict()
-
     chkval = ChkVal(None,None,None)
     rets = ''
     rets += chkval.format_chkval_header(odict[CHKVAL_KEY],objs)
 
     write_file(rets,args.output)
+    write_json(odict,args.dump)
     sys.exit(0)
     return
 
@@ -930,15 +983,11 @@ def replchkval_handler(args,parser):
     set_logging_level(args)
     jdict, args = get_jdict(args)
     odict = get_odict(args, False)
-    chkval = ChkVal(args.input,None,None)
-    if CHKVAL_KEY not in odict.keys():
-        odict[CHKVAL_KEY] = dict()
-    objs = []
-    for k in jdict.keys():
-        logging.info('k[%s]'%(k))
-        objs.append(k)
+    objs = chkval_data_objs(args,odict,args.obchkkey)
+    exitobjs = chkval_exit_objs(args,odict,args.obchkkey)
     rets = ''
-    rets += chkval.replace_functions(odict[CHKVAL_KEY],objs,args.includefiles,args.failfunc)
+    chkval = ChkVal(args.input,None,None)
+    rets += chkval.replace_functions(odict[CHKVAL_KEY],objs,exitobjs,args.failfunc)
     write_file(rets, args.output)
     sys.exit(0)
     return
@@ -948,10 +997,15 @@ def chkvaldumpfuncself_handler(args,parser):
     logging.info('chkvaldumpfuncself')
     jdict, args = get_jdict(args)
     odict = get_odict(args, False)
-    objs = []
-    for k in jdict.keys():
-        objs.append(k)
-    odict = chkval_dump_object_functions(args,'ElfParser',odict,objs)
+    objs = chkval_data_objs(args,odict,args.obchkkey)
+    for f in objs:
+        curobjs = []
+        files = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RANDOM_VALUE,f)
+        if files is not None:
+            for k in files.keys():
+                curobjs.append(k)
+            args.output = f
+            odict = chkval_dump_object_functions(args,'ElfParser',odict,curobjs)
     write_json(odict, args.dump)
     sys.exit(0)
     return
@@ -961,9 +1015,7 @@ def chkvalfillelf_handler(args,parser):
     logging.info('chkvalfillelf')
     jdict, args = get_jdict(args)
     odict = get_odict(args, False)
-    objs = []
-    for k in jdict.keys():
-        objs.append(k)
+    objs = chkval_data_objs(args,odict,args.obchkkey)
     odict = chkval_fill_data(args,'ElfParser',odict,args.output,objs)
     write_json(odict,args.dump)
     sys.exit(0)
@@ -1003,12 +1055,13 @@ def chkvalheaderforge_handler(args,parser):
 def fmtchkvalforge_handler(args,parser):
     set_logging_level(args)
     jdict, args = get_jdict(args)
-    # output file ok
-    rets =  ''
-    if args.output is None:
-        write_file_direct(rets,sys.stdout)
-    else:
-        write_file(rets,args.output)
+    odict = get_odict(args,False)
+    files = chkval_data_files(args,odict,args.obchkkey)
+    idx = 0
+    while idx < len(files):
+        rets = ''
+        write_file(rets,files[idx])
+        idx += 1
     sys.exit(0)
     return
 
@@ -1023,8 +1076,14 @@ def replchkvalforge_handler(args,parser):
 def chkvalexitfmtforge_handler(args,parser):
     set_logging_level(args)    
     jdict, args = get_jdict(args)
-    rets = ''
-    write_file(rets,args.output)
+    odict = get_odict(args,False)
+    objs = chkval_exit_objs(args,odict,args.obchkkey)
+    files = chkval_exit_files(args,odict,args.obchkkey)
+    idx = 0
+    while idx < len(files):
+        rets = ''
+        write_file(rets,files[idx])
+        idx += 1
     sys.exit(0)
     return
 
@@ -1033,10 +1092,15 @@ def chkvalexitfmt_handler(args,parser):
     set_logging_level(args)
     jdict, args = get_jdict(args)
     odict = get_odict(args,False)
+    files = chkval_exit_files(args,odict,args.obchkkey)
+    objs = chkval_exit_objs(args,odict,args.obchkkey)
     chkval = ChkVal(args.input,None,None)
     odict = create_odict_is_none(odict,CHKVAL_KEY)
-    rets,odict[CHKVAL_KEY] = chkval.expand_chkval_code(args.objfile,odict[CHKVAL_KEY])
-    write_file(rets,args.output)
+    idx = 0
+    while idx < len(files):
+        rets,odict[CHKVAL_KEY] = chkval.expand_chkval_code(objs[idx],odict[CHKVAL_KEY])
+        write_file(rets,files[idx])
+        idx += 1
     write_json(odict,args.dump)
     sys.exit(0)
     return
@@ -1049,7 +1113,7 @@ def exitheaderfmtforge_handler(args,parser):
     sys.exit(0)
     return
 
-def format_exit_header(args,odict,objs=[]):
+def format_exit_header(args,odict,obchkkeys=[]):
     rets = ''
     guardval = '__%s__'%(get_random_name(random.randint(10,30)))
     rets += format_line('#ifndef %s'%(guardval),0)
@@ -1058,12 +1122,16 @@ def format_exit_header(args,odict,objs=[]):
     rets += format_line('#ifdef __cplusplus',0)
     rets += format_line('extern "C" {', 0)
     rets += format_line('#endif /*__cplusplus*/',0)
-    for f in objs:
-        funcname = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE,f,args.failfunc)
-        if funcname is not None:
-            rets += format_line('',0)
-            rets += format_debug_line('from [%s] file for [%s]'%(f,args.failfunc),0,3)
-            rets += format_line('void %s(int errcode, char* fmt);'%(funcname),0)
+    d = args.appendpath
+    d = os.path.abspath(d)
+    for k in obchkkeys:
+        objs = chkval_exit_objs(args,odict,k)
+        for f in objs:
+            funcname = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE,f,args.failfunc)
+            if funcname is not None:
+                rets += format_line('',0)
+                rets += format_debug_line('from [%s] file for [%s]'%(f,args.failfunc),0,3)
+                rets += format_line('void %s(int errcode, char* fmt);'%(funcname),0)
 
     rets += format_line('',0)
     rets += format_line('#ifdef __cplusplus',0)
@@ -1078,17 +1146,76 @@ def exitheaderfmt_handler(args,parser):
     set_logging_level(args)
     jdict, args = get_jdict(args)
     odict = get_odict(args,False)
-    objfiles = []
+    obchkkeys = []
     for k in jdict.keys():
-        objfiles.append(k)
-    if len(objfiles) == 0:
-        varobjs = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE)
+        obchkkeys.append(k)
+    if len(obchkkeys) == 0:
+        varobjs = get_odict_value(odict,CHKVAL_KEY,CHKVAL_EXIT_HANDLER_FILES)
         if varobjs is not None:
             for k in varobjs.keys():
-                objfiles.append(k)
-    rets = format_exit_header(args,odict,objfiles)
+                obchkkeys.append(k)
+    rets = format_exit_header(args,odict,obchkkeys)
     write_file(rets,args.output)
     sys.exit(0)
     return
+
+
+
+def chkvalexitfiles_handler(args,parser):
+    set_logging_level(args)
+    jdict, args = get_jdict(args)
+    odict = get_odict(args,False)
+    keys = []
+    for k in jdict.keys():
+        keys.append(k)
+    files = []
+    for k in keys:
+        files.extend(chkval_exit_files(args,odict,k))
+    output_list(files,None,args.with_quote)
+    sys.exit(0)
+    return
+
+def chkvalexitobjs_handler(args,parser):
+    set_logging_level(args)
+    jdict, args = get_jdict(args)
+    odict = get_odict(args,False)
+    keys = []
+    for k in jdict.keys():
+        keys.append(k)
+    objs = []    
+    for k in keys:
+        objs.extend(chkval_exit_objs(args,odict,k))
+    output_list(objs,None,args.with_quote)
+    sys.exit(0)
+    return
+
+def chkvaldatafiles_handler(args,parser):
+    set_logging_level(args)
+    jdict, args = get_jdict(args)
+    odict = get_odict(args,False)
+    keys = []
+    for k in jdict.keys():
+        keys.append(k)
+    files = []
+    for k in keys:
+        files.extend(chkval_data_files(args,odict,k))
+    output_list(files,None,args.with_quote)
+    sys.exit(0)
+    return
+
+def chkvaldataobjs_handler(args,parser):
+    set_logging_level(args)
+    jdict, args = get_jdict(args)
+    odict = get_odict(args,False)
+    keys = []
+    for k in jdict.keys():
+        keys.append(k)
+    objs = []
+    for k in keys:
+        objs.extend(chkval_data_objs(args,odict,k))
+    output_list(objs,None,args.with_quote)
+    sys.exit(0)
+    return
+
 
 ##extractcode_end

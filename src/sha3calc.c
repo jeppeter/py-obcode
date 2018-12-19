@@ -20,9 +20,9 @@ typedef struct sha3_context_ {
 
 
 /* For Init or Reset call these: */
-void OB_RANDOM_NAME(sha3_init512)(void *priv);
-void OB_RANDOM_NAME(sha3_update)(void *priv, void const *bufIn, unsigned int len);
-void OB_RANDOM_NAME(sha3_final)(void *priv, unsigned char* pval);
+void OB_RANDOM_NAME(sha3_init512)(sha3_context*priv);
+void OB_RANDOM_NAME(sha3_update)(sha3_context *ctx, const unsigned char *buf, unsigned int len);
+void OB_RANDOM_NAME(sha3_final)(sha3_context*priv, unsigned char* pval);
 
 
 
