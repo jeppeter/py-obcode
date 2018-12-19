@@ -82,7 +82,6 @@ class ChkVal(COBFileBase):
                 newc, odict = self.__format_ob_random_name_spec_func(newc,objname,odict)
             else:
                 break
-        newc += '\n'
         return newc,odict
 
     def __format_multi_lines(self,mlines,objname,odict):

@@ -5,9 +5,9 @@ TOPDIR=$(shell readlink -f ../../..)
 endif
 -include ${TOPDIR}/obcode.mak
 
-main_SRCS=${CURDIR}/main.cpp ${CURDIR}/callc.cpp ${CURDIR}/chk_main_1.cpp ${CURDIR}/chk_main_2.cpp ${CURDIR}/main_exit_1,cpp ${CURDIR}/main_exit_2.cpp
+main_SRCS=${CURDIR}/main.cpp ${CURDIR}/callc.cpp ${CURDIR}/chk_main_1.cpp ${CURDIR}/chk_main_2.cpp ${CURDIR}/main_exit_1.cpp ${CURDIR}/main_exit_2.cpp
 main_OBJS=$(patsubst ${CURDIR}/%.cpp,${CURDIR}/%.o,${main_SRCS})
-main2_SRCS=${CURDIR}/main2.cpp ${CURDIR}/callc2.cpp ${CURDIR}/chk_main2_1.cpp ${CURDIR}/chk_main2_2.cpp ${CURDIR}/main2_exit_1,cpp ${CURDIR}/main2_exit_2.cpp
+main2_SRCS=${CURDIR}/main2.cpp ${CURDIR}/callc2.cpp ${CURDIR}/chk_main2_1.cpp ${CURDIR}/chk_main2_2.cpp ${CURDIR}/main2_exit_1.cpp ${CURDIR}/main2_exit_2.cpp
 main2_OBJS=$(patsubst ${CURDIR}/%.cpp,${CURDIR}/%.o,${main2_SRCS})
 
 CFLAGS= -I${TOPDIR}/include  -DOB_DEBUG_MODE=1 -include stdio.h -include  stdlib.h

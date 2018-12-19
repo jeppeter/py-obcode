@@ -27,34 +27,34 @@ $(1)
 endef
 
 define UNOB_MAK_FILE_SHORT
-$(shell ${PYTHON} -c "import sys;c='%OBMAK_CODE%';sys.stdout.write('%s'%(c));"  | ${PYTHON} /dev/stdin  | ${PYTHON} /dev/stdin ${OB_VERBOSE} basename $(1))
+$(shell ${PYTHON} "${__OBCODE_MAK_DIR__}/obmak.py" ${OB_VERBOSE} basename $(1) )
 endef
 
 define UNOB_FUNC
-$(shell ${PYTHON} -c "import sys;c='%OBMAK_CODE%';sys.stdout.write('%s'%(c));"  | ${PYTHON} /dev/stdin  | ${PYTHON} /dev/stdin ${OB_VERBOSE} obunfunc $(1))
+$(shell ${PYTHON} "${__OBCODE_MAK_DIR__}/obmak.py" ${OB_VERBOSE} obunfunc $(1) )
 endef
 
 else
 
 
 define OB_MAK_FILE
-$(shell ${PYTHON} -c "import sys;c='%OBMAK_CODE%';sys.stdout.write('%s'%(c));"  | ${PYTHON} /dev/stdin  | ${PYTHON} /dev/stdin ${OB_VERBOSE} makob $(1))
+$(shell ${PYTHON} "${__OBCODE_MAK_DIR__}/obmak.py" ${OB_VERBOSE} makob $(1))
 endef
 
 define OB_TRANS_PATH
-$(shell ${PYTHON} -c "import sys;c='%OBMAK_CODE%';sys.stdout.write('%s'%(c));"  | ${PYTHON} /dev/stdin  | ${PYTHON} /dev/stdin ${OB_VERBOSE} obtrans --obtrans-srcdir "$(1)" --obtrans-dstdir "$(2)" "$(3)")
+$(shell ${PYTHON} "${__OBCODE_MAK_DIR__}/obmak.py" ${OB_VERBOSE} obtrans --obtrans-srcdir "$(1)" --obtrans-dstdir "$(2)" "$(3)")
 endef
 
 define UNOB_MAK_FILE
-$(shell ${PYTHON} -c "import sys;c='%OBMAK_CODE%';sys.stdout.write('%s'%(c));"  | ${PYTHON} /dev/stdin  | ${PYTHON} /dev/stdin ${OB_VERBOSE}  unmakob $(1))
+$(shell ${PYTHON} "${__OBCODE_MAK_DIR__}/obmak.py" ${OB_VERBOSE} unmakob $(1))
 endef
 
 define UNOB_MAK_FILE_SHORT
-$(shell ${PYTHON} -c "import sys;c='%OBMAK_CODE%';sys.stdout.write('%s'%(c));"  | ${PYTHON} /dev/stdin  | ${PYTHON} /dev/stdin ${OB_VERBOSE} unmakob --unmakob-short $(1))
+$(shell ${PYTHON} "${__OBCODE_MAK_DIR__}/obmak.py" ${OB_VERBOSE} unmakob --unmakob-short $(1))
 endef
 
 define UNOB_FUNC
-$(shell ${PYTHON} -c "import sys;c='%OBMAK_CODE%';sys.stdout.write('%s'%(c));"  | ${PYTHON} /dev/stdin  | ${PYTHON} /dev/stdin ${OB_VERBOSE} obunfunc $(1))
+$(shell ${PYTHON} "${__OBCODE_MAK_DIR__}/obmak.py" ${OB_VERBOSE} obunfunc $(1))
 endef
 
 endif
@@ -63,21 +63,21 @@ endif
 ifeq (${OB_PATCH},)
 
 define OB_ELF_PATCH
-${PYTHON} -c "import sys;c='%OBPATCH_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} obpatchelfforge $(1)
+${PYTHON} "${__OBCODE_MAK_DIR__}/obpatch.py" ${OB_VERBOSE} obpatchelfforge $(1)
 endef
 
 define OB_ELF_UNPATCH
-${PYTHON} -c "import sys;c='%OBPATCH_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} obunpatchelfforge $(1)
+${PYTHON} "${__OBCODE_MAK_DIR__}/obpatch.py" ${OB_VERBOSE} obunpatchelfforge $(1)
 endef
 
 else
 
 define OB_ELF_PATCH
-${PYTHON} -c "import sys;c='%OBPATCH_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} obpatchelf $(1)
+${PYTHON} "${__OBCODE_MAK_DIR__}/obpatch.py" ${OB_VERBOSE} obpatchelf $(1)
 endef
 
 define OB_ELF_UNPATCH
-${PYTHON} -c "import sys;c='%OBPATCH_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} obunpatchelf $(1)
+${PYTHON} "${__OBCODE_MAK_DIR__}/obpatch.py" ${OB_VERBOSE} obunpatchelf $(1)
 endef
 
 endif
@@ -87,65 +87,49 @@ ifeq (${OB_CHKVAL},)
 
 
 define  OB_CHKVAL_REPLS
-${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} replchkvalforge $(1)
+${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} replchkvalforge $(1)
 endef
-#${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} replchkvalforge $(1)
 
 define OB_CHKVAL_FILL_FUNCS_ELF
-${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} chkvalfillforge $(1)
+${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} chkvalfillforge $(1)
 endef
-#${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} chkvalfillforge $(1)
 
 
 define OB_CHKVAL_FMT_CHKVAL
-${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} fmtchkvalforge $(1)
+${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} fmtchkvalforge $(1)
 endef
-#${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} fmtchkvalforge $(1)
-#
 
 define OB_CHKVAL_FMT_HEADER
-${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} chkvalheaderforge $(1)
+${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} chkvalheaderforge $(1)
 endef
-#${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} chkvalheaderforge $(1)
-#
-
 
 define OB_CHKVAL_DUMP_FUNCS_ELF
-${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} chkvaldumpfuncsforge $(1)
+${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} chkvaldumpfuncsforge $(1)
 endef
-#${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} chkvaldumpfuncsforge $(1)
-#
 
 # else ${OB_CHKVAL}
 
 else
 
 define  OB_CHKVAL_REPLS
-${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} replchkval $(1)
+${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} replchkval $(1)
 endef
-#${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} replchkval $(1)
-#
 
 define OB_CHKVAL_FMT_HEADER
-${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} chkvalheader $(1)
+${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} chkvalheader $(1)
 endef
-#${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} chkvalheader $(1)
 
 define OB_CHKVAL_FMT_CHKVAL
-${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} fmtchkval $(1)
+${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} fmtchkval $(1)
 endef
-#${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} fmtchkval $(1)
 
 define OB_CHKVAL_FILL_FUNCS_ELF
-${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} chkvalfillelf $(1)
+${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} chkvalfillelf $(1)
 endef
-#${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} chkvalfillelf $(1)
 
 define OB_CHKVAL_DUMP_FUNCS_ELF
-${PYTHON} -c "import sys;c='%OBCHKVAL_CODE%';sys.stdout.write('%s'%(c));" | ${PYTHON} /dev/stdin | ${PYTHON} /dev/stdin ${OB_VERBOSE} chkvaldumpfuncself $(1)
+${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} chkvaldumpfuncself $(1)
 endef
-#${PYTHON} ${__OBCODE_MAK_DIR__}/obchkval.py ${OB_VERBOSE} chkvaldumpfuncself $(1)
-
 
 #endof ${OB_CHKVAL}
 endif
