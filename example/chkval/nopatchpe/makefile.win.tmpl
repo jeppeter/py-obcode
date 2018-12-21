@@ -1,0 +1,60 @@
+CURDIR=$(MAKEDIR)
+!IFNDEF TOPDIR
+TOPDIR=$(CURDIR)\..\..\..
+!ENDIF
+
+CC      = cl.exe
+LD      = link.exe
+AR      = lib.exe
+RM      = del
+PYTHON  = python.exe
+CP      = copy /Y
+
+
+!IFDEF MAKEVERBOSE
+!IF $(MAKEVERBOSE) != 0
+QUIETCMD=
+NOLOGO_CFLAGS=
+NOLOGO_LDFLAGS=
+NOLOGO_MAKEFLAGS=
+GIT_VERBOSE=
+PYTHON_VERBOSE= -vvvv
+NMAKE_VERBOSE=
+!ELSE
+QUIETCMD=@
+NOLOGO_CFLAGS=/nologo
+NOLOGO_LDFLAGS=/nologo
+NOLOGO_MAKEFLAGS=/NOLOGO
+GIT_VERBOSE=--quiet
+PYTHON_VERBOSE=
+NMAKE_VERBOSE=/NOLOGO
+!ENDIF
+!ELSE
+QUIETCMD=@
+NOLOGO_CFLAGS=/nologo
+NOLOGO_LDFLAGS=/nologo
+NOLOGO_MAKEFLAGS=/NOLOGO
+GIT_VERBOSE=--quiet
+PYTHON_VERBOSE=
+NMAKE_VERBOSE=/NOLOGO
+!ENDIF
+
+
+MAIN_SRC=%MAIN_SRC%
+MAIN2_SRC=%MAIN2_SRC%
+MAIN2_EXIT_SRC=%MAIN2_EXIT_SRC%
+MAIN2_EXIT_SRC=%MAIN2_EXIT_SRC%
+
+
+
+
+all:$(MAIN_SRC)
+
+$(MAIN_SRC):
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) fmtchkval --obchkkey main "includefiles;chk_main.h" "includefiles;main.h" "includefiles;callc.h" "$(CURDIR)\callc.o;callc_a,callc_b,callc_c" "$(CURDIR)\main.o;print_out_a,print_out_b,print_out_c"
+
+clean:
+	$(QUIETCMD)$(RM) $(MAIN_SRC) $(MAIN2_SRC) 2>NUL
+	$(QUIETCMD)$(RM) $(MAIN2_SRC) $(MAIN2_EXIT_SRC) 2>NUL
+	$(QUIETCMD)$(RM) $(CURDIR)\main.exe $(CURDIR)\main2.exe 2>NUL
+	$(QUIETCMD)$(RM) $(CURDIR)\obcode.json 2>NUL

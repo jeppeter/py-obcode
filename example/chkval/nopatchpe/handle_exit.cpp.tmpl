@@ -1,0 +1,14 @@
+#include <obcode.h>
+#include "handle_exit.h"
+#include <stdio.h>
+#include <stdlib.h>
+
+
+#define OUTP(...) do{fprintf(stdout,"[%s:%d] ",__FILE__,__LINE__); fprintf(stdout,__VA_ARGS__);fprintf(stdout,"\n");}while(0)
+
+void OB_RANDOM_NAME(failfunc_handler)(int exitcode, char* name)
+{
+    OB_EXPAND_CODE(exitcode);
+    OUTP("fail [%d] [%s]", exitcode, name);
+    exit(exitcode);
+}
