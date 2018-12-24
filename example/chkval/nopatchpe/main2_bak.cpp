@@ -125,6 +125,8 @@ int print_out2_g(void)
 int main(int argc,char* argv[])
 {
 	int ret;
+	argc = argc;
+	argv = argv;
 	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;

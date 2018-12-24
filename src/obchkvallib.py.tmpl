@@ -1010,6 +1010,25 @@ def chkvaldumpfuncself_handler(args,parser):
     sys.exit(0)
     return
 
+def chkvaldumpfuncscoff_handler(args,parser):
+    set_logging_level(args)
+    logging.info('chkvaldumpfuncscoff')
+    jdict, args = get_jdict(args)
+    odict = get_odict(args, False)
+    objs = chkval_data_objs(args,odict,args.obchkkey)
+    for f in objs:
+        curobjs = []
+        files = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RANDOM_VALUE,f)
+        if files is not None:
+            for k in files.keys():
+                curobjs.append(k)
+            args.output = f
+            odict = chkval_dump_object_functions(args,'CoffParser',odict,curobjs)
+    write_json(odict, args.dump)
+    sys.exit(0)
+    return
+
+
 def chkvalfillelf_handler(args,parser):
     set_logging_level(args)
     logging.info('chkvalfillelf')
@@ -1020,6 +1039,18 @@ def chkvalfillelf_handler(args,parser):
     write_json(odict,args.dump)
     sys.exit(0)
     return
+
+def chkvalfillpe_handler(args,parser):
+    set_logging_level(args)
+    logging.info('chkvalfillpe')
+    jdict, args = get_jdict(args)
+    odict = get_odict(args, False)
+    objs = chkval_data_objs(args,odict,args.obchkkey)
+    odict = chkval_fill_data(args,'PEParser',odict,args.output,objs)
+    write_json(odict,args.dump)
+    sys.exit(0)
+    return
+
 
 def chkvalfillforge_handler(args,parser):
     set_logging_level(args)

@@ -114,6 +114,12 @@ def main():
         },
         "chkvaldataobjs<chkvaldataobjs_handler>##obchkkey... to get the data objs list##" : {
             "$" : "+"
+        },
+        "chkvaldumpfuncscoff<chkvaldumpfuncscoff_handler>##--obchkkey key to get the byte information for handler in coff format##" : {
+            "$" : "*"
+        },
+        "chkvalfillpe<chkvalfillpe_handler>##--obchkkey key  to filled real data into the structure in pe format##" : {
+            "$" : "*"
         }
     }
     '''
