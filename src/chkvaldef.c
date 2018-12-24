@@ -29,15 +29,18 @@ typedef struct __chkvalue
 #define  SHA256_VALUE_SIZE                    32
 #define  SHA3_VALUE_SIZE                      64
 
+
+#define  AES_KEY_SIZE                         32
+#define  AES_IV_SIZE                          16
+
 typedef int (*m_calc_value_func_t)(unsigned char* ptr,unsigned int len,unsigned char* pval,int valsize);
 typedef int (*m_checkvalue_func_t)(unsigned char* ptr,unsigned int size, m_calc_value_func_t calcfunc, unsigned char* pchkval, int calcsize);
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-int OB_RANDOM_NAME(check_value_func)(unsigned char* ptr,unsigned int size,m_calc_value_func_t calcfunc, unsigned char* pchkval, int calcsize);
-int OB_RANDOM_NAME(check_end_func)(m_check_fail_func_t failfunc);
 int OB_RANDOM_NAME(crc32_calc)(unsigned char *message, unsigned int size, unsigned char* pval, int valsize);
+int OB_RANDOM_NAME(check_value_func)(unsigned char* ptr,unsigned int size,m_calc_value_func_t calcfunc, unsigned char* pchkval, int calcsize);
 int OB_RANDOM_NAME(check_chkval_value)(m_check_fail_func_t failfunc);
 
 #ifdef __cplusplus

@@ -226,6 +226,18 @@ int OB_RANDOM_NAME(check_sha3_value)(m_check_fail_func_t failfunc)
 	return 0;
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+/* we put here to declare  is just to including the last function in the text sections it will be  not compiled optimization in windows cl.exe*/
+int OB_RANDOM_NAME(check_end_func)(m_check_fail_func_t failfunc);
+
+#ifdef __cplusplus
+};
+#endif
+
 int OB_RANDOM_NAME(check_chkval_value)(m_check_fail_func_t failfunc)
 {
 	unsigned char *pcurptr,*pendptr;
@@ -254,7 +266,6 @@ int OB_RANDOM_NAME(check_chkval_value)(m_check_fail_func_t failfunc)
 	if (ret < 0) {
 		FAIL_RET(CHECK_VALUE_CHKVAL_SHA3_FAILED," ");
 	}
-
 	/*now check for the value*/
 	pcurptr = OB_RANDOM_NAME(get_func_address)((unsigned char*) OB_RANDOM_NAME(crc32_calc));
 	pendptr = OB_RANDOM_NAME(get_func_address)((unsigned char*) OB_RANDOM_NAME(check_end_func));
@@ -276,15 +287,12 @@ int OB_RANDOM_NAME(check_chkval_value)(m_check_fail_func_t failfunc)
 			FAIL_RET(CHECK_VALUE_CHKVAL_DATAS_FAILED," ");
 		}
 	}
-
 	return 0;
 }
 
 int OB_RANDOM_NAME(check_end_func)(m_check_fail_func_t failfunc)
 {	
-	/*this is for the coding of */
-	int ret=0;
+	int ret =0;
 	OB_EXPAND_CODE(ret);
-	failfunc = failfunc;	
 	return ret;
 }

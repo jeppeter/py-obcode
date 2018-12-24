@@ -61,7 +61,7 @@ INC_LDFLAGS=
 !ENDIF
 
 INC_CFLAGS = /I"$(TOPDIR)\include"
-COM_CFLAGS = /Wall /wd"4820" /wd"4668" /wd"4127" /wd"4510" /wd"4512" /wd"4610" /wd"4710" /wd"5045" 
+COM_CFLAGS = /FI stdio.h /FI stdlib.h /DOB_DEBUG_MODE=1 /Wall /wd"4820" /wd"4668" /wd"4127" /wd"4510" /wd"4512" /wd"4610" /wd"4710" /wd"5045" 
 REL_CFLAGS = /DOB_MMAP=1
 DBG_CFLAGS = /Z7 /Od  
 #DBG_CFLAGS = /Zi /Od  

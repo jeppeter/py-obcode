@@ -244,7 +244,7 @@ class ChkVal(COBFileBase):
         curs , odict = self.__format_check_value_single(odict,CHKVAL_VALUE_CHECKS_DICT,1,True,CHKVAL_OBJ_DATA,objname,CHKVAL_VALUE_CHECKS)
         return odict
 
-    def format_c_code_pre(self,odict,objname):
+    def format_c_code_pre(self,args,odict,objname):
         logging.info('objname [%s]'%(objname))
         odict = create_odict_is_none(odict, RANDOM_VARIABLE,objname)
         odict = create_odict_is_none(odict,CHKVAL_RANDOM_VALUE,objname)
@@ -253,6 +253,11 @@ class ChkVal(COBFileBase):
 
         curs , odict = self.__format_multi_lines(C_CODE_CHKVALDEF,objname,odict)
         rets += curs
+
+        # we include the headers here ,because we could like to make 
+        # CHKVAL_BASE_FUNCTION_NAME crc32_calc to be the first function 
+        # in the .text sections
+        rets += format_includes(args)
 
         curs,odict = self.__format_multi_lines(C_CODE_CRC32CALC,objname,odict)
         rets += curs
@@ -673,9 +678,7 @@ def chkval_data_objs(args,odict,keyval):
 
 def get_crc32_value(rawdata):
     crc32val = zlib.crc32(ints_to_bytes(rawdata))
-    if crc32val  >= 0x80000000:
-        crc32val = (1 << 32) - crc32val
-    elif crc32val < 0:
+    if crc32val < 0:
         crc32val = (1 << 32) + crc32val
     return '%x'%(crc32val)
 
@@ -832,6 +835,7 @@ def __inc_filled_self(args,objparser,exefile,alldata,odict,incfile,win32mode):
     realdata = alldata[startoff:endoff]
     # now we should give the encryption
     assert((len(realdata) % CHKVAL_AES_IV_SIZE) == 0)
+    assert(len(startoffdata) == CHKVAL_AES_KEY_SIZE)
     # now we should get the aes key
     aesdata = realdata[CHKVAL_AES_KEY_SIZE:]
     aesbytes = ints_to_bytes(aesdata)
@@ -844,11 +848,16 @@ def __inc_filled_self(args,objparser,exefile,alldata,odict,incfile,win32mode):
     aes = AES.new(keybytes,AES.MODE_CBC,ivbytes)
     encbytes = aes.encrypt(aesbytes)
     assert(len(encbytes) == len(aesbytes))
+    logging.info('ivdata \n%s'%(format_bytes_debug(ivdata)))
+    logging.info('not encrypted data\n%s'%(format_bytes_debug(aesdata)))
     aesdata = bytes_to_ints(encbytes)
+    logging.info('encrypted data\n%s'%(format_bytes_debug(aesdata)))
     realdata = set_data_bytes(realdata,aesdata,CHKVAL_AES_KEY_SIZE,'[%s]encrypted data'%(incfile))
     alldata = set_data_bytes(alldata, realdata, startoff)
 
     crc32val = get_crc32_value(realdata)
+    logging.info('realdata \n%s'%(format_bytes_debug(realdata)))
+    logging.info('crc32val 0x%s'%(crc32val))
     md5val = get_md5_value(realdata)
     sha256val = get_sha256_value(realdata)
     sha3val = get_sha3_value(realdata)
@@ -898,6 +907,8 @@ def __inc_filled_self(args,objparser,exefile,alldata,odict,incfile,win32mode):
     realdata = set_data_bytes(realdata,crcbytes, setpos)
     alldata = set_data_bytes(alldata, realdata,startoff)
 
+    logging.info('startoff [0x%x:%d] endoff[0x%x:%d]'%(startoff, startoff, endoff, endoff))
+
     return odict,alldata
 
 def chkval_fill_inc(args,objparser,exefile,alldata,odict,incfile,win32mode):
@@ -938,11 +949,13 @@ def single_chkval_data_format(args,objfile,odict,jdict):
     if CHKVAL_KEY not in odict.keys():
         odict[CHKVAL_KEY] = dict()
     rets = ''
-    rets += format_includes(args)
-    rets += format_line('',0)
 
-    curs, odict[CHKVAL_KEY] = chkval.format_c_code_pre(odict[CHKVAL_KEY],objfile)
+    # we put the obcode is for the handle OB_RANDOM_NAME macro expand
+    rets += format_line('#include <obcode.h>',0)
+
+    curs, odict[CHKVAL_KEY] = chkval.format_c_code_pre(args,odict[CHKVAL_KEY],objfile)
     rets += curs
+
 
     curs , odict[CHKVAL_KEY] = chkval.format_c_code(odict[CHKVAL_KEY],objfile,jdict)
     rets += curs
