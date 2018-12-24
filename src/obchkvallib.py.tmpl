@@ -283,6 +283,10 @@ class ChkVal(COBFileBase):
         func_checks = get_odict_value(odict,RANDOM_VARIABLE,objname,CHKVAL_FUNC_CHECKS)
         assert(func_checks is not None)
 
+        rets += format_line('#ifdef __cplusplus',0)
+        rets += format_line('extern "C" {', 0)
+        rets += format_line('#endif', 0)
+
         rets += format_line('',0)
         rets += format_line('chkvalue_t %s[] = {'%(func_checks), 0)
 
@@ -312,6 +316,10 @@ class ChkVal(COBFileBase):
 
         curs,odict = self.__format_char_array(odict,16,objname,CHKVAL_VALUE_CHECKS_TOTAL_END)
         rets += curs
+
+        rets += format_line('#ifdef __cplusplus',0)
+        rets += format_line('};', 0)
+        rets += format_line('#endif', 0)
         return rets
 
 

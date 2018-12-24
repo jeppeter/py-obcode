@@ -154,10 +154,11 @@ class CoffParser(object):
 
 		if vaddr < findsym.value or vaddr >= (findsym.value + findsym.size):
 			return OBJ_RELOC_FORBID
-		#if len(self.__relocvalues[findk]) > 0:
-		#	logging.info('reloc [%s] len(%s) [%s] [%s]'%(findk, len(self.__relocvalues[findk]), self.__relocvalues[findk][0], self.__relocvalues[findk][-1]))
-		#else:
-		#	logging.info('reloc [%s] 0'%(findk))
+		if len(self.__relocvalues[findk]) > 0:
+			logging.info('reloc [%s] len(%s) [%s] [%s] [%s]'%(findk, len(self.__relocvalues[findk]), self.__relocvalues[findk][0], self.__relocvalues[findk][-1], name))
+		else:
+			# nothing to find ,so no reloc
+			return OBJ_RELOC_NONE
 
 		relinfo = self._find_rel_in(self.__relocvalues[findk], vaddr)
 		if relinfo is None:
