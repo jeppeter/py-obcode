@@ -61,7 +61,7 @@ INC_LDFLAGS=
 !ENDIF
 
 INC_CFLAGS = /I"$(TOPDIR)\include"
-COM_CFLAGS = /FI stdio.h /FI stdlib.h /DOB_DEBUG_MODE=1 /Wall /wd"4820" /wd"4668" /wd"4127" /wd"4510" /wd"4512" /wd"4610" /wd"4710" /wd"5045" 
+COM_CFLAGS = /FI stdio.h /FI stdlib.h /DOB_DEBUG_MODE=1 /Wall /wd"4820" /wd"4668" /wd"4127" /wd"4510" /wd"4512" /wd"4610" /wd"4710" /wd"5045"  /wd"4514"
 REL_CFLAGS = /DOB_MMAP=1
 DBG_CFLAGS = /Z7 /Od  
 #DBG_CFLAGS = /Zi /Od  
@@ -107,18 +107,30 @@ main_OBJECTS=$(main_SOURCES:.cpp=.obj)
 main2_SOURCES=$(CURDIR)\main2.cpp $(CURDIR)\callc2.cpp $(MAIN2_SRC) $(MAIN2_EXIT_SRC)
 main2_OBJECTS=$(main2_SOURCES:.cpp=.obj)
 
+!IF "$(PLATFORM)" == "X86"
+DUMP_WIN32_MODE="win32;"
+main_CLAUSE= "includefiles;chk_main.h" "includefiles;main.h" "includefiles;callc.h" "$(CURDIR)\\callc.obj;callc_a,callc_b,callc_c" "$(CURDIR)\\main.obj;print_out_a,print_out_b,print_out_c" "win32;"
+main2_CLAUSE= "includefiles;chk_main2.h" "includefiles;main2.h" "includefiles;callc.h" "$(CURDIR)\\callc2.obj;callc_a,callc_b,callc_c" "$(CURDIR)\\main2.obj;print_out2_a,print_out2_b,print_out2_c" "win32;"
+!ELSE
+DUMP_WIN32_MODE=
+main_CLAUSE= "includefiles;chk_main.h" "includefiles;main.h" "includefiles;callc.h" "$(CURDIR)\\callc.obj;callc_a,callc_b,callc_c" "$(CURDIR)\\main.obj;print_out_a,print_out_b,print_out_c"
+main2_CLAUSE= "includefiles;chk_main2.h" "includefiles;main2.h" "includefiles;callc.h" "$(CURDIR)\\callc2.obj;callc_a,callc_b,callc_c" "$(CURDIR)\\main2.obj;print_out2_a,print_out2_b,print_out2_c"
+!ENDIF
+
 all:$(CURDIR)\main.exe $(CURDIR)\main2.exe
 
 
+!IFDEF OB_CHKVAL
+
 $(CURDIR)\main.exe:$(main_OBJECTS)
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvaldumpfuncscoff --obchkkey main
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvaldumpfuncscoff --obchkkey main $(DUMP_WIN32_MODE)
 	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(main_OBJECTS)
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvalfillpe --output $@ --obchkkey main
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvalfillpe --output $@ --obchkkey main $(DUMP_WIN32_MODE)
 
 $(CURDIR)\main2.exe:$(main2_OBJECTS)
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvaldumpfuncscoff --obchkkey main2
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvaldumpfuncscoff --obchkkey main2 $(DUMP_WIN32_MODE)
 	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(main2_OBJECTS)
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvalfillpe --output $@ --obchkkey main2
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvalfillpe --output $@ --obchkkey main2 $(DUMP_WIN32_MODE)
 
 
 
@@ -146,10 +158,10 @@ $(CURDIR)\chk_main2.h:$(MAIN2_SRC)
 
 
 $(MAIN_SRC):
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) fmtchkval --obchkkey main "includefiles;chk_main.h" "includefiles;main.h" "includefiles;callc.h" "$(CURDIR)\\callc.obj;callc_a,callc_b,callc_c" "$(CURDIR)\\main.obj;print_out_a,print_out_b,print_out_c"
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) fmtchkval --obchkkey main  $(main_CLAUSE)
 
 $(MAIN2_SRC):
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) fmtchkval --obchkkey main2 "includefiles;chk_main2.h" "includefiles;main2.h" "includefiles;callc.h" "$(CURDIR)\\callc2.obj;callc_a,callc_b,callc_c" "$(CURDIR)\\main2.obj;print_out2_a,print_out2_b,print_out2_c"
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) fmtchkval --obchkkey main2 $(main2_CLAUSE)
 
 $(MAIN_EXIT_SRC):
 	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvalexitfmt -i "$(CURDIR)\\handle_exit.cpp.tmpl" --obchkkey main
@@ -172,7 +184,71 @@ $(CURDIR)\callc2.cpp:$(CURDIR)\callc_bak.cpp $(CURDIR)\handle_exit.h
 $(CURDIR)\handle_exit.h:$(MAIN_EXIT_SRC) $(MAIN2_EXIT_SRC)
 	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) exitheaderfmt -o $@ main main2
 
+# else of OB_CHKVAL
+!ELSE
 
+$(CURDIR)\main.exe:$(main_OBJECTS)
+	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(main_OBJECTS)
+
+$(CURDIR)\main2.exe:$(main2_OBJECTS)
+	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(main2_OBJECTS)
+
+
+
+$(CURDIR)\main.obj:$(CURDIR)\main.cpp $(CURDIR)\chk_main.h $(CURDIR)\handle_exit.h
+	$(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $(CURDIR)\main.cpp
+
+$(CURDIR)\main2.obj:$(CURDIR)\main2.cpp $(CURDIR)\chk_main2.h $(CURDIR)\handle_exit.h
+	$(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $(CURDIR)\main2.cpp
+
+$(CURDIR)\callc.obj:$(CURDIR)\callc.cpp $(CURDIR)\chk_main.h $(CURDIR)\chk_main2.h $(CURDIR)\handle_exit.h
+	$(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $(CURDIR)\callc.cpp
+
+$(CURDIR)\callc2.obj:$(CURDIR)\callc2.cpp $(CURDIR)\chk_main.h $(CURDIR)\chk_main2.h $(CURDIR)\handle_exit.h
+	$(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $(CURDIR)\callc2.cpp
+
+.cpp.obj:
+	$(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $<
+
+
+$(CURDIR)\chk_main.h:$(MAIN_SRC)
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvalheaderforge -o $@ --obchkkey main
+
+$(CURDIR)\chk_main2.h:$(MAIN2_SRC)
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvalheaderforge -o $@ --obchkkey main2
+
+
+$(MAIN_SRC):
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) fmtchkvalforge --obchkkey main "includefiles;chk_main.h" "includefiles;main.h" "includefiles;callc.h" "$(CURDIR)\\callc.obj;callc_a,callc_b,callc_c" "$(CURDIR)\\main.obj;print_out_a,print_out_b,print_out_c"
+
+$(MAIN2_SRC):
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) fmtchkvalforge --obchkkey main2 "includefiles;chk_main2.h" "includefiles;main2.h" "includefiles;callc.h" "$(CURDIR)\\callc2.obj;callc_a,callc_b,callc_c" "$(CURDIR)\\main2.obj;print_out2_a,print_out2_b,print_out2_c"
+
+$(MAIN_EXIT_SRC):
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvalexitfmtforge -i "$(CURDIR)\\handle_exit.cpp.tmpl" --obchkkey main
+
+$(MAIN2_EXIT_SRC):
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvalexitfmtforge -i "$(CURDIR)\\handle_exit.cpp.tmpl" --obchkkey main2
+
+$(CURDIR)\main.cpp:$(CURDIR)\main_bak.cpp $(CURDIR)\handle_exit.h
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) replchkvalforge -o $@ -i $(CURDIR)\main_bak.cpp --obchkkey main
+
+$(CURDIR)\main2.cpp:$(CURDIR)\main2_bak.cpp $(CURDIR)\handle_exit.h
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) replchkvalforge -o $@ -i $(CURDIR)\main2_bak.cpp --obchkkey main2
+
+$(CURDIR)\callc.cpp:$(CURDIR)\callc_bak.cpp $(CURDIR)\handle_exit.h
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) replchkvalforge -o $@ -i $(CURDIR)\callc_bak.cpp --obchkkey main
+
+$(CURDIR)\callc2.cpp:$(CURDIR)\callc_bak.cpp $(CURDIR)\handle_exit.h
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) replchkvalforge -o $@ -i $(CURDIR)\callc_bak.cpp --obchkkey main2
+
+$(CURDIR)\handle_exit.h:$(MAIN_EXIT_SRC) $(MAIN2_EXIT_SRC)
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) exitheaderfmtforge -o $@ main main2
+
+
+
+# end of OB_CHKVAL
+!ENDIF
 
 
 clean:

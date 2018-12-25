@@ -294,5 +294,8 @@ int OB_RANDOM_NAME(check_end_func)(m_check_fail_func_t failfunc)
 {	
 	int ret =0;
 	OB_EXPAND_CODE(ret);
+	if (ret < 0) {
+		failfunc(ret," ");
+	}
 	return ret;
 }

@@ -564,7 +564,7 @@ def chkval_dump_object_function_one(args,objparser,odict,o,f,win32mode=False):
         foff = objparser.func_offset(realf)
         fsize = objparser.func_size(realf)
         if fvaddr < 0 or fsize < 0 or foff < 0:
-            raise Exception('can not find [%s] in [%s]'%(f,o))
+            raise Exception('can not find [%s](%s) in [%s]'%(f,realf,o))
         alldata = objparser.get_data()
         relocs = []
         # just read the code ,and this is to search for the coding
@@ -1044,7 +1044,7 @@ def chkvaldumpfuncscoff_handler(args,parser):
             for k in files.keys():
                 curobjs.append(k)
             args.output = f
-            odict = chkval_dump_object_functions(args,'CoffParser',odict,curobjs)
+            odict = chkval_dump_object_functions(args,'CoffParser',odict,curobjs,args.win32)
     write_json(odict, args.dump)
     sys.exit(0)
     return
@@ -1067,7 +1067,7 @@ def chkvalfillpe_handler(args,parser):
     jdict, args = get_jdict(args)
     odict = get_odict(args, False)
     objs = chkval_data_objs(args,odict,args.obchkkey)
-    odict = chkval_fill_data(args,'PEParser',odict,args.output,objs)
+    odict = chkval_fill_data(args,'PEParser',odict,args.output,objs,args.win32)
     write_json(odict,args.dump)
     sys.exit(0)
     return
