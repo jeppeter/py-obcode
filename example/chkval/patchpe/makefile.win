@@ -1,0 +1,267 @@
+CURDIR=$(MAKEDIR)
+!IFNDEF TOPDIR
+TOPDIR=$(CURDIR)\..\..\..
+!ENDIF
+
+CURFILE=$(CURDIR)\makefile.win
+
+CC      = cl.exe
+LD      = link.exe
+AR      = lib.exe
+RM      = del
+PYTHON  = python.exe
+CP      = copy /Y
+
+
+!IFNDEF CHKVAL_TIMES
+CHKVAL_TIMES=1
+!ENDIF
+
+!IFDEF MAKEVERBOSE
+!IF $(MAKEVERBOSE) != 0
+QUIETCMD=
+NOLOGO_CFLAGS=
+NOLOGO_LDFLAGS=
+NOLOGO_MAKEFLAGS=
+GIT_VERBOSE=
+PYTHON_VERBOSE= -vvvv
+NMAKE_VERBOSE=
+!ELSE
+QUIETCMD=@
+NOLOGO_CFLAGS=/nologo
+NOLOGO_LDFLAGS=/nologo
+NOLOGO_MAKEFLAGS=/NOLOGO
+GIT_VERBOSE=--quiet
+PYTHON_VERBOSE=
+NMAKE_VERBOSE=/NOLOGO
+!ENDIF
+!ELSE
+QUIETCMD=@
+NOLOGO_CFLAGS=/nologo
+NOLOGO_LDFLAGS=/nologo
+NOLOGO_MAKEFLAGS=/NOLOGO
+GIT_VERBOSE=--quiet
+PYTHON_VERBOSE=
+NMAKE_VERBOSE=/NOLOGO
+!ENDIF
+
+!IFDEF STATICLIB
+!IF $(STATICLIB) != 0
+STATIC_LIB_CFLAGS=/MT
+
+INC_LDFLAGS=
+
+!ELSE
+STATIC_LIB_CFLAGS=/MT
+INC_LDFLAGS =
+
+!ENDIF
+!ELSE
+STATIC_LIB_CFLAGS=/MT
+
+INC_LDFLAGS=
+!ENDIF
+
+INC_CFLAGS = /I"$(TOPDIR)\include"
+COM_CFLAGS = /FI stdio.h /FI stdlib.h /DOB_DEBUG_MODE=1 /Wall /wd"4820" /wd"4668" /wd"4127" /wd"4510" /wd"4512" /wd"4610" /wd"4710" /wd"5045"  /wd"4514"
+REL_CFLAGS = /DOB_MMAP=1
+DBG_CFLAGS = /Z7 /Od  
+#DBG_CFLAGS = /Zi /Od  
+
+
+REL_LDFLAGS = 
+
+CFLAGS  =  $(NOLOGO_CFLAGS) $(STATIC_LIB_CFLAGS) $(INC_CFLAGS) $(COM_CFLAGS) $(REL_CFLAGS) $(DBG_CFLAGS)
+LDFLAGS = $(NOLOGO_LDFLAGS) $(INC_LDFLAGS) $(REL_LDFLAGS) -DEBUG
+#LDFLAGS = $(NOLOGO_LDFLAGS) $(INC_LDFLAGS) $(REL_LDFLAGS)
+
+!IFDEF OB_REPATCH
+JSON_FILE=$(OB_REPATCH)
+PATCH_EXE=obrepatchpe
+UNPATCH_COFF=obreunpatchcoff
+!ELSE
+JSON_FILE=$(CURDIR)\obcode.json
+
+!IFDEF OB_PATCH
+PATCH_EXE=obpatchpe
+UNPATCH_COFF=obunpatchcoff
+!ELSE
+PATCH_EXE=obpatchpeforge
+UNPATCH_COFF=obunpatchcoffforge
+!ENDIF
+
+!ENDIF
+
+
+
+!IFNDEF MAIN_SRC
+main_src_target:
+	$(QUIETCMD)echo off && $(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvaldatafiles -D $(JSON_FILE) main >bb.txt && FOR /F "delims=" %%G in (bb.txt) do set MAIN_SRC=%%G && del bb.txt  && nmake  $(NMAKE_VERBOSE) /f $(CURFILE) COM_TARGET=$(COM_TARGET)
+!ENDIF
+
+!IFNDEF MAIN2_SRC
+main2_src_target:
+	$(QUIETCMD)echo off && $(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) -D $(JSON_FILE) chkvaldatafiles main2 >cc.txt && FOR /F "delims=" %%G in (cc.txt) do set MAIN2_SRC=%%G  && del cc.txt && nmake $(NMAKE_VERBOSE) /f $(CURFILE) COM_TARGET=$(COM_TARGET)
+!ENDIF
+
+!IFNDEF MAIN_EXIT_SRC
+main_exit_src_target:
+	$(QUIETCMD)echo off && $(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvalexitfiles -D $(JSON_FILE) main >dd.txt && FOR /F "delims=" %%G in (dd.txt) do set MAIN_EXIT_SRC=%%G && del dd.txt  && nmake $(NMAKE_VERBOSE) /f $(CURFILE) COM_TARGET=$(COM_TARGET)
+!ENDIF
+
+!IFNDEF MAIN2_EXIT_SRC
+main2_exit_src_target:
+	$(QUIETCMD)echo off && $(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvalexitfiles -D $(JSON_FILE) main2 >ee.txt && FOR /F "delims=" %%G in (ee.txt) do set MAIN2_EXIT_SRC=%%G  && del ee.txt && nmake  $(NMAKE_VERBOSE) /f $(CURFILE) COM_TARGET=$(COM_TARGET) $(COM_TARGET)
+!ENDIF
+
+!IFDEF MAIN_SRC
+!IFDEF MAIN2_SRC
+!IFDEF MAIN_EXIT_SRC
+!IFDEF MAIN2_EXIT_SRC
+
+main_SOURCES=$(CURDIR)\main.cpp $(CURDIR)\callc.cpp $(CURDIR)\main_unpatch.cpp $(MAIN_SRC) $(MAIN_EXIT_SRC)
+main_OBJECTS=$(main_SOURCES:.cpp=.obj)
+
+main2_SOURCES=$(CURDIR)\main2.cpp $(CURDIR)\callc2.cpp $(CURDIR)\main2_unpatch.cpp $(MAIN2_SRC) $(MAIN2_EXIT_SRC)
+main2_OBJECTS=$(main2_SOURCES:.cpp=.obj)
+
+
+main_CHKVAL_CLAUSE= "includefiles;chk_main.h" "includefiles;main.h" "includefiles;callc.h" "$(CURDIR)\\callc.obj;callc_a,callc_b,callc_c" "$(CURDIR)\\main.obj;print_out_a,print_out_b,print_out_c"
+main2_CHKVAL_CLAUSE= "includefiles;chk_main2.h" "includefiles;main2.h" "includefiles;callc.h" "$(CURDIR)\\callc2.obj;callc_a,callc_b,callc_c" "$(CURDIR)\\main2.obj;print_out2_a,print_out2_b,print_out2_c"
+
+
+!IF "$(PLATFORM)" == "X86"
+OB_CHKVAL_INNER=0
+!ELSE
+!IFDEF OB_CHKVAL
+OB_CHKVAL_INNER=1
+!ELSE
+OB_CHKVAL_INNER=0
+!ENDIF
+!ENDIF
+
+!IF $(OB_CHKVAL_INNER) == 1
+CHKVAL_DUMP_FUNCS_COFF=chkvaldumpfuncscoff
+CHKVAL_FILL_PE=chkvalfillpe
+CHKVAL_HEADER=chkvalheader
+CHKVAL_FMT_CHK=fmtchkval
+CHKVAL_EXIT_FMT=chkvalexitfmt
+CHKVAL_REPL=replchkval
+CHKVAL_EXIT_HEADER_FMT=exitheaderfmt
+!ELSE
+CHKVAL_DUMP_FUNCS_COFF=chkvaldumpfuncsforge
+CHKVAL_FILL_PE=chkvalfillforge
+CHKVAL_HEADER=chkvalheaderforge
+CHKVAL_FMT_CHK=fmtchkvalforge
+CHKVAL_EXIT_FMT=chkvalexitfmtforge
+CHKVAL_REPL=replchkvalforge
+CHKVAL_EXIT_HEADER_FMT=exitheaderfmtforge
+!ENDIF
+
+!IF "$(PLATFORM)" == "X86"
+main_PATCH_CLAUSE = "$(CURDIR)\main.obj;print_out_a,print_out_b,print_out_c" "$(CURDIR)\callc.obj;callc_a,callc_b,callc_c" "win32;"
+main2_PATCH_CLAUSE = "$(CURDIR)\main2.obj;print_out2_a,print_out2_b,print_out2_c" "$(CURDIR)\callc2.obj;callc_a,callc_b,callc_c" "win32;"
+!ELSE
+main_PATCH_CLAUSE = "$(CURDIR)\main.obj;print_out_a,print_out_b,print_out_c" "$(CURDIR)\callc.obj;callc_a,callc_b,callc_c"
+main2_PATCH_CLAUSE = "$(CURDIR)\main2.obj;print_out2_a,print_out2_b,print_out2_c" "$(CURDIR)\callc2.obj;callc_a,callc_b,callc_c"
+!ENDIF
+
+
+
+
+
+all:$(CURDIR)\main.exe $(CURDIR)\main2.exe
+
+$(CURDIR)\main.exe:$(main_OBJECTS)
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_DUMP_FUNCS_COFF) -D $(JSON_FILE) --obchkkey main
+	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(main_OBJECTS)
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py $(PYTHON_VERBOSE) -o $@ $(PATCH_EXE) -D $(JSON_FILE)  $(CURDIR)\main.obj $(CURDIR)\callc.obj $(CURDIR)\main_unpatch.obj
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_FILL_PE) -D $(JSON_FILE) --output $@ --obchkkey main
+
+$(CURDIR)\main2.exe:$(main2_OBJECTS)
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_DUMP_FUNCS_COFF) -D $(JSON_FILE) --obchkkey main2 $(DUMP_WIN32_MODE)
+	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(main2_OBJECTS)
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py $(PYTHON_VERBOSE) -o $@ $(PATCH_EXE) -D $(JSON_FILE)  $(CURDIR)\main2.obj $(CURDIR)\callc2.obj $(CURDIR)\main2_unpatch.obj
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_FILL_PE) -D $(JSON_FILE) --output $@ --obchkkey main2 $(DUMP_WIN32_MODE)
+
+
+
+$(CURDIR)\main.obj:$(CURDIR)\main.cpp $(CURDIR)\chk_main.h $(CURDIR)\handle_exit.h
+	$(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $(CURDIR)\main.cpp
+
+$(CURDIR)\main2.obj:$(CURDIR)\main2.cpp $(CURDIR)\chk_main2.h $(CURDIR)\handle_exit.h
+	$(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $(CURDIR)\main2.cpp
+
+$(CURDIR)\callc.obj:$(CURDIR)\callc.cpp $(CURDIR)\chk_main.h $(CURDIR)\chk_main2.h $(CURDIR)\handle_exit.h
+	$(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $(CURDIR)\callc.cpp
+
+$(CURDIR)\callc2.obj:$(CURDIR)\callc2.cpp $(CURDIR)\chk_main.h $(CURDIR)\chk_main2.h $(CURDIR)\handle_exit.h
+	$(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $(CURDIR)\callc2.cpp
+
+.cpp.obj:
+	$(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $<
+
+
+$(CURDIR)\chk_main.h:$(MAIN_SRC)
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_HEADER) -D $(JSON_FILE) -o $@ --obchkkey main
+
+$(CURDIR)\chk_main2.h:$(MAIN2_SRC)
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_HEADER) -D $(JSON_FILE) -o $@ --obchkkey main2
+
+
+$(CURDIR)\main_unpatch.cpp:$(CURDIR)\main.obj $(CURDIR)\callc.obj
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py $(PYTHON_VERBOSE) --includefiles main.h --includefiles unpatch.h --includefiles callc.h -D $(JSON_FILE) -o main_unpatch.cpp $(UNPATCH_COFF) $(main_PATCH_CLAUSE)
+
+$(CURDIR)\main2_unpatch.cpp:$(CURDIR)\main2.obj $(CURDIR)\callc2.obj
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py $(PYTHON_VERBOSE) --includefiles main2.h --includefiles unpatch.h --includefiles callc.h -D $(JSON_FILE) -o main2_unpatch.cpp $(UNPATCH_COFF) $(main2_PATCH_CLAUSE)
+
+
+$(MAIN_SRC):
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_FMT_CHK) -D $(JSON_FILE) --obchkkey main  $(main_CHKVAL_CLAUSE)
+
+$(MAIN2_SRC):
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_FMT_CHK) -D $(JSON_FILE) --obchkkey main2 $(main2_CHKVAL_CLAUSE)
+
+$(MAIN_EXIT_SRC):
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_EXIT_FMT) -D $(JSON_FILE) -i "$(CURDIR)\\handle_exit.cpp.tmpl" --obchkkey main
+
+$(MAIN2_EXIT_SRC):
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_EXIT_FMT) -D $(JSON_FILE) -i "$(CURDIR)\\handle_exit.cpp.tmpl" --obchkkey main2
+
+$(CURDIR)\main.cpp:$(CURDIR)\main_bak.cpp $(CURDIR)\handle_exit.h
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -D $(JSON_FILE) -o $@ -i $(CURDIR)\main_bak.cpp --obchkkey main
+
+$(CURDIR)\main2.cpp:$(CURDIR)\main2_bak.cpp $(CURDIR)\handle_exit.h
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -D $(JSON_FILE) -o $@ -i $(CURDIR)\main2_bak.cpp --obchkkey main2
+
+$(CURDIR)\callc.cpp:$(CURDIR)\callc_bak.cpp $(CURDIR)\handle_exit.h
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -D $(JSON_FILE) -o $@ -i $(CURDIR)\callc_bak.cpp --obchkkey main
+
+$(CURDIR)\callc2.cpp:$(CURDIR)\callc_bak.cpp $(CURDIR)\handle_exit.h
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -D $(JSON_FILE) -o $@ -i $(CURDIR)\callc_bak.cpp --obchkkey main2
+
+$(CURDIR)\handle_exit.h:$(MAIN_EXIT_SRC) $(MAIN2_EXIT_SRC)
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_EXIT_HEADER_FMT) -D $(JSON_FILE) -o $@ main main2
+
+
+clean:
+	$(QUIETCMD)del $(CURDIR)\main.exe $(CURDIR)\main2.exe 2>NUL
+	$(QUIETCMD)del *.ilk *.pdb 2>NUL
+	$(QUIETCMD)del $(CURDIR)\main.cpp $(CURDIR)\main2.cpp $(CURDIR)\callc.cpp $(CURDIR)\callc2.cpp 2>NUL
+	$(QUIETCMD)del $(CURDIR)\chk_main.h $(CURDIR)\chk_main2.h $(CURDIR)\handle_exit.h 2>NUL
+	$(QUIETCMD)del $(main2_OBJECTS) $(main_OBJECTS) 2>NUL
+	$(QUIETCMD)del $(MAIN_SRC) $(MAIN2_SRC)	2>NUL
+	$(QUIETCMD)del $(MAIN_EXIT_SRC) $(MAIN2_EXIT_SRC) 2>NUL
+	$(QUIETCMD)del $(CURDIR)\main_unpatch.cpp $(CURDIR)\main2_unpatch.cpp 2>NUL
+	$(QUIETCMD)del obcode.json 2>NUL
+
+
+# end of MAIN2_EXIT_SRC
+!ENDIF
+# end of MAIN_EXIT_SRC
+!ENDIF
+# end of MAIN2_SRC
+!ENDIF
+# end of MAIN_SRC
+!ENDIF
+

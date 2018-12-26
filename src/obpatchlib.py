@@ -439,7 +439,8 @@ def obpatchpeforge_handler(args,parser):
 def obunpatchelfforge_handler(args,parser):
     set_logging_level(args)
     jdict , args = get_jdict(args)
-    odict = dict()
+    odict = get_odict(args,False)
+    odict = set_odict_value(odict,dict(),PATCH_FUNC_KEY)
     rets = ''
     rets += format_includes(args)
     rets += format_line('int %s(map_prot_func_t mapfunc)'%(args.unpatchfunc),0)
@@ -455,7 +456,9 @@ def obunpatchelfforge_handler(args,parser):
 def obunpatchcoffforge_handler(args,parser):
     set_logging_level(args)
     jdict , args = get_jdict(args)
-    odict = dict()
+    # we delete the patch func keys
+    odict = get_odict(args,False)
+    odict = set_odict_value(odict,dict(),PATCH_FUNC_KEY)
     rets = ''
     rets += format_includes(args)
     rets += format_line('int %s(map_prot_func_t mapfunc)'%(args.unpatchfunc),0)
