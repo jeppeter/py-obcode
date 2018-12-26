@@ -146,7 +146,6 @@ CHKVAL_EXIT_HEADER_FMT=exitheaderfmtforge
 all:$(CURDIR)\main.exe $(CURDIR)\main2.exe
 
 
-
 $(CURDIR)\main.exe:$(main_OBJECTS)
 	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_DUMP_FUNCS_COFF) --obchkkey main $(DUMP_WIN32_MODE)
 	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(main_OBJECTS)
@@ -208,8 +207,6 @@ $(CURDIR)\callc2.cpp:$(CURDIR)\callc_bak.cpp $(CURDIR)\handle_exit.h
 
 $(CURDIR)\handle_exit.h:$(MAIN_EXIT_SRC) $(MAIN2_EXIT_SRC)
 	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_EXIT_HEADER_FMT) -o $@ main main2
-
-
 
 clean:
 	$(QUIETCMD)del $(CURDIR)\main.exe $(CURDIR)\main2.exe 2>NUL
