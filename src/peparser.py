@@ -68,7 +68,11 @@ class PEParser(object):
 					curidx += 1
 				if jdx == len(data):
 					if retoff >= 0:
-						raise Exception('double match at [0x%x] and [0x%x]'%(retoff,idx))
+						outexpstr = ''
+						outexpstr += 'double match at [%s].[%s]\n'%(self.__fname, symname)
+						outexpstr += '%s\n'%(format_bytes_debug(sbyte[retoff:(retoff+len(data))], 'retoff [0x%x:%d]'%(retoff,retoff)))
+						outexpstr += '%s'%(format_bytes_debug(sbyte[idx:(idx+len(data))], 'idx [0x%x:%d]'%(idx,idx)))
+						raise Exception(outexpstr)
 					retoff = idx
 			idx += 1
 		if retoff < 0:

@@ -56,20 +56,20 @@ class COBFile(COBFileBase):
             for curb in self.__ob_mixed_str_dicts[k]:
                 if curb.hash == cb.hash and curb.equal_byte(sbyte):
                     if len(sbyte) >=4 and sbyte[-1] == 0 and sbyte[-2] == 0 and sbyte[-3] == 0 and sbyte[-4] == 0:
-                        logging.info('at [%d] %s [%s] already inserted'%(self.cur_line, sbyte, uni32_to_string(sbyte)))
+                        logging.warn('at [%d] %s [%s] already inserted'%(self.cur_line, sbyte, uni32_to_string(sbyte)))
                     elif len(sbyte) >= 2 and sbyte[-1] == 0 and sbyte[-2] == 0:
-                        logging.info('at [%d] %s [%s] already inserted'%(self.cur_line, sbyte, uni16_to_string(sbyte)))
+                        logging.warn('at [%d] %s [%s] already inserted'%(self.cur_line, sbyte, uni16_to_string(sbyte)))
                     else:
-                        logging.info('at [%d] %s [%s] already inserted'%(self.cur_line, sbyte, ints_to_string(sbyte)))
+                        logging.warn('at [%d] %s [%s] already inserted'%(self.cur_line, sbyte, ints_to_string(sbyte)))
                     return
         else:
             self.__ob_mixed_str_dicts[k] = []
         if len(sbyte) >=4 and sbyte[-1] == 0 and sbyte[-2] == 0 and sbyte[-3] == 0 and sbyte[-4] == 0:
-            logging.info('%s [%s] into %s'%(sbyte, uni32_to_string(sbyte),cb.funcname))
+            logging.warn('%s [%s] into %s'%(sbyte, uni32_to_string(sbyte),cb.funcname))
         elif len(sbyte) >= 2 and sbyte[-1] == 0 and sbyte[-2] == 0:
-            logging.info('%s [%s] into %s'%(sbyte, uni16_to_string(sbyte),cb.funcname))
+            logging.warn('%s [%s] into %s'%(sbyte, uni16_to_string(sbyte),cb.funcname))
         else:
-            logging.info('%s [%s] into %s'%(sbyte, ints_to_string(sbyte),cb.funcname))
+            logging.warn('%s [%s] into %s'%(sbyte, ints_to_string(sbyte),cb.funcname))
         self.__ob_mixed_str_dicts[k].append(cb)
         return
 
@@ -78,7 +78,7 @@ class COBFile(COBFileBase):
         cfg , params, before, after = self.get_variables(l, self.__ob_mixed_str_expr)
         assert(len(params) == 1)
         cbyte = string_to_ints(params[0])
-        logging.info('params[%s]'%(params[0]))
+        #logging.info('params[%s]'%(params[0]))
         cbyte = string_to_ints(params[0])
         sbyte,lbyte = parse_string(cbyte)
         cs = ints_to_string(sbyte)
@@ -90,7 +90,7 @@ class COBFile(COBFileBase):
     def __prepare_mixed_str_spec_funcs(self,l):
         cfg ,params, before , after = self.get_spec_config_variables(l, self.__ob_mixed_str_spec_expr)
         assert(len(params) == 1)
-        logging.info('params [%s]'%(params[0]))        
+        #logging.info('params [%s]'%(params[0]))        
         cbyte = string_to_ints(params[0])
         sbyte,lbyte = parse_string(cbyte)
         cs = ints_to_string(sbyte)
@@ -135,16 +135,16 @@ class COBFile(COBFileBase):
         curl = l
         while True:
             if self.get_filter_expr_not_defined(curl, self.__ob_mixed_str_expr):
-                logging.info('at [%d] [%s]'%(self.cur_line, l))
+                #logging.info('at [%d] [%s]'%(self.cur_line, l))
                 curl = self.__prepared_mixed_str_funcs(curl)
             elif self.get_filter_expr_not_defined(curl, self.__ob_mixed_str_spec_expr):
-                logging.info('at [%d] [%s]'%(self.cur_line, l))
+                #logging.info('at [%d] [%s]'%(self.cur_line, l))
                 curl = self.__prepare_mixed_str_spec_funcs(curl)
             elif self.get_filter_expr_not_defined(curl, self.__ob_mixed_wstr_expr):
-                logging.info('at [%d] [%s]'%(self.cur_line, l))
+                #logging.info('at [%d] [%s]'%(self.cur_line, l))
                 curl = self.__prepare_mixed_wstr_funcs(curl)
             elif self.get_filter_expr_not_defined(curl, self.__ob_mixed_wstr_spec_expr):
-                logging.info('at [%d] [%s]'%(self.cur_line, l))
+                #logging.info('at [%d] [%s]'%(self.cur_line, l))
                 curl = self.__prepare_mixed_wstr_spec_funcs(curl)
             else:
                 break
@@ -154,7 +154,7 @@ class COBFile(COBFileBase):
         self.cur_line = 0
         for l in self.in_lines:
             self.cur_line += 1
-            logging.info('[%d][%s]'%(self.cur_line, l))
+            #logging.info('[%d][%s]'%(self.cur_line, l))
             if self.get_filter_expr_not_defined(l, self.__ob_mixed_str_expr) or \
                 self.get_filter_expr_not_defined(l, self.__ob_mixed_str_spec_expr) or \
                 self.get_filter_expr_not_defined(l, self.__ob_mixed_wstr_expr) or \
@@ -683,46 +683,46 @@ class COBFile(COBFileBase):
                 continue
 
             if self.get_filter_expr_not_defined(l, self.__ob_code_expr):
-                logging.info('')
+                #logging.info('')
                 rets += self.__format_ob_code(l)
             elif self.get_filter_expr_not_defined(l, self.__ob_code_spec_expr):
-                logging.info('')
+                #logging.info('')
                 rets += self.__format_ob_code_spec(l)
             elif self.get_filter_expr_not_defined(l, self.__ob_func_expr):
-                logging.info('')
+                #logging.info('')
                 rets += self.__format_ob_func(l)
             elif self.get_filter_expr_not_defined(l, self.__ob_func_spec_expr):
-                logging.info('')
+                #logging.info('')
                 rets += self.__format_ob_func_spec(l)
             elif self.get_filter_expr_not_defined(l, self.__ob_var_expr):
-                logging.info('')
+                #logging.info('')
                 rets += self.__format_ob_var(l)
             elif self.get_filter_expr_not_defined(l, self.__ob_var_spec_expr):
-                logging.info('')
+                #logging.info('')
                 rets += self.__format_ob_var_spec(l)
             elif self.get_filter_expr_not_defined(l, self.__ob_decl_var_expr):
-                logging.info('')
+                #logging.info('')
                 rets += self.__format_ob_decl_var(l)
             elif self.get_filter_expr_not_defined(l, self.__ob_decl_var_spec_expr):
-                logging.info('')
+                #logging.info('')
                 rets += self.__format_ob_decl_var_spec(l)
             elif self.get_filter_expr_not_defined(l, self.__ob_constant_str_expr):
-                logging.info('')
+                #logging.info('')
                 rets += self.__format_ob_constant_str(l)
             elif self.get_filter_expr_not_defined(l, self.__ob_constant_wstr_expr):
-                logging.info('l [%s]'%(l))
+                #logging.info('l [%s]'%(l))
                 rets += self.__format_ob_constant_wstr(l)
             elif self.get_filter_expr_not_defined(l, self.__ob_constant_str_spec_expr):
-                logging.info('')
+                #logging.info('')
                 rets += self.__format_ob_constant_str_spec(l)
             elif self.get_filter_expr_not_defined(l, self.__ob_constant_wstr_spec_expr):
-                logging.info('l [%s]'%(l))
+                #logging.info('l [%s]'%(l))
                 rets += self.__format_ob_constant_wstr_spec(l)
             elif self.get_filter_expr_not_defined(l, self.__ob_mixed_str_expr) or \
                 self.get_filter_expr_not_defined(l, self.__ob_mixed_wstr_expr) or \
                 self.get_filter_expr_not_defined(l, self.__ob_mixed_str_spec_expr) or \
                 self.get_filter_expr_not_defined(l, self.__ob_mixed_wstr_spec_expr):
-                logging.info('l [%s]'%(l))
+                #logging.info('l [%s]'%(l))
                 rets += self.__format_ob_mixed(l)
             else:
                 rets += format_line('%s'%(l),0)

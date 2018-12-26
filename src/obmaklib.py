@@ -195,7 +195,7 @@ def obuntrans_inner(fname,makobfile,args):
             v = fdict[k]
             ck = os.path.basename(k)
             cv = os.path.basename(v)
-            logging.info('ck [%s] cv [%s]'%(ck,cv))
+            #logging.info('ck [%s] cv [%s]'%(ck,cv))
             l = re.sub(cv, ck, l)
             s1 = re.split('\.', ck)
             ok = s1[0]

@@ -18,7 +18,7 @@ def set_logging_level(args):
         logging.root.handlers = []
     logging.basicConfig(level=loglvl,format='%(asctime)s:%(filename)s:%(funcName)s:%(lineno)d\t%(message)s')
     #logging.basicConfig(level=loglvl,format='%(funcName)s:%(lineno)d\t%(message)s')
-    random.seed(time.time())
+    random.seed(time.time()*10000)
     return
 
 
@@ -154,7 +154,7 @@ def string_to_uni32(s):
     ri.append(0)
     ri.append(0)
     ri.append(0)
-    logging.info('ri %s'%(ri))
+    #logging.info('ri %s'%(ri))
     return ri
 
 def uni32_to_string(sbyte):
@@ -729,7 +729,7 @@ def format_bytes(hexstr,size,bigendian=False):
 
 def set_data_bytes(alldata,data,foff,note=''):
     assert((foff+ len(data))<= len(alldata))
-    logging.debug('[%s].[0x%x:%d][0x%x:%d] %s'%(note,foff,foff,len(data),len(data),format_bytes_c(data)))
+    #logging.debug('[%s].[0x%x:%d][0x%x:%d] %s'%(note,foff,foff,len(data),len(data),format_bytes_c(data)))
     idx = 0
     while idx < len(data):
         alldata[(foff + idx)] = data[idx]

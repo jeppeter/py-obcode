@@ -34,6 +34,9 @@ int OB_RANDOM_NAME(check_value_func)(unsigned char* ptr,unsigned int size,m_calc
 
 	for (i=0;i<calcsize;i++) {
 		if (calcvalue[i] != pchkval[i]) {
+			OB_BUFFER_FMT(ptr,size,"size [0x%x:%d]", size,size);
+			OB_BUFFER_FMT(calcvalue,calcsize, "calculated");
+			OB_BUFFER_FMT(pchkval,calcsize, "expected");
 			return -3;
 		}
 	}

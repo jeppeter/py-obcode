@@ -21,7 +21,7 @@ int print_out2_a(void)
 {
 	int a=1,b=2,c=3;
 	int ret;
-	OB_CODE(a,b,c);
+	OB_EXPAND_CODE(a,b,c);
 	ret = OB_CHKVAL_FUNC(failfunc_main2_1);
 	if (ret < 0) {
 		return ret;
@@ -36,7 +36,7 @@ int print_out2_b(void)
 {
 	int a=1,b=2,c=3;
 	int ret;
-	OB_CODE(a,b,c);
+	OB_EXPAND_CODE(a,b,c);
 	ret = OB_CHKVAL_TOTAL_FUNC_SPEC("namemax=50");
 	if (ret < 0) {
 		return ret;
@@ -51,7 +51,7 @@ int print_out2_c(void)
 {
 	int a=1,b=2,c=3;
 	int ret;
-	OB_CODE(a,b,c);
+	OB_EXPAND_CODE(a,b,c);
 	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;
@@ -66,7 +66,7 @@ int print_out2_d(void)
 {
 	int a=1,b=2,c=3;
 	int ret;
-	OB_CODE(a,b,c);
+	OB_EXPAND_CODE(a,b,c);
 	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;
@@ -81,7 +81,7 @@ int print_out2_e(void)
 {
 	int a=1,b=2,c=3;
 	int ret;
-	OB_CODE(a,b,c);
+	OB_EXPAND_CODE(a,b,c);
 	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;
@@ -96,7 +96,7 @@ int print_out2_f(void)
 {
 	int a=1,b=2,c=3;
 	int ret;
-	OB_CODE(a,b,c);
+	OB_EXPAND_CODE(a,b,c);
 	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;
@@ -111,7 +111,7 @@ int print_out2_g(void)
 {
 	int a=1,b=2,c=3;
 	int ret;
-	OB_CODE(a,b,c);
+	OB_EXPAND_CODE(a,b,c);
 	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;

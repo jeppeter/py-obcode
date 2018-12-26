@@ -21,7 +21,7 @@ int callc_a(void)
 {
 	int a=1,b=2,c=3;
 	int ret;
-	OB_CODE(a,b,c);
+	OB_EXPAND_CODE(a,b,c);
 	ret = OB_CHKVAL_FUNC(failfunc_c1);
 	if (ret < 0) {
 		return ret;
@@ -36,7 +36,7 @@ int callc_b(void)
 {
 	int a=1,b=2,c=3;
 	int ret;
-	OB_CODE(a,b,c);
+	OB_EXPAND_CODE(a,b,c);
 	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;
@@ -51,7 +51,7 @@ int callc_c(void)
 {
 	int a=1,b=2,c=3;
 	int ret;
-	OB_CODE(a,b,c);
+	OB_EXPAND_CODE(a,b,c);
 	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;
@@ -66,7 +66,7 @@ int callc_d(void)
 {
 	int a=1,b=2,c=3;
 	int ret;
-	OB_CODE(a,b,c);
+	OB_EXPAND_CODE(a,b,c);
 	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;
@@ -81,7 +81,7 @@ int callc_e(void)
 {
 	int a=1,b=2,c=3;
 	int ret;
-	OB_CODE(a,b,c);
+	OB_EXPAND_CODE(a,b,c);
 	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;
@@ -96,7 +96,7 @@ int callc_f(void)
 {
 	int a=1,b=2,c=3;
 	int ret;
-	OB_CODE(a,b,c);
+	OB_EXPAND_CODE(a,b,c);
 	ret = OB_CHKVAL_TOTAL_FUNC();
 	if (ret < 0) {
 		return ret;

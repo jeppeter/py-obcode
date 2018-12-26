@@ -49,7 +49,7 @@ REPLACE_OB_CHKVAL_LIB=1
 
 
 def handle_c_file(sfile,dfile,args,param):
-    logging.info('c file [%s] => [%s]'%(sfile, dfile))
+    #logging.info('c file [%s] => [%s]'%(sfile, dfile))
     clear_random_name()
     if dfile is not None:
         make_dir_safe(os.path.dirname(dfile))    
@@ -76,7 +76,7 @@ def cob_copy_file(sfile,dfile,args,params):
         if dfile is not None:
             raw_copy(sfile,dfile)
         else:
-            logging.info('dump [%s]'%(sfile))
+            #logging.info('dump [%s]'%(sfile))
             s = read_file(sfile)
             write_file(s,None)
 
@@ -104,19 +104,19 @@ def cob_handler(args,parser):
     srcdir = args.subnargs[0]
     srcdir = os.path.abspath(srcdir)
     dstdir = None
-    logging.info('subnargs [%s]'%(args.subnargs))
+    #logging.info('subnargs [%s]'%(args.subnargs))
     if len(args.subnargs) > 1:
         dstdir = args.subnargs[1]
         dstdir = os.path.abspath(dstdir)
-    logging.info('dstdir [%s]'%(dstdir))
+    #logging.info('dstdir [%s]'%(dstdir))
     if os.path.isdir(srcdir):
         if dstdir is None:
-            logging.info(' ')
+            #logging.info(' ')
             dstdir = os.path.abspath('.')
         param = cobparam(srcdir, dstdir,args.cob_config)
     elif os.path.islink(srcdir) and os.path.isdir(os.path.realpath(srcdir)):
         if dstdir is None:
-            logging.info(' ')
+            #logging.info(' ')
             dstdir = os.path.abspath('.')
         param = cobparam(srcdir, dstdir,args.cob_config)
     elif (os.path.islink(srcdir) and os.path.isfile(os.path.realpath(srcdir))) or os.path.isfile(srcdir):
@@ -156,7 +156,7 @@ def obj_reunpatch_one_function(objparser, alldatas,args,odict,fname,funcname):
     realf = funcname
     if win32mode:
         realf = '_%s'%(funcname)
-    logging.info('[%s].[%s] realname [%s] [%s]'%(fname,funcname, realf, win32mode))
+    #logging.info('[%s].[%s] realname [%s] [%s]'%(fname,funcname, realf, win32mode))
     funcsize = objparser.func_size(realf)
     if funcsize != len(relocs):
         raise Exception('[%s].[%s] funcsize [%d] != relocs[%d]'%(fname, realf,funcsize, len(relocs)))
@@ -216,7 +216,7 @@ def obreunpatchelf_handler(args,parser):
     for f in jdict.keys():
         files.append(f)
     rets , odict = obj_reunpatch('ElfParser',args.unpatchfunc,args,odict,files,'prefix')
-    logging.debug('rets\n%s'%(rets))
+    #logging.debug('rets\n%s'%(rets))
     write_patch_output(args,rets,odict)
     sys.exit(0)
     return

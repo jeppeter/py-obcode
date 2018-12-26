@@ -26,11 +26,11 @@ class ExtractOb(object):
 	def __get_ob_func(self,funcname):
 		retfunc = funcname
 		rstr = '^\s*#\s*define\s+%s\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*$'%(funcname)
-		logging.info('rstr [%s]'%(rstr))
+		#logging.info('rstr [%s]'%(rstr))
 		expr = re.compile(rstr)
 		for l in self.__lines:
 			m = expr.findall(l)
-			logging.info('[%s] [%s] ret[%s]'%(l,funcname,m))
+			#logging.info('[%s] [%s] ret[%s]'%(l,funcname,m))
 			if m is not None and len(m) > 0:
 				retfunc = m[0]
 				break

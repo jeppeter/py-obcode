@@ -173,7 +173,7 @@ class ElfParser(object):
 					if hv in self.__funcinfo[secidx]:
 						for k in self.__funcinfo[secidx][hv]:
 							if k == funcinfo:
-								logging.info('%s already insert'%(funcinfo))
+								logging.warn('%s already insert'%(funcinfo))
 								inserted = True
 								break
 						if not inserted:
@@ -235,7 +235,7 @@ class ElfParser(object):
 					if hv in ndict[section.name].keys():
 						for k in ndict[section.name][hv]:
 							if k == relinfo:
-								logging.info('%s already inserted'%(relinfo))
+								logging.warn('%s already inserted'%(relinfo))
 								inserted = True
 								break
 					else:
@@ -390,7 +390,7 @@ class ElfParser(object):
 					if rels[jdx] == OBJ_RELOC_NONE and \
 						data[jdx] != sbyte[curidx]:
 						if jdx > matchmax:
-							logging.debug('[%s].[+0x%x] [+0x%x] [0x%02x] != [0x%02x]'%(symname,jdx,curidx,data[jdx], sbyte[curidx]))
+							#logging.debug('[%s].[+0x%x] [+0x%x] [0x%02x] != [0x%02x]'%(symname,jdx,curidx,data[jdx], sbyte[curidx]))
 							matchmax = jdx
 						break
 					jdx += 1

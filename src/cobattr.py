@@ -44,8 +44,8 @@ class MixedString(object):
                 random.randint(self.__cfg.namemin,self.__cfg.namemax), \
                 random.randint(len(sbyte),len(sbyte)*2), \
                 0,self.__cfg.debug, self.__line)
-        logging.info('afunc [%s] bfunc [%s] name [%s] hash [%s]'%(self.__afuncname, \
-            self.__bfuncname, self.__sfuncname, self.__get_hash(self.__sbyte)))
+        #logging.info('afunc [%s] bfunc [%s] name [%s] hash [%s]'%(self.__afuncname, \
+        #    self.__bfuncname, self.__sfuncname, self.__get_hash(self.__sbyte)))
         return
 
     def __get_hash(self,sbyte):
@@ -178,7 +178,7 @@ class COBAttr(object):
 
         if len(self.prefix) == 0:
             raise Exception('prefix [] empty')
-        logging.info('funcmin [%s] funcmax [%s]'%(self.funcmin,self.funcmax))
+        #logging.info('funcmin [%s] funcmax [%s]'%(self.funcmin,self.funcmax))
         if self.funcmin > self.funcmax or self.funcmin < 0 or self.funcmax <= 0:
             raise Exception('funcmin [%d] or funcmax [%d] not valid'%(self.funcmin, self.funcmax))
         return
@@ -214,7 +214,7 @@ class CompoundAttr(COBAttr):
     def __inc_prefix(self):
         self.__basic_inc += 1
         s = '%s_%d'%(self.__basic_prefix,self.__basic_inc)
-        logging.info('prefix [%s]'%(s))
+        #logging.info('prefix [%s]'%(s))
         return s
 
     def __init__(self,attrs=None):
@@ -245,7 +245,7 @@ class CompoundAttr(COBAttr):
 
     def get_file_config(self,name):
         retval = None
-        logging.info('id <%s>'%(self))
+        #logging.info('id <%s>'%(self))
         if self.__filecfg is not None and \
             name in self.__filecfg.keys():
             retval = COBAttr(self.__filecfg[name],None)
@@ -268,7 +268,7 @@ class CompoundAttr(COBAttr):
 
 def format_object_string(odict,tabs):
     s = json.dumps(odict,indent=4)
-    logging.info('s\n%s'%(s))
+    #logging.info('s\n%s'%(s))
     sarr = re.split('\n', s)
     idx = 1
     rets = ''

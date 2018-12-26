@@ -53,7 +53,7 @@ class COBFileBase(object):
             for expr in self.__define_expr:
                 m = expr.findall(l)
                 if m is not None and len(m) > 0:
-                    logging.info('[match] %s'%(m[0]))
+                    #logging.info('[match] %s'%(m[0]))
                     filtered = True
                     break
             if not filtered:
@@ -64,11 +64,11 @@ class COBFileBase(object):
     def get_variables(self,l,expr1):
         variables = expr1.findall(l)
         # we do this on the increment
-        logging.info('[%d][%s] variables[%d]'%(self.cur_line,l, len(variables)))
+        #logging.info('[%d][%s] variables[%d]'%(self.cur_line,l, len(variables)))
         assert(len(variables) == 1)
         assert(len(variables[0]) > 1)
         cfgattr = self.base_cfg
-        logging.info('v [%s]'%(variables[0][1]))
+        #logging.info('v [%s]'%(variables[0][1]))
         sbyte = string_to_ints(variables[0][1])
         params, lbyte = parse_param(sbyte)
         before = l.replace(variables[0][0],'',1)
@@ -88,7 +88,7 @@ class COBFileBase(object):
         after = ints_to_string(lbyte)
         cfgstr,lbyte = parse_raw_string(string_to_ints(params[0]))
         cfgstr = ints_to_string(cfgstr)
-        logging.info('cfgstr [%s]'%(cfgstr))
+        #logging.info('cfgstr [%s]'%(cfgstr))
         cfgattr = self.base_cfg.get_file_config(cfgstr)
         retparams = []
         if len(params) > 1:

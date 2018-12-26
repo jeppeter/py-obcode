@@ -245,7 +245,7 @@ class ChkVal(COBFileBase):
         return odict
 
     def format_c_code_pre(self,args,odict,objname):
-        logging.info('objname [%s]'%(objname))
+        #logging.info('objname [%s]'%(objname))
         odict = create_odict_is_none(odict, RANDOM_VARIABLE,objname)
         odict = create_odict_is_none(odict,CHKVAL_RANDOM_VALUE,objname)
 
@@ -275,7 +275,7 @@ class ChkVal(COBFileBase):
 
     def format_c_code_post(self,odict,objname):
         rets= ''        
-        logging.info('objname [%s]'%(objname))
+        #logging.info('objname [%s]'%(objname))
         curs, odict = self.__format_multi_lines(C_CODE_CHKVAL,objname,odict)
         rets += curs
         return rets,odict
@@ -332,12 +332,12 @@ class ChkVal(COBFileBase):
     def format_c_code(self,odict, objname,jdict):
 
         # this to check value
-        logging.info('objname [%s]'%(objname))
+        #logging.info('objname [%s]'%(objname))
         rets = ''
         for k in jdict.keys():
-            logging.info('k [%s]'%(k))
+            #logging.info('k [%s]'%(k))
             odict = self.__format_check_value(odict,objname,k,jdict[k])
-        logging.info(' ')
+        #logging.info(' ')
         rets = self.__write_check_value(odict,objname,jdict)
         return rets,odict
 
@@ -368,7 +368,6 @@ class ChkVal(COBFileBase):
         return retodict
 
     def format_chkval_header(self,odict,objs=[]):
-        logging.info(' ')
         pregaurd = '__%s__'%(get_random_name(30))
         rets = ''
         rets += format_line('#ifndef %s'%(pregaurd),0)
@@ -382,7 +381,7 @@ class ChkVal(COBFileBase):
         rets += format_line('',0)
 
         for o in objs:
-            logging.info('o[%s]'%(o))
+            #logging.info('o[%s]'%(o))
             crc32func = get_odict_value(odict,RANDOM_VARIABLE,o,CHKVAL_FUNC_CHECK_CRC32_FUNC)
             md5func = get_odict_value(odict,RANDOM_VARIABLE,o,CHKVAL_FUNC_CHECK_MD5_FUNC)
             sha256func = get_odict_value(odict,RANDOM_VARIABLE,o,CHKVAL_FUNC_CHECK_SHA256_FUNC)
@@ -402,10 +401,9 @@ class ChkVal(COBFileBase):
 
     def __format_ob_chkval_func_inner(self,l,retodict,cfg,params,before,after):
         idx = -1
-        logging.info('')
         if len(retodict['FUNCS']) > 0:
             idx = random.randint(0,len(retodict['FUNCS']) - 1)
-        logging.info('idx [%d]'%(idx))
+        #logging.info('idx [%d]'%(idx))
         if idx < 0:
             # we do not have the functions ,so just keep 
             return '%s\n'%(l)
@@ -435,12 +433,11 @@ class ChkVal(COBFileBase):
     def __format_ob_chkval_total_func_inner(self,l,retodict,cfg,params,before,after):
         idx = -1
         jdx = -1
-        logging.info('')
         if len(retodict['FUNCS']) > 0:
             idx = random.randint(0,len(retodict['FUNCS']) - 1)
         if len(retodict['FAILFUNC']) > 0:
             jdx = random.randint(0,len(retodict['FAILFUNC']) - 1)
-        logging.info('idx [%d]'%(idx))
+        #logging.info('idx [%d]'%(idx))
         if idx < 0 or jdx < 0:
             # we do not have the functions ,so just keep 
             return '%s\n'%(l)
@@ -494,7 +491,7 @@ class ChkVal(COBFileBase):
 
 
     def replace_functions(self,odict,objs=[],exitobjs=[],failfunc=''):
-        logging.info('objs %s'%(objs))
+        #logging.info('objs %s'%(objs))
         retodict = self.get_functions_odict(odict,objs)
         funccalls = []
         funcnames = []
@@ -515,19 +512,19 @@ class ChkVal(COBFileBase):
         for l in self.in_lines:
             self.cur_line += 1
             l = l.rstrip('\r\n')
-            logging.debug('[%d][%s]'%(self.cur_line, l))
+            #logging.debug('[%d][%s]'%(self.cur_line, l))
             if self.get_filter_expr_not_defined(l,self.__ob_chkval_func_expr):
-                logging.debug('')
                 rets += self.__format_ob_chkval_func(l,retodict)
             elif self.get_filter_expr_not_defined(l, self.__ob_chkval_func_spec_expr):
-                logging.debug('')
                 rets += self.__format_ob_chkval_func_spec(l,retodict)
             elif self.get_filter_expr_not_defined(l, self.__ob_chkval_total_func_expr):
-                logging.debug('')
                 rets += self.__format_ob_chkval_total_func(l,retodict)
             elif self.get_filter_expr_not_defined(l, self.__ob_chkval_total_func_spec_expr):
-                logging.debug('')
                 rets += self.__format_ob_chkval_total_func_spec(l,retodict)
+            elif self.get_filter_expr_not_defined(l, self.__ob_expand_code_expr):
+                rets += self.__format_ob_expand_code(l)
+            elif self.get_filter_expr_not_defined(l,self.__ob_expand_code_spec_expr):
+                rets += self.__format_ob_expand_code_spec(l)
             else:
                 rets += '%s\n'%(l)
         return rets
@@ -539,7 +536,7 @@ class ChkVal(COBFileBase):
         for l in self.in_lines:
             self.cur_line += 1
             l = l.rstrip('\r\n')
-            logging.info('[%d][%s]'%(self.cur_line, l))
+            #logging.info('[%d][%s]'%(self.cur_line, l))
             if self.get_filter_expr_not_defined(l,self.__ob_expand_code_expr):
                 rets += self.__format_ob_expand_code(l)
             elif self.get_filter_expr_not_defined(l,self.__ob_expand_code_spec_expr):
@@ -553,7 +550,7 @@ class ChkVal(COBFileBase):
 
 
 def chkval_dump_object_function_one(args,objparser,odict,o,f,win32mode=False):
-    logging.info('o[%s]f[%s]'%(o,f))
+    #logging.info('o[%s]f[%s]'%(o,f))
     fodict = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RAW_DATA,o,f)
     realf = f
     if win32mode:
@@ -578,7 +575,7 @@ def chkval_dump_object_function_one(args,objparser,odict,o,f,win32mode=False):
     return odict
 
 def chkval_dump_check_functions(args,objtype,odict,outname,win32mode=False):
-    logging.debug('[%s]'%(outname))
+    #logging.debug('[%s]'%(outname))
     startfunc = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE,outname,CHKVAL_START_FUNCTION_NAME)
     endfunc = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE,outname,CHKVAL_END_FUNCTION_NAME)
     basefunc = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE,outname,CHKVAL_BASE_FUNCTION_NAME)
@@ -608,7 +605,7 @@ def chkval_dump_object_functions(args,objtype,odict,objs=[],win32mode=False):
                 odict = chkval_dump_object_function_one(args,curobjparser,odict,o,f,win32mode)
             curobjparser.close()
     else:
-        logging.info('[%s]None handle'%(args.output))
+        logging.warn('[%s]None handle'%(args.output))
 
     # now we should get the output function value
     odict = chkval_dump_check_functions(args,objtype,odict,args.output,win32mode)
@@ -618,17 +615,25 @@ def chkval_get_realdata(objparser,exefile,odict,rawdata,objname,funcname,win32mo
     realdata = []
     realdata.extend(rawdata)
     exeodict = get_odict_value(odict,PATCH_FUNC_KEY,exefile,objname,funcname)
+    logging.info('exeodict %s'%(exeodict))
     if exeodict is not None:
         # this is patched, so we should give this to the xors
         offsetk = get_odict_value(exeodict,FORMAT_FUNC_OFFSET_KEY)
+        logging.debug('offsetk %s'%(offsetk))
         xors = get_odict_value(exeodict,FORMAT_FUNC_XORS_KEY)
+        relocs = get_odict_value(exeodict,FUNC_DATA_RELOC_KEY)
         assert(offsetk is not None)
         assert(xors is not None)
         for offk in offsetk.keys():
             offi = int(offk)
-            if offsetk[offk] >= 2:
+            # this means we relocs , so we change the value
+            if offsetk[offk] >= 2 and relocs[offk] > 0:
                 logging.debug('[%s].[%s].[0x%x:%d] [0x%02x] ^ [0x%02x] = [0x%02x]'%(objname,funcname,offi,offi,realdata[offi],xors[offk],(realdata[offi] ^ xors[offk])))
                 realdata[offi] = realdata[offi] ^ xors[offk]
+            elif offsetk[offk] >= 2:
+                logging.debug('[%s].[%s].[0x%x:%d] reserved [0x%02x]'%(objname,funcname, offi,offi,realdata[offi]))
+            else:
+                logging.debug('[%s].[%s].[0x%x:%d] nothing handle [0x%02x]'%(objname,funcname, offi,offi,realdata[offi]))
     return realdata
 
 def chkval_cfiles(args,odict,*path):
@@ -758,6 +763,8 @@ def chkval_fill_inc_obj_func(args,objparser,exefile,alldata,odict,incfile,objfil
         setoffset = (basefuncoff - foff)
         setoffset = (0x1 << 64) - setoffset
     
+    logging.info('%s'%(format_bytes_debug(rawdata,'rawdata [%s].[%s].[%s]'%(exefile,objfile,funcname))))
+    logging.info('%s'%(format_bytes_debug(realdata,'realdata [%s].[%s].[%s]'%(exefile,objfile,funcname))))
     crc32val = get_crc32_value(realdata)
     md5val = get_md5_value(realdata)
     sha256val = get_sha256_value(realdata)
@@ -840,24 +847,17 @@ def __inc_filled_self(args,objparser,exefile,alldata,odict,incfile,win32mode):
     aesdata = realdata[CHKVAL_AES_KEY_SIZE:]
     aesbytes = ints_to_bytes(aesdata)
     ivdata = alldata[endoff:(endoff+CHKVAL_AES_IV_SIZE)]
-    logging.info('ivdata\n%s'%(format_bytes_debug(ivdata)))
     ivbytes = ints_to_bytes(ivdata)
     keydata = realdata[:CHKVAL_AES_KEY_SIZE]
-    logging.info('keydata\n%s'%(format_bytes_debug(keydata)))
     keybytes = ints_to_bytes(keydata)
     aes = AES.new(keybytes,AES.MODE_CBC,ivbytes)
     encbytes = aes.encrypt(aesbytes)
     assert(len(encbytes) == len(aesbytes))
-    logging.info('ivdata \n%s'%(format_bytes_debug(ivdata)))
-    logging.info('not encrypted data\n%s'%(format_bytes_debug(aesdata)))
     aesdata = bytes_to_ints(encbytes)
-    logging.info('encrypted data\n%s'%(format_bytes_debug(aesdata)))
     realdata = set_data_bytes(realdata,aesdata,CHKVAL_AES_KEY_SIZE,'[%s]encrypted data'%(incfile))
     alldata = set_data_bytes(alldata, realdata, startoff)
 
     crc32val = get_crc32_value(realdata)
-    logging.info('realdata \n%s'%(format_bytes_debug(realdata)))
-    logging.info('crc32val 0x%s'%(crc32val))
     md5val = get_md5_value(realdata)
     sha256val = get_sha256_value(realdata)
     sha3val = get_sha3_value(realdata)
@@ -891,9 +891,7 @@ def __inc_filled_self(args,objparser,exefile,alldata,odict,incfile,win32mode):
     sizebytes = zero_bytes(CHKVAL_STRUCT_SIZE_SIZE)
     # clear the bytes ,and it will give clear
     realdata = set_data_bytes(realdata,sizebytes, (sizepos - startoff))
-    logging.info('sizepos [0x%x:%d]realdata checked\n%s'%((sizepos - startoff),(sizepos - startoff),format_bytes_debug(realdata)))
     crcval = get_crc_sum(realdata)
-    logging.info('crcval 0x%x'%(crcval))
     # now we should make change
     crcval = 0x100000000 - crcval
     # not overflow
@@ -903,18 +901,15 @@ def __inc_filled_self(args,objparser,exefile,alldata,odict,incfile,win32mode):
     setpos = (sizepos - startoff)
     while (setpos % 4) != 0:
         setpos += 1
-    logging.info('crcbytes %s'%(crcbytes))
     realdata = set_data_bytes(realdata,crcbytes, setpos)
     alldata = set_data_bytes(alldata, realdata,startoff)
 
-    logging.info('startoff [0x%x:%d] endoff[0x%x:%d]'%(startoff, startoff, endoff, endoff))
 
     return odict,alldata
 
 def chkval_fill_inc(args,objparser,exefile,alldata,odict,incfile,win32mode):
     incodict = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RANDOM_VALUE,incfile)
     basefuncname = get_odict_value(odict,CHKVAL_KEY,RANDOM_VARIABLE,incfile,CHKVAL_BASE_FUNCTION_NAME)
-    logging.info('basefuncname [%s]'%(basefuncname))
     assert(basefuncname is not None)
     assert(incodict is not None)
     basefuncodict = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RAW_DATA,incfile,basefuncname)
@@ -925,10 +920,8 @@ def chkval_fill_inc(args,objparser,exefile,alldata,odict,incfile,win32mode):
     if win32mode:
         realf = '_%s'%(basefuncname)
     basefuncoff = objparser.get_text_file_off(basefuncdata,basefuncrelocs,realf)
-    logging.info('basefuncoff 0x%x'%(basefuncoff))
     assert(basefuncoff >= 0)
     for o in incodict.keys():
-        logging.debug('o[%s]'%(o))
         odict,alldata = chkval_fill_inc_obj(args,objparser,exefile,alldata,odict,incfile,o,basefuncoff,win32mode)
     odict, alldata = chkval_fill_inc_lastitem(args,objparser,exefile,alldata,odict,incfile,win32mode)
     odict,alldata = __inc_filled_self(args,objparser,exefile,alldata,odict,incfile,win32mode)
@@ -938,7 +931,6 @@ def chkval_fill_data(args,objtype,odict,exefile,chkobjs=[],win32mode=False):
     objparser = call_object_parser(objtype,exefile)
     alldata = objparser.get_data()
     for f in chkobjs:
-        logging.debug('f[%s]'%(f))
         odict,alldata = chkval_fill_inc(args,objparser,exefile,alldata,odict,f,win32mode)
     objparser.close()
     write_file_ints(alldata, exefile)

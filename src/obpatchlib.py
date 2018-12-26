@@ -113,7 +113,7 @@ def format_ob_patch_func_code(objparser,jsondump,objname,funcname,formatname,get
             #rets += format_debug_line('printf("patch [%%p] [0x%%02x] = [0x%%02x] ^ [0x%02x]\\n", pcurptr, (*pcurptr ^ 0x%x), *pcurptr);'%(xornum,xornum),1,debuglevel)
             #rets += format_line('printf("[%%s:%%d] patch [%s].[+0x%x:%d] [%%p] [0x%%02x] = [0x%%02x] ^ [0x%02x]\\n",__FILE__,__LINE__, pcurptr, (*pcurptr ^ 0x%x), *pcurptr);'%(funcname,xoroff,xoroff,xornum,xornum),1)
             rets += format_line('*pcurptr ^= %d;'%(xornum),1)
-            logging.info('[%s].[%s] +[0x%x:%d] xornum [0x%x:%d] funcdata[%d]'%(objname,funcname,xoroff,xoroff,xornum,xornum,funcdata[xoroff]))
+            #logging.info('[%s].[%s] +[0x%x:%d] xornum [0x%x:%d] funcdata[%d]'%(objname,funcname,xoroff,xoroff,xornum,xornum,funcdata[xoroff]))
     else:
         rets += format_line('mapfunc = mapfunc;', 1)
     rets += format_line('return 0;',1)
@@ -153,7 +153,7 @@ def unpatch_one_file_func(objparser,odict,objfile,f,objdata,win32mode=False):
         realf = '_%s'%(f)
     foff = objparser.func_offset(realf)
     fsize = objparser.func_size(realf)
-    logging.info('foff [0x%x:%d]'%(foff,foff))
+    #logging.info('foff [0x%x:%d]'%(foff,foff))
     if foff < 0 :
         raise Exception('can not find [%s]'%(realf))
     fvaddr = objparser.func_vaddr(realf)
@@ -163,13 +163,13 @@ def unpatch_one_file_func(objparser,odict,objfile,f,objdata,win32mode=False):
     assert(xorskey is not None)
     for offi in xorskey.keys():
         off = int(offi)
-        logging.info('off [0x%x:%d]'%(off,off))
+        #logging.info('off [0x%x:%d]'%(off,off))
         if offsetk[offi] >= 2:
             # we change the xor data into
-            logging.info('[%s].[%s]foff [0x%x] + off [0x%x] [0x%02x] ^ [0x%02x] => [0x%02x]'%(objfile,f,\
-                foff, off,objdata[(foff + off)] ,\
-                xorskey[offi], \
-                objdata[(foff + off)] ^ xorskey[offi]))
+            #logging.info('[%s].[%s]foff [0x%x] + off [0x%x] [0x%02x] ^ [0x%02x] => [0x%02x]'%(objfile,f,\
+            #    foff, off,objdata[(foff + off)] ,\
+            #    xorskey[offi], \
+            #    objdata[(foff + off)] ^ xorskey[offi]))
             objdata[(foff + off)] = objdata[(foff + off)] ^ xorskey[offi]
     odict[PATCH_FUNC_KEY][objfile][f][FUNC_DATA_KEY] = objdata[foff:(foff+fsize)]
     return odict,objdata
@@ -268,13 +268,13 @@ def patch_objects(objparser,args,ofile,objs,odict,alldatas,force=False):
                     reloff = objparser.get_text_file_off(data,rels,f)
                     xors = get_odict_value(odict,PATCH_FUNC_KEY,ofile,o,f,FORMAT_FUNC_XORS_KEY)
                     for k in offsetk.keys():
-                        logging.info('xors[%s]=%d'%(k,offsetk[k]))
+                        #logging.info('xors[%s]=%d'%(k,offsetk[k]))
                         if offsetk[k] <= 1 and offsetk[k] >= 0:
                             assert(k in xors.keys())
                             ki = int(k)
-                            logging.info('[%s].[%s] [+0x%x:%d] [0x%02x] = [0x%02x] ^ [0x%02x]'%( o, f,ki,ki,\
-                                alldatas[(reloff + ki)] ^ xors[k], alldatas[(reloff + ki)], \
-                                xors[k]))
+                            #logging.info('[%s].[%s] [+0x%x:%d] [0x%02x] = [0x%02x] ^ [0x%02x]'%( o, f,ki,ki,\
+                            #    alldatas[(reloff + ki)] ^ xors[k], alldatas[(reloff + ki)], \
+                            #    xors[k]))
                             alldatas[(reloff + ki)] = alldatas[(reloff + ki)] ^ xors[k]
                             offsetk[k] = 2
                     odict = set_odict_value(odict,offsetk, PATCH_FUNC_KEY,ofile,o,f,FORMAT_FUNC_OFFSET_KEY)
@@ -353,7 +353,7 @@ def obunpatchelf_handler(args,parser):
 
     files = []
     for f in jdict.keys():
-        logging.info('f [%s] funcs %s'%(f,jdict[f]))
+        #logging.info('f [%s] funcs %s'%(f,jdict[f]))
         odict = object_one_file('ElfParser',odict,f,jdict[f],args.times,args.obunpatchelf_loglvl)
         files.append(f)
     rets = format_patch_funcions(args,odict,files,args.unpatchfunc)
@@ -383,7 +383,7 @@ def obpatchelf_handler(args,parser):
     odict = patch_objects_class('ElfParser', args, args.output, args.subnargs, odict,False)
     with open(args.dump,'w+b') as fout:
         write_file_direct(json.dumps(odict,sort_keys=True,indent=4), fout)
-    logging.info('log patch\n%s'%(log_patch(args,odict,args.output)))
+    #logging.info('log patch\n%s'%(log_patch(args,odict,args.output)))
     sys.exit(0)
     return
 
@@ -397,7 +397,7 @@ def obunpatchcoff_handler(args,parser):
 
     files = []
     for f in jdict.keys():
-        logging.info('f [%s] funcs %s'%(f,jdict[f]))
+        #logging.info('f [%s] funcs %s'%(f,jdict[f]))
         odict = object_one_file('CoffParser',odict,f,jdict[f],args.times,args.obunpatchcoff_loglvl,args.win32)
         files.append(f)
 
@@ -421,7 +421,7 @@ def obpatchpe_handler(args,parser):
     odict = patch_objects_class('PEParser', args, args.output, args.subnargs, odict,False)
     with open(args.dump,'w+b') as fout:
         write_file_direct(json.dumps(odict,sort_keys=True,indent=4), fout)
-    logging.info('log patch\n%s'%(log_patch(args,odict,args.output)))
+    #logging.info('log patch\n%s'%(log_patch(args,odict,args.output)))
     sys.exit(0)
     return
 
