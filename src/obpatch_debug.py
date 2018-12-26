@@ -71,6 +71,13 @@ def main():
         },
         "obpatchelfforge<obpatchelfforge_handler>##inputfile to no handle##" : {
         	"$" : "+"
+        },
+        "obpatchpeforge<obpatchpeforge_handler>##inputfile to no handle##" : {
+            "$" : "+"
+        },
+        "obunpatchcoffforge<obunpatchcoffforge_handler>##objfilename:func1,func2 ... to format unpatch elf file with func1 func2##" : {
+            "$" : "+",
+            "loglvl" : 3
         }
     }
     '''

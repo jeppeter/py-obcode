@@ -29,7 +29,7 @@ DBG_CFLAGS = /Z7 /Od
 REL_LDFLAGS = 
 
 CFLAGS  =  $(NOLOGO_CFLAGS) $(STATIC_LIB_CFLAGS) $(INC_CFLAGS) $(COM_CFLAGS) $(REL_CFLAGS) $(DBG_CFLAGS)
-LDFLAGS = $(NOLOGO_LDFLAGS) $(INC_LDFLAGS) $(REL_LDFLAGS) -DEBUG
+LDFLAGS = $(NOLOGO_LDFLAGS) $(INC_LDFLAGS) $(REL_LDFLAGS)
 
 SOURCES=main.cpp unpatch.cpp
 OBJECTS=$(SOURCES:.cpp=.obj)
@@ -40,36 +40,40 @@ main_CLAUSE= "$(CURDIR)\main.obj;print_out_a" "win32;"
 main_CLAUSE= "$(CURDIR)\main.obj;print_out_a"
 !ENDIF
 
-all:main.exe
+!IFDEF OB_REPATCH
+JSON_FILE=$(OB_REPATCH)
+PATCH_EXE=obrepatchpe
+UNPATCH_COFF=obreunpatchcoff
+!ELSE
+JSON_FILE=$(CURDIR)\unpatch.json
 
 !IFDEF OB_PATCH
-main.exe:$(OBJECTS)
-	$(QUIETCMD) echo "call static $(OBJECTS)"
-	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(OBJECTS)
-	$(QUIETCMD)echo "use static lib"
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py -o $(CURDIR)\main.exe obpatchpe -D $(CURDIR)\unpatch.json  $(CURDIR)\main.obj $(CURDIR)\unpatch.obj
+PATCH_EXE=obpatchpe
+UNPATCH_COFF=obunpatchcoff
 !ELSE
+PATCH_EXE=obpatchpeforge
+UNPATCH_COFF=obunpatchcoffforge
+!ENDIF
+
+!ENDIF
+
+all:main.exe
+
 main.exe:$(OBJECTS)
 	$(QUIETCMD) echo "call static $(OBJECTS)"
 	$(QUIETCMD)$(LD) -out:$@  $(LDFLAGS)  $(OBJECTS)
 	$(QUIETCMD)echo "use static lib"
-!ENDIF
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py -o $(CURDIR)\main.exe $(PATCH_EXE) -D $(JSON_FILE)  $(CURDIR)\main.obj $(CURDIR)\unpatch.obj
+
+unpatch.json:main.obj
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h -D $(JSON_FILE) -o unpatch.cpp $(UNPATCH_COFF)  $(main_CLAUSE)
+
 
 .cpp.obj:
 	$(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $<
 
 unpatch.cpp:unpatch.json
 
-
-!IFDEF OB_PATCH
-unpatch.json:main.obj
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h -D unpatch.json -o unpatch.cpp obunpatchcoff  $(main_CLAUSE)
-!ELSE
-unpatch.json:main.obj
-	$(QUIETCMD)echo {} >unpatch.json
-	$(QUIETCMD)echo #include "main.h" >unpatch.cpp
-	$(QUIETCMD)echo int unpatch_handler(map_prot_func_t protfunc) { protfunc = protfunc;return 0;} >>unpatch.cpp
-!ENDIF
 
 
 

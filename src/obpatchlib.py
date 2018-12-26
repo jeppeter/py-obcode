@@ -430,7 +430,29 @@ def obpatchelfforge_handler(args,parser):
     sys.exit(0)
     return
 
+def obpatchpeforge_handler(args,parser):
+    set_logging_level(args)
+    sys.exit(0)
+    return
+
+
 def obunpatchelfforge_handler(args,parser):
+    set_logging_level(args)
+    jdict , args = get_jdict(args)
+    odict = dict()
+    rets = ''
+    rets += format_includes(args)
+    rets += format_line('int %s(map_prot_func_t mapfunc)'%(args.unpatchfunc),0)
+    rets += format_line('{',0)
+    rets += format_line('mapfunc = mapfunc;', 1)
+    rets += format_line('return 0;',1)
+    rets += format_line('}',0)
+    write_patch_output(args,rets,odict)
+    sys.exit(0)
+    return
+
+
+def obunpatchcoffforge_handler(args,parser):
     set_logging_level(args)
     jdict , args = get_jdict(args)
     odict = dict()

@@ -80,6 +80,29 @@ somain1_CLAUSE = "$(CURDIR)\somain1.obj;main1_print_out_a,main1_print_out_b,main
 somain2_CLAUSE = "$(CURDIR)\somain2.obj;main2_print_out_a,main2_print_out_b,main2_print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c"
 !ENDIF
 
+!IFDEF OB_REPATCH
+
+JSON_FILE=$(OB_REPATCH)
+PATCH_EXE=obrepatchpe
+UNPATCH_COFF=obreunpatchcoff
+
+!ELSE
+
+JSON_FILE=$(CURDIR)\unpatch.json
+
+!IFDEF OB_PATCH
+PATCH_EXE=obpatchpe
+UNPATCH_COFF=obunpatchcoff
+!ELSE
+PATCH_EXE=obpatchpeforge
+UNPATCH_COFF=obunpatchcoffforge
+!ENDIF
+
+
+!ENDIF
+
+
+
 all:$(CURDIR)\main.exe
 
 $(CURDIR)\main.exe:$(main_OBJECTS) $(CURDIR)\somain1.dll $(CURDIR)\somain2.dll
@@ -90,27 +113,15 @@ $(CURDIR)\main.exe:$(main_OBJECTS) $(CURDIR)\somain1.dll $(CURDIR)\somain2.dll
 $(CURDIR)\main.obj:$(CURDIR)\main.cpp
 	$(QUIETCMD)$(CC) $(DLL_CFLAGS) -c -Fo$@ $(CURDIR)\main.cpp
 
-!IFDEF OB_PATCH
-# patch mode
 $(CURDIR)\somain1.dll:$(somain1_OBJECTS) $(CURDIR)\unpatch.json
 	$(QUIETCMD)$(LD) $(DLL_LDFLAGS) -dll -out:$@ $(somain1_OBJECTS)
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py -o $(CURDIR)\somain1.dll obpatchpe -D $(CURDIR)\unpatch.json $(CURDIR)\somain1.obj $(CURDIR)\callc.obj
-
-# patch mode
-$(CURDIR)\somain2.dll:$(somain2_OBJECTS) $(CURDIR)\unpatch.json
-	$(QUIETCMD)$(LD) $(DLL_LDFLAGS) -dll -out:$@ $(somain2_OBJECTS)
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py -o $(CURDIR)\somain2.dll obpatchpe -D $(CURDIR)\unpatch.json $(CURDIR)\somain2.obj $(CURDIR)\callc.obj
-
-
-!ELSE
-# not patch mode
-$(CURDIR)\somain1.dll:$(somain1_OBJECTS) $(CURDIR)\unpatch.json
-	$(QUIETCMD)$(LD) $(DLL_LDFLAGS) -dll -out:$@ $(somain1_OBJECTS)
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py -o $(CURDIR)\somain1.dll $(PATCH_EXE) -D $(JSON_FILE) $(CURDIR)\somain1.obj $(CURDIR)\callc.obj
 
 $(CURDIR)\somain2.dll:$(somain2_OBJECTS) $(CURDIR)\unpatch.json
 	$(QUIETCMD)$(LD) $(DLL_LDFLAGS) -dll -out:$@ $(somain2_OBJECTS)
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py -o $(CURDIR)\somain2.dll $(PATCH_EXE) -D $(JSON_FILE) $(CURDIR)\somain2.obj $(CURDIR)\callc.obj
 
-!ENDIF
+
 
 
 .cpp.obj:
@@ -118,28 +129,13 @@ $(CURDIR)\somain2.dll:$(somain2_OBJECTS) $(CURDIR)\unpatch.json
 
 $(CURDIR)\unpatch.json:$(CURDIR)\somain1_unpatch.cpp $(CURDIR)\somain2_unpatch.cpp
 
-#	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles main.h -D unpatch.json -o unpatch.cpp obunpatchcoff "$(CURDIR)\main.obj;print_out_a,print_out_b,print_out_c" "$(CURDIR)\callc.obj;call_a,call_b,call_c" -vvvv
 
-
-!IFDEF OB_PATCH
 $(CURDIR)\somain1_unpatch.cpp:$(CURDIR)\somain1.obj $(CURDIR)\callc.obj
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles somain1.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o somain1_unpatch.cpp obunpatchcoff $(somain1_CLAUSE)
-!ELSE
-$(CURDIR)\somain1_unpatch.cpp:$(CURDIR)\somain1.obj $(CURDIR)\callc.obj
-	$(QUIETCMD)echo {} >unpatch.json
-	$(QUIETCMD)echo #include "unpatch.h" >somain1_unpatch.cpp
-	$(QUIETCMD)echo int unpatch_handler(map_prot_func_t protfunc) { protfunc = protfunc;return 0;} >>somain1_unpatch.cpp
-!ENDIF
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles somain1.h --includefiles unpatch.h --includefiles callc.h -D $(JSON_FILE) -o somain1_unpatch.cpp $(UNPATCH_COFF) $(somain1_CLAUSE)
 
-!IFDEF OB_PATCH
 $(CURDIR)\somain2_unpatch.cpp:$(CURDIR)\somain2.obj $(CURDIR)\callc.obj
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles somain2.h --includefiles unpatch.h --includefiles callc.h -D unpatch.json -o somain2_unpatch.cpp obunpatchcoff $(somain2_CLAUSE)
-!ELSE
-$(CURDIR)\somain2_unpatch.cpp:$(CURDIR)\somain2.obj $(CURDIR)\callc.obj
-	$(QUIETCMD)echo {} >unpatch.json
-	$(QUIETCMD)echo #include "unpatch.h" >somain2_unpatch.cpp
-	$(QUIETCMD)echo int unpatch_handler(map_prot_func_t protfunc) { protfunc = protfunc;return 0;} >>somain2_unpatch.cpp
-!ENDIF
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obcode.py --includefiles somain2.h --includefiles unpatch.h --includefiles callc.h -D $(JSON_FILE) -o somain2_unpatch.cpp $(UNPATCH_COFF) $(somain2_CLAUSE)
+
 
 
 clean:
