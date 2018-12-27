@@ -920,6 +920,112 @@ class obcode_test(unittest.TestCase):
         self.runOk=True
         return
 
+    def test_A016(self):
+        if sys.platform != 'win32':
+            self.runOk=True
+            return
+        stdnull = None
+        # now we should compare
+        topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'))
+        obcodepy = os.path.join(topdir,'obcode.py')
+        exampledir = os.path.join(topdir,'example','chkval','patchpe')
+        stdnull = open(os.devnull,'w')
+        
+        # patch mode
+        origdir = os.getcwd()
+        os.chdir(exampledir)
+        try:
+            cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','OB_CHKVAL=1','OB_PATCH=1','COM_TARGET=clean']
+            subprocess.check_call(cmds,stdout=stdnull)
+            cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','OB_CHKVAL=1','OB_PATCH=1','COM_TARGET=all']
+            subprocess.check_call(cmds,stdout=stdnull)
+            cmdbin = os.path.join(exampledir,'main.exe')
+            oblines = []
+            for l in cmdpack.run_cmd_output([cmdbin]):
+                l = l.rstrip('\r\n')
+                oblines.append(l)
+            cmdbin = os.path.join(exampledir,'main2.exe')
+            ob2lines = []
+            for l in cmdpack.run_cmd_output([cmdbin]):
+                l = l.rstrip('\r\n')
+                ob2lines.append(l)
+            # no patch mode
+            cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','COM_TARGET=clean']
+            subprocess.check_call(cmds,stdout=stdnull)
+            cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','COM_TARGET=all']
+            subprocess.check_call(cmds,stdout=stdnull)
+            cmdbin = os.path.join(exampledir,'main.exe')
+            normlines = []
+            for l in cmdpack.run_cmd_output([cmdbin]):
+                l = l.rstrip('\r\n')
+                normlines.append(l)
+            cmdbin = os.path.join(exampledir,'main2.exe')
+            norm2lines = []
+            for l in cmdpack.run_cmd_output([cmdbin]):
+                l = l.rstrip('\r\n')
+                norm2lines.append(l)
+            cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','COM_TARGET=clean']
+            subprocess.check_call(cmds,stdout=stdnull)
+            self.assertTrue(len(normlines) > 2)
+            self.assertEqual(normlines,oblines)
+            self.assertEqual(norm2lines,ob2lines)
+            self.runOk=True
+        finally:
+            if stdnull is not None:
+                stdnull.close()
+            stdnull = None
+            os.chdir(origdir)
+        return
+
+    def test_A017(self):
+        if sys.platform == 'win32':
+            self.runOk=True
+            return
+        # now we should compare
+        topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'))
+        obcodepy = os.path.join(topdir,'obcode.py')
+        exampledir = os.path.join(topdir,'example','chkval','patchelf')
+        stdnull = open(os.devnull,'w')
+
+        # patch mode
+        cmds = ['make','-C',exampledir,'OB_CHKVAL=1','OB_PATCH=1','clean']
+        subprocess.check_call(cmds,stdout=stdnull)
+        cmds = ['make','-C',exampledir,'OB_CHKVAL=1','OB_PATCH=1','all']
+        subprocess.check_call(cmds,stdout=stdnull)
+        cmdbin = os.path.join(exampledir,'main')
+        oblines = []
+        for l in cmdpack.run_cmd_output([cmdbin]):
+            l = l.rstrip('\r\n')
+            oblines.append(l)
+        cmdbin = os.path.join(exampledir,'main2')
+        ob2lines = []
+        for l in cmdpack.run_cmd_output([cmdbin]):
+            l = l.rstrip('\r\n')
+            ob2lines.append(l)
+        # no patch mode
+        cmds = ['make','-C',exampledir,'clean']
+        subprocess.check_call(cmds,stdout=stdnull)
+        cmds = ['make','-C',exampledir,'all']
+        subprocess.check_call(cmds,stdout=stdnull)
+        cmdbin = os.path.join(exampledir,'main')
+        normlines = []
+        for l in cmdpack.run_cmd_output([cmdbin]):
+            l = l.rstrip('\r\n')
+            normlines.append(l)
+        cmdbin = os.path.join(exampledir,'main2')
+        norm2lines = []
+        for l in cmdpack.run_cmd_output([cmdbin]):
+            l = l.rstrip('\r\n')
+            norm2lines.append(l)
+        cmds = ['make','-C',exampledir,'clean']
+        subprocess.check_call(cmds,stdout=stdnull)
+        self.assertTrue(len(normlines) > 2)
+        self.assertEqual(normlines,oblines)
+        self.assertEqual(norm2lines,ob2lines)
+        stdnull.close()
+        stdnull = None
+        self.runOk=True
+        return
 
 def main():
     unittest.main()
