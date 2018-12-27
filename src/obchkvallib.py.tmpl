@@ -627,11 +627,9 @@ def chkval_get_realdata(objparser,exefile,odict,rawdata,objname,funcname,win32mo
         for offk in offsetk.keys():
             offi = int(offk)
             # this means we relocs , so we change the value
-            if offsetk[offk] >= 2 and relocs[offk] > 0:
+            if offsetk[offk] >= 2 :
                 logging.debug('[%s].[%s].[0x%x:%d] [0x%02x] ^ [0x%02x] = [0x%02x]'%(objname,funcname,offi,offi,realdata[offi],xors[offk],(realdata[offi] ^ xors[offk])))
                 realdata[offi] = realdata[offi] ^ xors[offk]
-            elif offsetk[offk] >= 2:
-                logging.debug('[%s].[%s].[0x%x:%d] reserved [0x%02x]'%(objname,funcname, offi,offi,realdata[offi]))
             else:
                 logging.debug('[%s].[%s].[0x%x:%d] nothing handle [0x%02x]'%(objname,funcname, offi,offi,realdata[offi]))
     return realdata

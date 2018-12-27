@@ -192,7 +192,8 @@ def get_jdict(args):
                 jdict[sarr[0]] = []
                 continue
             carr = re.split(',',sarr[1])
-            jdict[sarr[0]] = carr
+            f = os.path.abspath(sarr[0])
+            jdict[f] = carr
     return jdict , args
 
 def get_odict(args,force):
