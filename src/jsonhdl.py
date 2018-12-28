@@ -5,9 +5,11 @@ import sys
 import os
 import logging
 import re
+import json
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from strparser import *
+from fmthdl import *
 from elfparser import *
 from coffparser import *
 from peparser import *

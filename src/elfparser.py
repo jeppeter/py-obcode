@@ -122,8 +122,9 @@ class RelocInfo(object):
 		return
 
 
-class ElfParser(object):
+class ElfParser(ObjParser):
 	def __init__(self,fname):
+		ObjParser.__init__(self)
 		if sys.version[0] == '3':
 			self.__fin = open(fname,'rb')
 			fin = open(fname,'rb')
@@ -135,11 +136,13 @@ class ElfParser(object):
 		self.__funcinfo = None
 		self.__relocinfo = None
 		self.__data = fin.read()
+
 		fin.close()
 		fin = None
 		return
 
 	def close(self):
+		ObjParser.close(self)
 		if self.__elffile is not None:
 			self.__elffile = None
 
@@ -149,7 +152,11 @@ class ElfParser(object):
 
 		if self.__funcinfo is not None:
 			self.__funcinfo = None
+
+
 		return
+
+
 
 	def __parse_elf_funcinfo(self):
 		assert(self.__elffile is not None)
@@ -365,44 +372,6 @@ class ElfParser(object):
 	def get_data(self):
 		return bytes_to_ints(self.__data)
 
-	def get_text_file_off(self,data,rels,symname=''):
-		if len(data) != len(rels):
-			raise Exception('len(data) [%d] != len(rels)[%d]'%(len(data),len(rels)))
-		sbyte = bytes_to_ints(self.__data)
-		retoff = -1
-		idx = 0
-		jdx = 0
-		fidx = 0
-		matchmax = 0
-		while fidx < len(rels):
-			if rels[fidx] == 0:
-				break
-			fidx += 1
-		if fidx >= len(rels):
-			raise Exception('all rels')
-		idx = 0
-		while idx < len(sbyte):
-			jdx = fidx
-			if sbyte[(idx+fidx)] == data[(jdx)]:
-				curidx = idx + fidx + 1
-				jdx += 1
-				while jdx < len(data) and curidx < len(sbyte):
-					if rels[jdx] == OBJ_RELOC_NONE and \
-						data[jdx] != sbyte[curidx]:
-						if jdx > matchmax:
-							#logging.debug('[%s].[+0x%x] [+0x%x] [0x%02x] != [0x%02x]'%(symname,jdx,curidx,data[jdx], sbyte[curidx]))
-							matchmax = jdx
-						break
-					jdx += 1
-					curidx += 1
-				if jdx == len(data):
-					if retoff >= 0:
-						raise Exception('double match at [0x%x] and [0x%x]'%(retoff,idx))
-					retoff = idx
-			idx += 1
-		if retoff < 0:
-			raise Exception('can not find [%s] code\nrels\n%s\ndata\n%s\n'%(symname, dump_ints(rels), dump_ints(data)))
-		return retoff
 
 	def dump_structure(self,fout):
 		self.__parse_elf_relocinfo()
@@ -412,5 +381,8 @@ class ElfParser(object):
 			for rel in relinfos:
 				fout.write('    %s\n'%(rel))
 		return
+
+	def get_text_file_off(self,data,rels,symname=''):
+		return ObjParser.get_text_file_off(self,data,rels,symname,self.__data)
 
 ##extractcode_end

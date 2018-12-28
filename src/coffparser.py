@@ -6,13 +6,15 @@ import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+from strparser import *
 from objparser import *
 
 
 ##extractcode_start
 
-class CoffParser(object):
+class CoffParser(ObjParser):
 	def __init__(self,fname):
+		ObjParser.__init__(self)
 		self.__coff = coff.Coff(fname)
 		self.__symvalues = dict()
 		self.__symnames = dict()
@@ -39,7 +41,9 @@ class CoffParser(object):
 		return
 
 	def close(self):
+		ObjParser.close(self)
 		return
+
 
 	def _find_sym(self,name,symtbl):
 		minidx = 0
@@ -172,40 +176,6 @@ class CoffParser(object):
 		return bytes_to_ints(self.__data)
 
 	def get_text_file_off(self,data,rels,symname=''):
-		if len(data) != len(rels):
-			raise Exception('len(data) [%d] != len(rels)[%d]'%(len(data),len(rels)))
-		sbyte = bytes_to_ints(self.__data)
-		retoff = -1
-		idx = 0
-		jdx = 0
-		fidx = 0
-		while fidx < len(rels):
-			if rels[fidx] == 0:
-				break
-			fidx += 1
-		if fidx >= len(rels):
-			raise Exception('all rels')
-		idx = 0
-		while idx < len(sbyte):
-			jdx = fidx
-			if sbyte[(idx+fidx)] == data[(jdx)]:
-				curidx = idx + fidx + 1
-				jdx += 1
-				while jdx < len(data) and curidx < len(sbyte):
-					if rels[jdx] == OBJ_RELOC_NONE and \
-						data[jdx] != sbyte[curidx]:
-						#logging.info('[%s].[+0x%x] [+0x%x] [0x%02x] != [0x%02x]'%(symname,jdx,curidx,data[jdx], sbyte[curidx]))
-						break
-					jdx += 1
-					curidx += 1
-				if jdx == len(data):
-					if retoff >= 0:
-						raise Exception('double match at [0x%x] and [0x%x]'%(retoff,idx))
-					retoff = idx
-			idx += 1
-		if retoff < 0:
-			raise Exception('can not find [%s] code\nrels\n%s\ndata\n%s\n'%(symname, dump_ints(rels), dump_ints(data)))
-		return retoff
-
+		return ObjParser.get_text_file_off(self,data,rels,symname,self.__data)
 
 ##extractcode_end

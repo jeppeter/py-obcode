@@ -4,12 +4,15 @@ import extargsparse
 import logging
 import sys
 import os
+import time
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..','src')))
 from filehdl import *
+from jsonhdl import *
 from pyparser import *
 from elfparser import *
 from coffparser import *
+from peparser import *
 
 
 def set_logging_level(args):
@@ -128,6 +131,47 @@ def coffsym_handler(args,parser):
 	sys.exit(0)
 	return
 
+def pefind_handler(args,parser):
+	set_logging_level(args)
+	odict = get_odict(args,False)
+	peparser = call_object_parser('PEParser',args.subnargs[0])
+	for k in odict.keys():
+		data = get_odict_value(odict,k,CHKVAL_RDATA_DATAS)
+		relocs = get_odict_value(odict,k,CHKVAL_RDATA_RELOCS)
+		if data is not None and relocs is not None:
+			idx = 0
+			stime = time.time()
+			while True:
+				pos = peparser.get_text_file_off(data,relocs,k)
+				if idx >= args.times:
+					break
+				idx += 1
+			etime = time.time()
+			sys.stdout.write('[%d].[%s].[%s] times %s\n'%(args.times,args.subnargs[0],k,etime - stime))
+	sys.exit(0)
+	return
+
+def cofffind_handler(args,parser):
+	set_logging_level(args)
+	odict = get_odict(args,False)
+	peparser = call_object_parser('CoffParser',args.subnargs[0])
+	for k in odict.keys():
+		data = get_odict_value(odict,k,CHKVAL_RDATA_DATAS)
+		relocs = get_odict_value(odict,k,CHKVAL_RDATA_RELOCS)
+		if data is not None and relocs is not None:
+			idx = 0
+			stime = time.time()
+			while True:
+				pos = peparser.get_text_file_off(data,relocs,k)
+				if idx >= args.times:
+					break
+				idx += 1
+			etime = time.time()
+			sys.stdout.write('[%d].[%s].[%s] times %s\n'%(args.times,args.subnargs[0],k,etime - stime))
+	sys.exit(0)
+	return
+
+
 def elfdump_handler(args,parser):
 	set_logging_level(args)
 	for f in args.subnargs:
@@ -140,6 +184,8 @@ def main():
 	commandline='''
 	{
 		"verbose|v" : "+",
+		"times|t" : 0,
+		"dump|D" : null,
 		"py<py_handler>##pyfile ... to parse python file##" : {
 			"$" : "+"
 		},
@@ -157,6 +203,12 @@ def main():
 		},
 		"elfdump<elfdump_handler>##elffile ... to dump elffile ##" : {
 			"$" : "+"
+		},
+		"pefind<pefind_handler>##pefile jsonfile to get file position from data##" : {
+			"$" : 1
+		},
+		"cofffind<cofffind_handler>##pefile jsonfile to get file position from data##" : {
+					"$" : 1
 		}
 	}
 	'''
