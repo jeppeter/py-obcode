@@ -55,6 +55,7 @@ class ObjParser(object):
 			raise Exception('all rels')
 		firstbyte = data[fidx]
 		retoff = -1
+		matchmax = -1
 		if firstbyte in self.dataoffdict.keys():
 			posarr = self.dataoffdict[firstbyte]
 			idx = 0
@@ -64,7 +65,9 @@ class ObjParser(object):
 					jdx = fidx
 					while jdx < len(rels):
 						if rels[jdx] == 0 and self.sbyte[(curpos + jdx - fidx)] != data[jdx]:
-							logging.info('[%s].[+0x%x] [+0x%x] [0x%02x] != [0x%02x]'%(symname,jdx,(curpos + jdx - fidx),data[jdx], self.sbyte[(curpos+jdx - fidx)]))
+							if jdx > matchmax:
+								logging.info('[%s].[+0x%x] [+0x%x] [0x%02x] != [0x%02x]'%(symname,jdx,(curpos + jdx - fidx),data[jdx], self.sbyte[(curpos+jdx - fidx)]))
+								matchmax = jdx
 							break
 						jdx += 1
 					if jdx == len(rels):

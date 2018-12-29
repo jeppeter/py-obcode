@@ -64,7 +64,6 @@ def makob_handler(args,parser):
             rets += ' '
         rets += retf
     sys.stdout.write('%s\n'%(rets))
-    sys.exit(0)
     return
 
 def obtrans_file_inner(fname,args):
@@ -100,7 +99,6 @@ def obtrans_handler(args,parser):
     set_logging_level(args)
     for c in args.subnargs:
         obtrans_file_inner(c, args)
-    sys.exit(0)
     return
 
 def get_unmakob_file(fname,makeobfile,args):
@@ -141,7 +139,6 @@ def unmakob_handler(args,parser):
             s += ' '
         s += rets
     sys.stdout.write('%s\n'%(s))
-    sys.exit(0)
     return
 
 def get_ob_list(fname,args,parser):
@@ -171,7 +168,6 @@ def oblist_handler(args,parser):
         for c in args.subnargs:
             rets = get_ob_list(c, args, parser)
             sys.stdout.write('%s'%(rets))
-    sys.exit(0)
     return
 
 def obuntrans_inner(fname,makobfile,args):
@@ -221,7 +217,6 @@ def obuntrans_handler(args,parser):
         makobfile = os.environ[GL_MAKOB_FILE_VAR]
     rets = obuntrans_inner(fname, makobfile, args)
     write_file(rets,outfile)
-    sys.exit(0)
     return
 
 
@@ -235,7 +230,6 @@ def basename_handler(args,parser):
             s += ' '
         s += rets
     sys.stdout.write('%s\n'%(s))
-    sys.exit(0)
     return
 
 def format_one_obunfunc(args,s):
@@ -263,6 +257,5 @@ def obunfunc_handler(args,parser):
             rets += ' '
         rets += '\"%s\"'%(quote_string(format_one_obunfunc(args,s)))
     sys.stdout.write('%s\n'%(rets))
-    sys.exit(0)
     return
 ##extractcode_end

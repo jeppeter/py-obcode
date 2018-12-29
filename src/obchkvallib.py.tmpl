@@ -724,13 +724,40 @@ def format_calc_bytes(alldata,val,storesize,calcsize,pos,bigendian=False,note=''
         b.extend(get_random_bytes(storesize - calcsize))
     return set_data_bytes(alldata,b,pos,note)
 
+def get_store_value_obj_func(args,objparser,alldata,odict,exefile,objfile,funcname, win32mode):
+    funcodict = get_odict_value(odict,CHKVAL_STORE_VALUE,objfile,funcname)
+    if funcodict is None:
+        funcodict = dict()
+        datas = get_odict_value(odict, CHKVAL_KEY,CHKVAL_RAW_DATA,objfile,funcname,CHKVAL_RDATA_DATAS)
+        relocs = get_odict_value(odict, CHKVAL_KEY,CHKVAL_RAW_DATA,objfile,funcname,CHKVAL_RDATA_RELOCS)
+        realf = funcname
+        if win32mode:
+            realf = '_%s'%(funcname)
+        foff = objparser.get_text_file_off(datas,relocs,realf)
+        rawdata = alldata[foff:(foff + len(relocs))]
+        realdata = chkval_get_realdata(objparser,exefile,odict,rawdata,objfile,funcname,win32mode)
+        
+        logging.info('%s'%(format_bytes_debug(rawdata,'rawdata [%s].[%s].[%s]'%(exefile,objfile,funcname))))
+        logging.info('%s'%(format_bytes_debug(realdata,'realdata [%s].[%s].[%s]'%(exefile,objfile,funcname))))
+        crc32val = get_crc32_value(realdata)
+        md5val = get_md5_value(realdata)
+        sha256val = get_sha256_value(realdata)
+        sha3val = get_sha3_value(realdata)
 
-def chkval_fill_inc_obj_func(args,objparser,exefile,alldata,odict,incfile,objfile,funcname,basefuncoff,win32mode):
+        funcodict = set_odict_value(funcodict,crc32val,CHKVAL_STRUCT_CRC32VAL)
+        funcodict = set_odict_value(funcodict, md5val, CHKVAL_STRUCT_MD5VAL)
+        funcodict = set_odict_value(funcodict, sha256val, CHKVAL_STRUCT_SHA256VAL)
+        funcodict = set_odict_value(funcodict, sha3val, CHKVAL_STRUCT_SHA3VAL)
+        funcodict = set_odict_value(funcodict, len(rawdata), CHKVAL_STRUCT_SIZE)
+        funcodict = set_odict_value(funcodict, foff , CHKVAL_STRUCT_OFFSET)
+
+        odict = set_odict_value(odict, funcodict, CHKVAL_STORE_VALUE,objfile,funcname)
+    return odict
+
+
+def chkval_fill_inc_obj_func(args,objparser,exefile,alldata,odict,incfile,objfile,funcname,basefuncoff, incobjparser,incdatas,incdatapos,win32mode):
     # now get the k value
-    datas = get_odict_value(odict, CHKVAL_KEY,CHKVAL_RAW_DATA,objfile,funcname,CHKVAL_RDATA_DATAS)
-    relocs = get_odict_value(odict, CHKVAL_KEY,CHKVAL_RAW_DATA,objfile,funcname,CHKVAL_RDATA_RELOCS)
-    assert(datas is not None)
-    assert(relocs is not None)
+    odict = get_store_value_obj_func(args,objparser,alldata,odict,exefile,objfile,funcname,win32mode)
     # now to get function store data
     rnddatadict = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RANDOM_VALUE,incfile,objfile,funcname)
     realf = funcname
@@ -744,46 +771,45 @@ def chkval_fill_inc_obj_func(args,objparser,exefile,alldata,odict,incfile,objfil
     sizernddata = get_odict_value(rnddatadict,CHKVAL_STRUCT_SIZE)
     offsetrnddata = get_odict_value(rnddatadict,CHKVAL_STRUCT_OFFSET)
 
-    crc32foff = objparser.get_text_file_off(crc32rnddata,zero_bytes(CHKVAL_STRUCT_CRC32VAL_SIZE),'%s_%s'%(realf,CHKVAL_STRUCT_CRC32VAL))
-    sha256foff = objparser.get_text_file_off(sha256rnddata,zero_bytes(CHKVAL_STRUCT_SHA256VAL_SIZE),'%s_%s'%(realf,CHKVAL_STRUCT_SHA256VAL))
-    sha3foff = objparser.get_text_file_off(sha3rnddata,zero_bytes(CHKVAL_STRUCT_SHA3VAL_SIZE),'%s_%s'%(realf,CHKVAL_STRUCT_SHA3VAL))
-    md5foff = objparser.get_text_file_off(md5rnddata,zero_bytes(CHKVAL_STRUCT_MD5VAL_SIZE),'%s_%s'%(realf,CHKVAL_STRUCT_MD5VAL))
-    sizefoff = objparser.get_text_file_off(sizernddata,zero_bytes(CHKVAL_STRUCT_SIZE_SIZE),'%s_%s'%(realf,CHKVAL_STRUCT_SIZE))
-    offsetfoff = objparser.get_text_file_off(offsetrnddata,zero_bytes(CHKVAL_STRUCT_OFFSET_SIZE),'%s_%s'%(realf,CHKVAL_STRUCT_OFFSET))
 
-    foff = objparser.get_text_file_off(datas,relocs,realf)
-    rawdata = alldata[foff:(foff + len(relocs))]
-    realdata = chkval_get_realdata(objparser,exefile,odict,rawdata,objfile,funcname,win32mode)
-    # to give the data set
+    crc32foff = incobjparser.get_text_file_off(crc32rnddata,zero_bytes(CHKVAL_STRUCT_CRC32VAL_SIZE),'%s_%s'%(realf,CHKVAL_STRUCT_CRC32VAL),incdatas)
+    sha256foff = incobjparser.get_text_file_off(sha256rnddata,zero_bytes(CHKVAL_STRUCT_SHA256VAL_SIZE),'%s_%s'%(realf,CHKVAL_STRUCT_SHA256VAL),incdatas)
+    sha3foff = incobjparser.get_text_file_off(sha3rnddata,zero_bytes(CHKVAL_STRUCT_SHA3VAL_SIZE),'%s_%s'%(realf,CHKVAL_STRUCT_SHA3VAL),incdatas)
+    md5foff = incobjparser.get_text_file_off(md5rnddata,zero_bytes(CHKVAL_STRUCT_MD5VAL_SIZE),'%s_%s'%(realf,CHKVAL_STRUCT_MD5VAL),incdatas)
+    sizefoff = incobjparser.get_text_file_off(sizernddata,zero_bytes(CHKVAL_STRUCT_SIZE_SIZE),'%s_%s'%(realf,CHKVAL_STRUCT_SIZE),incdatas)
+    offsetfoff = incobjparser.get_text_file_off(offsetrnddata,zero_bytes(CHKVAL_STRUCT_OFFSET_SIZE),'%s_%s'%(realf,CHKVAL_STRUCT_OFFSET),incdatas)
+
+    funcodict = get_odict_value(odict, CHKVAL_STORE_VALUE,objfile, funcname)
+    assert(funcodict is not None)
+
+    crc32val = get_odict_value(funcodict,CHKVAL_STRUCT_CRC32VAL)
+    md5val = get_odict_value(funcodict,CHKVAL_STRUCT_MD5VAL)
+    sha256val = get_odict_value(funcodict,CHKVAL_STRUCT_SHA256VAL)
+    sha3val = get_odict_value(funcodict,CHKVAL_STRUCT_SHA3VAL)
+    foff = get_odict_value(funcodict,CHKVAL_STRUCT_OFFSET)
+    size = get_odict_value(funcodict,CHKVAL_STRUCT_SIZE)
     if foff > basefuncoff:
-        setoffset = (foff - basefuncoff)
+        setoffset = foff - basefuncoff
     else:
-        setoffset = (basefuncoff - foff)
+        setoffset = basefuncoff - foff
         setoffset = (0x1 << 64) - setoffset
-    
-    logging.info('%s'%(format_bytes_debug(rawdata,'rawdata [%s].[%s].[%s]'%(exefile,objfile,funcname))))
-    logging.info('%s'%(format_bytes_debug(realdata,'realdata [%s].[%s].[%s]'%(exefile,objfile,funcname))))
-    crc32val = get_crc32_value(realdata)
-    md5val = get_md5_value(realdata)
-    sha256val = get_sha256_value(realdata)
-    sha3val = get_sha3_value(realdata)
 
-    alldata = format_calc_bytes(alldata,crc32val,CHKVAL_STRUCT_CRC32VAL_SIZE,CALC_CRC32_SIZE,crc32foff,False,'[%s].[%s].[%s][crc32]'%(incfile,objfile,funcname))
-    alldata = format_calc_bytes(alldata,md5val,CHKVAL_STRUCT_MD5VAL_SIZE,CALC_MD5_SIZE,md5foff,True,'[%s].[%s].[%s][md5]'%(incfile,objfile,funcname))
-    alldata = format_calc_bytes(alldata,sha256val,CHKVAL_STRUCT_SHA256VAL_SIZE,CALC_SHA256_SIZE,sha256foff,True,'[%s].[%s].[%s][sha256]'%(incfile,objfile,funcname))
-    alldata = format_calc_bytes(alldata,sha3val,CHKVAL_STRUCT_SHA3VAL_SIZE,CALC_SHA3_SIZE,sha3foff,True,'[%s].[%s].[%s][sha3]'%(incfile,objfile,funcname))
-    alldata = format_calc_bytes(alldata,'%x'%(setoffset),CHKVAL_STRUCT_OFFSET_SIZE,CALC_OFFSET_SIZE,offsetfoff,False,'[%s].[%s].[%s][offset]'%(incfile,objfile,funcname))
-    alldata = format_calc_bytes(alldata,'%x'%(len(relocs)),CHKVAL_STRUCT_SIZE_SIZE,CALC_SIZE_SIZE,sizefoff,False,'[%s].[%s].[%s][size]'%(incfile,objfile,funcname))
+    incdatas = format_calc_bytes(incdatas,crc32val,CHKVAL_STRUCT_CRC32VAL_SIZE,CALC_CRC32_SIZE,crc32foff,False,'[%s].[%s].[%s][crc32]'%(incfile,objfile,funcname))
+    incdatas = format_calc_bytes(incdatas,md5val,CHKVAL_STRUCT_MD5VAL_SIZE,CALC_MD5_SIZE,md5foff,True,'[%s].[%s].[%s][md5]'%(incfile,objfile,funcname))
+    incdatas = format_calc_bytes(incdatas,sha256val,CHKVAL_STRUCT_SHA256VAL_SIZE,CALC_SHA256_SIZE,sha256foff,True,'[%s].[%s].[%s][sha256]'%(incfile,objfile,funcname))
+    incdatas = format_calc_bytes(incdatas,sha3val,CHKVAL_STRUCT_SHA3VAL_SIZE,CALC_SHA3_SIZE,sha3foff,True,'[%s].[%s].[%s][sha3]'%(incfile,objfile,funcname))
+    incdatas = format_calc_bytes(incdatas,'%x'%(setoffset),CHKVAL_STRUCT_OFFSET_SIZE,CALC_OFFSET_SIZE,offsetfoff,False,'[%s].[%s].[%s][offset]'%(incfile,objfile,funcname))
+    incdatas = format_calc_bytes(incdatas,'%x'%(size),CHKVAL_STRUCT_SIZE_SIZE,CALC_SIZE_SIZE,sizefoff,False,'[%s].[%s].[%s][size]'%(incfile,objfile,funcname))
 
-
+    alldata = set_data_bytes(alldata, incdatas, incdatapos)
     # now we should get the 
     return odict,alldata
 
-def chkval_fill_inc_obj(args,objparser,exefile,alldata,odict,incfile,objfile,basefuncoff,win32mode):
+def chkval_fill_inc_obj(args,objparser,exefile,alldata,odict,incfile,objfile,basefuncoff, incobjparser,incdatas,incdatapos,win32mode):
     funcs = get_odict_value(odict,CHKVAL_KEY,CHKVAL_RAW_DATA,objfile)
     if funcs is not None:
         for f in funcs.keys():
-            odict,alldata = chkval_fill_inc_obj_func(args,objparser,exefile,alldata,odict,incfile,objfile,f,basefuncoff,win32mode)
+            odict,alldata = chkval_fill_inc_obj_func(args,objparser,exefile,alldata,odict,incfile,objfile,f,basefuncoff,incobjparser,incdatas,incdatapos,win32mode)
     else:
         logging.warn('[%s] not get functions'%(objfile))
     return odict,alldata
@@ -918,9 +944,22 @@ def chkval_fill_inc(args,objparser,exefile,alldata,odict,incfile,win32mode):
     if win32mode:
         realf = '_%s'%(basefuncname)
     basefuncoff = objparser.get_text_file_off(basefuncdata,basefuncrelocs,realf)
+    incdatastartdata = get_odict_value(odict,CHKVAL_KEY, CHKVAL_OBJ_DATA, incfile,CHKVAL_FUNC_CHECKS_START)
+    assert(incdatastartdata is not None)
+    incdatastartrels = zero_bytes(len(incdatastartdata))
+    incdataenddata = get_odict_value(odict,CHKVAL_KEY,CHKVAL_OBJ_DATA, incfile,CHKVAL_VALUE_CHECKS_TOTAL_END)
+    assert(incdataenddata is not None)
+    incdataendrels = zero_bytes(len(incdataenddata))
+    incdatapos = objparser.get_text_file_off(incdatastartdata,incdatastartrels,CHKVAL_FUNC_CHECKS_START)
+    incendpos = objparser.get_text_file_off(incdataenddata, incdataendrels, CHKVAL_VALUE_CHECKS_TOTAL_END)
+    incdatas = alldata[incdatapos:incendpos]
+    incobjparser = ObjParser()
+    sb = ints_to_bytes(incdatas)
+    poff = incobjparser.get_text_file_off(incdatas[:CHKVAL_STRUCT_OFFSET_SIZE], zero_bytes(CHKVAL_STRUCT_OFFSET_SIZE),CHKVAL_STRUCT_OFFSET,sb)
+    assert(poff >= 0)
     assert(basefuncoff >= 0)
     for o in incodict.keys():
-        odict,alldata = chkval_fill_inc_obj(args,objparser,exefile,alldata,odict,incfile,o,basefuncoff,win32mode)
+        odict,alldata = chkval_fill_inc_obj(args,objparser,exefile,alldata,odict,incfile,o,basefuncoff,incobjparser, incdatas,incdatapos,win32mode)
     odict, alldata = chkval_fill_inc_lastitem(args,objparser,exefile,alldata,odict,incfile,win32mode)
     odict,alldata = __inc_filled_self(args,objparser,exefile,alldata,odict,incfile,win32mode)
     return odict,alldata
@@ -971,7 +1010,6 @@ def fmtchkval_handler(args,parser):
         write_file(rets,files[idx])
         idx += 1
     write_json(odict,args.dump)
-    sys.exit(0)
     return
 
 def chkvalheader_handler(args,parser):
@@ -987,7 +1025,6 @@ def chkvalheader_handler(args,parser):
 
     write_file(rets,args.output)
     write_json(odict,args.dump)
-    sys.exit(0)
     return
 
 def replchkval_handler(args,parser):
@@ -1000,7 +1037,6 @@ def replchkval_handler(args,parser):
     chkval = ChkVal(args.input,None,None)
     rets += chkval.replace_functions(odict[CHKVAL_KEY],objs,exitobjs,args.failfunc)
     write_file(rets, args.output)
-    sys.exit(0)
     return
 
 def chkvaldumpfuncself_handler(args,parser):
@@ -1018,7 +1054,6 @@ def chkvaldumpfuncself_handler(args,parser):
             args.output = f
             odict = chkval_dump_object_functions(args,'ElfParser',odict,curobjs)
     write_json(odict, args.dump)
-    sys.exit(0)
     return
 
 def chkvaldumpfuncscoff_handler(args,parser):
@@ -1036,7 +1071,6 @@ def chkvaldumpfuncscoff_handler(args,parser):
             args.output = f
             odict = chkval_dump_object_functions(args,'CoffParser',odict,curobjs,args.win32)
     write_json(odict, args.dump)
-    sys.exit(0)
     return
 
 
@@ -1048,7 +1082,6 @@ def chkvalfillelf_handler(args,parser):
     objs = chkval_data_objs(args,odict,args.obchkkey)
     odict = chkval_fill_data(args,'ElfParser',odict,args.output,objs)
     write_json(odict,args.dump)
-    sys.exit(0)
     return
 
 def chkvalfillpe_handler(args,parser):
@@ -1059,19 +1092,16 @@ def chkvalfillpe_handler(args,parser):
     objs = chkval_data_objs(args,odict,args.obchkkey)
     odict = chkval_fill_data(args,'PEParser',odict,args.output,objs,args.win32)
     write_json(odict,args.dump)
-    sys.exit(0)
     return
 
 
 def chkvalfillforge_handler(args,parser):
     set_logging_level(args)
-    sys.exit(0)
     return
 
 
 def chkvaldumpfuncsforge_handler(args,parser):
     set_logging_level(args)
-    sys.exit(0)
     return
 
 def __format_header_empty(namelen):
@@ -1091,7 +1121,6 @@ def chkvalheaderforge_handler(args,parser):
         write_file_direct(rets,sys.stdout)
     else:
         write_file(rets,args.output)
-    sys.exit(0)
     return
 
 def fmtchkvalforge_handler(args,parser):
@@ -1104,7 +1133,6 @@ def fmtchkvalforge_handler(args,parser):
         rets = ''
         write_file(rets,files[idx])
         idx += 1
-    sys.exit(0)
     return
 
 def replchkvalforge_handler(args,parser):
@@ -1112,7 +1140,6 @@ def replchkvalforge_handler(args,parser):
     jdict, args = get_jdict(args)
     rets = read_file(args.input)
     write_file(rets,args.output)
-    sys.exit(0)
     return
 
 def chkvalexitfmtforge_handler(args,parser):
@@ -1126,7 +1153,6 @@ def chkvalexitfmtforge_handler(args,parser):
         rets = ''
         write_file(rets,files[idx])
         idx += 1
-    sys.exit(0)
     return
 
 
@@ -1144,7 +1170,6 @@ def chkvalexitfmt_handler(args,parser):
         write_file(rets,files[idx])
         idx += 1
     write_json(odict,args.dump)
-    sys.exit(0)
     return
 
 def exitheaderfmtforge_handler(args,parser):
@@ -1152,7 +1177,6 @@ def exitheaderfmtforge_handler(args,parser):
     jdict, args= get_jdict(args)
     rets = __format_header_empty(random.randint(10,30))
     write_file(rets,args.output)
-    sys.exit(0)
     return
 
 def format_exit_header(args,odict,obchkkeys=[]):
@@ -1198,7 +1222,6 @@ def exitheaderfmt_handler(args,parser):
                 obchkkeys.append(k)
     rets = format_exit_header(args,odict,obchkkeys)
     write_file(rets,args.output)
-    sys.exit(0)
     return
 
 
@@ -1214,7 +1237,6 @@ def chkvalexitfiles_handler(args,parser):
     for k in keys:
         files.extend(chkval_exit_files(args,odict,k))
     output_list(files,None,args.with_quote)
-    sys.exit(0)
     return
 
 def chkvalexitobjs_handler(args,parser):
@@ -1228,7 +1250,6 @@ def chkvalexitobjs_handler(args,parser):
     for k in keys:
         objs.extend(chkval_exit_objs(args,odict,k))
     output_list(objs,None,args.with_quote)
-    sys.exit(0)
     return
 
 def chkvaldatafiles_handler(args,parser):
@@ -1242,7 +1263,6 @@ def chkvaldatafiles_handler(args,parser):
     for k in keys:
         files.extend(chkval_data_files(args,odict,k))
     output_list(files,None,args.with_quote)
-    sys.exit(0)
     return
 
 def chkvaldataobjs_handler(args,parser):
@@ -1256,7 +1276,6 @@ def chkvaldataobjs_handler(args,parser):
     for k in keys:
         objs.extend(chkval_data_objs(args,odict,k))
     output_list(objs,None,args.with_quote)
-    sys.exit(0)
     return
 
 

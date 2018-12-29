@@ -8,6 +8,7 @@ import os
 import shutil
 import random
 import json
+import time
 
 
 ##importdebugstart
@@ -145,7 +146,6 @@ def cob_handler(args,parser):
         raise Exception('unknown type [%s]'%(args.subnargs[0]))
     if args.cob_dump is not None:
         append_file('\n}', args.cob_dump)
-    sys.exit(0)
     return
 
 REUNPATCH_HANDLER_KEY='reunpatchhandle'
@@ -218,7 +218,6 @@ def obreunpatchelf_handler(args,parser):
     rets , odict = obj_reunpatch('ElfParser',args.unpatchfunc,args,odict,files,'prefix')
     #logging.debug('rets\n%s'%(rets))
     write_patch_output(args,rets,odict)
-    sys.exit(0)
     return
 
 def obrepatchelf_handler(args,parser):
@@ -236,7 +235,6 @@ def obrepatchelf_handler(args,parser):
     with open(args.dump,'w+b') as fout:
         write_file_direct(json.dumps(odict,sort_keys=True,indent=4), fout)
     logging.info('log patch\n%s'%(log_patch(args,odict,args.output)))    
-    sys.exit(0)
     return
 
 
@@ -249,7 +247,6 @@ def obreunpatchcoff_handler(args,parser):
         files.append(f)
     rets , odict = obj_reunpatch('CoffParser',args.unpatchfunc,args,odict,files,'prefix')
     write_patch_output(args,rets,odict)
-    sys.exit(0)
     return
 
 def obrepatchpe_handler(args,parser):
@@ -267,7 +264,6 @@ def obrepatchpe_handler(args,parser):
     with open(args.dump,'w+b') as fout:
         write_file_direct(json.dumps(odict,sort_keys=True,indent=4), fout)
     logging.info('log patch\n%s'%(log_patch(args,odict,args.output)))    
-    sys.exit(0)
     return
 
 
@@ -295,6 +291,7 @@ def main():
         "cpattern" : null,
         "obchkkey" : "obchkval",
         "with_quote" : false,
+        "benchmark|B" : false,
         "cob<cob_handler>##srcdir dstdir to obfuscated code in c mode##" : {
             "handles" : ["\\\\.c$","\\\\.h$","\\\\.cpp$","\\\\.cxx$"],
             "filters" : ["\\\\.git$"],
@@ -439,6 +436,7 @@ def main():
         commandline = commandline_fmt%(os.getcwd(),'o','c',format_cob_config(4))
     d = dict()
     d['version'] = "VERSION_RELACE_STRING"
+    stime = time.time()
     options = extargsparse.ExtArgsOptions(d)
     parser = extargsparse.ExtArgsParse(options)
     parser.load_command_line_string(commandline)
@@ -446,7 +444,9 @@ def main():
     if args.version:
         sys.stdout.write('%s\n'%(options.version))
         sys.exit(0)
-    raise Exception('can not support command [%s]'%(args.subcommand))
+    if args.benchmark:
+        etime = time.time()
+        sys.stderr.write('run %s time %s second\n'%(sys.argv[1:],etime - stime))
     return
 
 ##importdebugstart

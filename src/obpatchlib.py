@@ -358,7 +358,6 @@ def obunpatchelf_handler(args,parser):
         files.append(f)
     rets = format_patch_funcions(args,odict,files,args.unpatchfunc)
     write_patch_output(args,rets,odict)
-    sys.exit(0)
     return
 
 def patch_objects_class(objclsname,args,ofile,objs,odict,force=False):
@@ -384,7 +383,6 @@ def obpatchelf_handler(args,parser):
     with open(args.dump,'w+b') as fout:
         write_file_direct(json.dumps(odict,sort_keys=True,indent=4), fout)
     #logging.info('log patch\n%s'%(log_patch(args,odict,args.output)))
-    sys.exit(0)
     return
 
 
@@ -403,7 +401,6 @@ def obunpatchcoff_handler(args,parser):
 
     rets = format_patch_funcions(args,odict,files,args.unpatchfunc)
     write_patch_output(args,rets,odict)
-    sys.exit(0)
     return
 
 
@@ -422,17 +419,14 @@ def obpatchpe_handler(args,parser):
     with open(args.dump,'w+b') as fout:
         write_file_direct(json.dumps(odict,sort_keys=True,indent=4), fout)
     #logging.info('log patch\n%s'%(log_patch(args,odict,args.output)))
-    sys.exit(0)
     return
 
 def obpatchelfforge_handler(args,parser):
     set_logging_level(args)
-    sys.exit(0)
     return
 
 def obpatchpeforge_handler(args,parser):
     set_logging_level(args)
-    sys.exit(0)
     return
 
 
@@ -449,7 +443,6 @@ def obunpatchelfforge_handler(args,parser):
     rets += format_line('return 0;',1)
     rets += format_line('}',0)
     write_patch_output(args,rets,odict)
-    sys.exit(0)
     return
 
 
@@ -467,7 +460,5 @@ def obunpatchcoffforge_handler(args,parser):
     rets += format_line('return 0;',1)
     rets += format_line('}',0)
     write_patch_output(args,rets,odict)
-    sys.exit(0)
     return
-
 ##extractcode_end

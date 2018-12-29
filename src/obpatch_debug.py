@@ -5,6 +5,7 @@ import sys
 import os
 import re
 import extargsparse
+import time
 
 ##importdebugstart
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
@@ -48,6 +49,7 @@ def main():
         "includes|I" : [],
         "includefiles" : [],
         "unpatchfunc|U" : "unpatch_handler",
+        "benchmark|B" : false,
         "obunpatchelf<obunpatchelf_handler>##objfilename:func1,func2 ... to format unpatch elf file with func1 func2##" : {
             "$" : "+",
             "loglvl" : 3
@@ -84,13 +86,16 @@ def main():
     d = dict()
     d['version'] = "VERSION_RELACE_STRING"
     options = extargsparse.ExtArgsOptions(d)
+    stime = time.time()
     parser = extargsparse.ExtArgsParse(options)
     parser.load_command_line_string(commandline)
     args = parser.parse_command_line(None,parser)
     if args.version:
         sys.stdout.write('%s\n'%(options.version))
         sys.exit(0)
-    raise Exception('can not support command [%s]'%(args.subcommand))
+    if args.benchmark:
+        etime = time.time()
+        sys.stderr.write('run %s time %s second\n'%(sys.argv[1:],etime - stime))
     return
 
 ##importdebugstart

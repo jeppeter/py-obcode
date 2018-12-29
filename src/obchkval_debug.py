@@ -5,6 +5,7 @@ import sys
 import os
 import extargsparse
 import re
+import time
 
 ##importdebugstart
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
@@ -61,6 +62,7 @@ def main():
         "cpattern" : null,
         "obchkkey" : "obchkval",
         "with_quote" : false,
+        "benchmark|B" : false,
         "fmtchkval<fmtchkval_handler>##--obchkkey key objfile;func1,func2 ... to format chkval file##" : {
             "$" : "+"
         },
@@ -132,13 +134,16 @@ def main():
     d = dict()
     d['version'] = "VERSION_RELACE_STRING"
     options = extargsparse.ExtArgsOptions(d)
+    stime =time.time()
     parser = extargsparse.ExtArgsParse(options)
     parser.load_command_line_string(commandline)
     args = parser.parse_command_line(None,parser)
     if args.version:
         sys.stdout.write('%s\n'%(options.version))
         sys.exit(0)
-    raise Exception('can not support command [%s]'%(args.subcommand))
+    if args.benchmark:
+        etime = time.time()
+        sys.stderr.write('run %s time %s second\n'%(sys.argv[1:],etime - stime))
     return
 
 ##importdebugstart
