@@ -3,23 +3,24 @@
 >  this project is to obfuscated for the c code
 
 ## release history
+* Jan 16th 2018 release 0.4.0 to add OB_CHKVAL into the check value code see [example](https://github.com/jeppeter/py-obcode/tree/master/example/chkval)
 * Dec 5th 2018  release 0.3.8 to fixup bug on i386 when link with M_386_GOT32X
 * Dec 4th 2018  release 0.3.6 to fixup bug when fixup the efi format loading
 * Dec 3rd 2018  release 0.3.4 to add OB_ELF_PATCH and OB_ELF_UNPATCH macro into obcode.mak.tmpl
 * Nov 30th 2018 release 0.3.2 to make x86 and x64 linux windows all ok
 * Nov 28th 2018 release 0.3.0 to make get obunfunc with obcode.mak ok and make multiple object to handle for objects
-* Nov 27th 2018 release 0.2.6 to fixup bug when used OB_MMAP to include OB_PATCH
+* Nov 27th 2018 release 0.2.6 to fixup bug when used OB_MMAP to include OB_PATCH [example](https://github.com/jeppeter/py-obcode/tree/master/example/unpatch)
 * Nov 16th 2018 release 0.2.4 to make the unpatch coding in the elf and pe format
 * Oct 29th 2018 release 0.2.2 to make OB_MIXED_STR OB_MIXED_STR_SPEC OB_MIXED_WSTR OB_MIXED_WSTR_SPEC ok
 * Oct 25th 2018 release 0.1.8 to make OB_CONSTANT_STR OB_CONSTANT_STR_SPEC OB_CONSTANT_WSTR OB_CONSTANT_WSTR_SPEC
 * Oct 24th 2018 release 0.1.6 to make new parse for parameter with parse_param function
-* Sep 21st 2018 release 0.1.4 to make trans handler to obtrans handler
+* Sep 21st 2018 release 0.1.4 to make trans handler to obtrans handler [example](https://github.com/jeppeter/py-obcode/tree/master/example/maklib)
 * Sep 21st 2018 release 0.1.2 to make oblist handler in obcode.py
 * Sep 20th 2018 release 0.1.0 to make UNOB_MAK_FILE with file reversemap
 * Sep 20th 2018 release 0.0.8 to make OB_MAK_FILE with file handle
 * Sep 18th 2018 release 0.0.6 to use OB_INSERT with insert ok
 * Sep 14th 2018 release 0.0.4 to make ok on #line and README ok
-* Sep 13th 2018 release 0.0.2 to support for OB code
+* Sep 13th 2018 release 0.0.2 to support for OB code [example](https://github.com/jeppeter/py-obcode/tree/master/example/srcdir)
 
 ## howto cob
 
@@ -451,6 +452,11 @@ $./main
 [d.c:12] up hello world 1 2 3
 ```
 
+## to make check value for the code 
+>> [peexample](https://github.com/jeppeter/py-obcode/tree/master/example/chkval/patchpe)
+>> [elfexample](https://github.com/jeppeter/py-obcode/tree/master/example/chkval/patchelf)
+
+
 ## keyword specification
 > some keywords will used
 -----------------
@@ -474,6 +480,8 @@ OB_MIXED_STR | to give the replace string constant with dynamic string | OB_MIXE
 OB_MIXED_STR_SPEC | to give the replace string constant with dynamic string  with config| OB_MIXED_STR_SPEC("funcname=10","hello world") |
 OB_MIXED_WSTR | to give the replace wide string constant with dynamic wide string | OB_MIXED_WSTR(L"hello world") |
 OB_MIXED_WSTR_SPEC | to give the replace wide string constant with dynamic wide string  with config| OB_MIXED_WSTR_SPEC("funcname=10",L"hello world") |
+OB_RANDOM_NAME | to give the random name for a single name | OB_RANDOM_NAME(print_hell) |
+OB_CHKVAL_TOTAL_FUNC | the self replace function for the check value | OB_CHKVAL_TOTAL_FUNC() |
 
 
 ## config specification
