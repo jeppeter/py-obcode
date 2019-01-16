@@ -839,6 +839,10 @@ class obcode_test(unittest.TestCase):
         if sys.platform != 'win32':
             self.runOk=True
             return
+        platwin = os.environ['PLATFORM']
+        if platwin.lower() == 'x86':
+            self.runOk = True
+            return
         stdnull = None
         # now we should compare
         topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'))
@@ -859,6 +863,14 @@ class obcode_test(unittest.TestCase):
             for l in cmdpack.run_cmd_output([cmdbin]):
                 l = l.rstrip('\r\n')
                 oblines.append(l)
+            cmds = [cmdbin,'a']
+            retval = subprocess.call(cmds,stdout=stdnull)
+            self.assertNotEqual(retval,0)
+            cmdbin = os.path.join(exampledir, 'main2.exe')
+            cmds = [cmdbin,'a']
+            retval = subprocess.call(cmds,stdout=stdnull)
+            self.assertNotEqual(retval,0)
+
             # no patch mode
             cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','COM_TARGET=clean']
             subprocess.check_call(cmds,stdout=stdnull)
@@ -924,6 +936,10 @@ class obcode_test(unittest.TestCase):
         if sys.platform != 'win32':
             self.runOk=True
             return
+        platwin = os.environ['PLATFORM']
+        if platwin.lower() == 'x86':
+            self.runOk = True
+            return
         stdnull = None
         # now we should compare
         topdir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..'))
@@ -944,11 +960,17 @@ class obcode_test(unittest.TestCase):
             for l in cmdpack.run_cmd_output([cmdbin]):
                 l = l.rstrip('\r\n')
                 oblines.append(l)
+            cmds = [cmdbin,'a']
+            retval = subprocess.call(cmds,stdout=stdnull)
+            self.assertNotEqual(retval, 0)
             cmdbin = os.path.join(exampledir,'main2.exe')
             ob2lines = []
             for l in cmdpack.run_cmd_output([cmdbin]):
                 l = l.rstrip('\r\n')
                 ob2lines.append(l)
+            cmds = [cmdbin,'a']
+            retval = subprocess.call(cmds,stdout=stdnull)
+            self.assertNotEqual(retval, 0)
             # no patch mode
             cmds = ['nmake.exe','/NOLOGO','/f','makefile.win','COM_TARGET=clean']
             subprocess.check_call(cmds,stdout=stdnull)
