@@ -19,7 +19,7 @@ main2_exit_SRCS := $(shell ${PYTHON} ${TOPDIR}/obchkval.py chkvalexitfiles main2
 main2_SRCS=${CURDIR}/main2.c ${CURDIR}/callc2.c ${main2_data_SRCS} ${main2_exit_SRCS}
 main2_OBJS=$(patsubst ${CURDIR}/%.c,${CURDIR}/%.o,${main2_SRCS})
 
-CFLAGS= -I${TOPDIR}/include  -DOB_DEBUG_MODE=1 -include stdio.h -include  stdlib.h
+CFLAGS= -I${TOPDIR}/include  -DOB_DEBUG_MODE=1 -DOB_MMAP=1  -include stdio.h -include  stdlib.h
 LDFLAGS=
 COMMA=,
 
