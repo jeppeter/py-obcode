@@ -47,6 +47,19 @@ ${CURDIR}/main2:${main2_OBJS}
 ${CURDIR}/%.o:${CURDIR}/%.c ${CURDIR}/chk_main.h ${CURDIR}/chk_main2.h ${CURDIR}/handle_exit.h
 	gcc -Wall ${CFLAGS} -c $< -o $@
 
+${CURDIR}/callc.o:${CURDIR}/callc.c ${CURDIR}/chk_main.h ${CURDIR}/chk_main2.h ${CURDIR}/handle_exit.h
+	$(call OB_CHKVAL_REPLS,-i ${CURDIR}/callc.c --obchkkey main) | gcc -Wall ${CFLAGS} -DC_FILE="\"$<\"" -o $@ -xc -c -
+
+${CURDIR}/callc2.o:${CURDIR}/callc.c ${CURDIR}/chk_main2.h ${CURDIR}/chk_main.h ${CURDIR}/handle_exit.h
+	$(call OB_CHKVAL_REPLS, -i ${CURDIR}/callc.c --obchkkey main2) | gcc -Wall ${CFLAGS} -DC_FILE="\"$<\"" -o $@ -xc -c -
+
+${CURDIR}/main.o:${CURDIR}/main.c ${CURDIR}/chk_main.h ${CURDIR}/handle_exit.h
+	$(call OB_CHKVAL_REPLS,-i ${CURDIR}/main.c  --obchkkey main) | gcc -Wall ${CFLAGS} -DC_FILE="\"$<\"" -o $@ -xc -c -
+
+${CURDIR}/main2.o:${CURDIR}/main2.c ${CURDIR}/chk_main2.h ${CURDIR}/handle_exit.h
+	$(call OB_CHKVAL_REPLS,-i ${CURDIR}/main2.c  --obchkkey main2) | gcc -Wall ${CFLAGS} -DC_FILE="\"$<\"" -o $@ -xc -c -
+
+
 ${CURDIR}/chk_main.h:$(shell ${PYTHON} ${TOPDIR}/obchkval.py  chkvaldatafiles main)
 	$(call OB_CHKVAL_FMT_HEADER,-o $@ --obchkkey main)
 
@@ -58,17 +71,17 @@ ${CURDIR}/handle_exit.h:$(shell ${PYTHON} ${TOPDIR}/obchkval.py  chkvalexitfiles
 	$(call OB_CHKVAL_FMT_EXIT_HEADER,-o $@ main main2)
 
 
-${CURDIR}/main.c:${CURDIR}/main_bak.c ${CURDIR}/chk_main.h ${CURDIR}/handle_exit.h
-	$(call OB_CHKVAL_REPLS,-o $@ -i ${CURDIR}/main_bak.c  --obchkkey main)
+#${CURDIR}/main.c:${CURDIR}/main_bak.c ${CURDIR}/chk_main.h ${CURDIR}/handle_exit.h
+#	$(call OB_CHKVAL_REPLS,-o $@ -i ${CURDIR}/main_bak.c  --obchkkey main)
 
-${CURDIR}/main2.c:${CURDIR}/main2_bak.c ${CURDIR}/chk_main2.h ${CURDIR}/handle_exit.h
-	$(call OB_CHKVAL_REPLS,-o $@ -i ${CURDIR}/main2_bak.c --obchkkey main2)
+#${CURDIR}/main2.c:${CURDIR}/main2_bak.c ${CURDIR}/chk_main2.h ${CURDIR}/handle_exit.h
+#	$(call OB_CHKVAL_REPLS,-o $@ -i ${CURDIR}/main2_bak.c --obchkkey main2)
 
-${CURDIR}/callc.c:${CURDIR}/callc_bak.c ${CURDIR}/chk_main.h ${CURDIR}/handle_exit.h
-	$(call OB_CHKVAL_REPLS,-o $@ -i ${CURDIR}/callc_bak.c --obchkkey main)
+#${CURDIR}/callc.c:${CURDIR}/callc_bak.c ${CURDIR}/chk_main.h ${CURDIR}/handle_exit.h
+#	$(call OB_CHKVAL_REPLS,-o $@ -i ${CURDIR}/callc_bak.c --obchkkey main)
 
-${CURDIR}/callc2.c:${CURDIR}/callc_bak.c ${CURDIR}/chk_main2.h ${CURDIR}/handle_exit.h
-	$(call OB_CHKVAL_REPLS, -o $@ -i ${CURDIR}/callc_bak.c --obchkkey main2)
+#${CURDIR}/callc2.c:${CURDIR}/callc_bak.c ${CURDIR}/chk_main2.h ${CURDIR}/handle_exit.h
+#	$(call OB_CHKVAL_REPLS, -o $@ -i ${CURDIR}/callc_bak.c --obchkkey main2)
 
 
 ${main_exit_SRCS}:${CURDIR}/handle_exit.c.tmpl
@@ -101,7 +114,5 @@ clean:
 	rm -f $(shell ${PYTHON} ${TOPDIR}/obchkval.py chkvaldatafiles main2)
 	rm -f ${CURDIR}/main_unpatch.c ${CURDIR}/main2_unpatch.c
 	rm -f ${CURDIR}/obcode.json
-	rm -f ${CURDIR}/main.c ${CURDIR}/main2.c
-	rm -f ${CURDIR}/callc.c ${CURDIR}/callc2.c
 	rm -f ${CURDIR}/handle_exit.h
 	rm -f ${CURDIR}/chk_main.h ${CURDIR}/chk_main2.h

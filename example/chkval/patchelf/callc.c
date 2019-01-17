@@ -7,7 +7,7 @@
 
 OB_INSERT();
 
-#define OUTP(...) do{fprintf(stdout,"[%s:%d] ",__FILE__,__LINE__); fprintf(stdout,__VA_ARGS__);fprintf(stdout,"\n");}while(0)
+#define OUTP(...) do{fprintf(stdout,"[%s:%d] ",C_FILE,__LINE__); fprintf(stdout,__VA_ARGS__);fprintf(stdout,"\n");}while(0)
 
 void failfunc_c1(int exitcode, char* name)
 {
