@@ -77,27 +77,27 @@ LDFLAGS = $(NOLOGO_LDFLAGS) $(INC_LDFLAGS) $(REL_LDFLAGS) -DEBUG
 
 !IFNDEF CURDIR_QUOTE
 curdir_src_target:
-	$(QUIETCMD)echo off && $(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) quotestring $(CURDIR) >bb.txt && FOR /F "delims=" %%G in (bb.txt) do set CURDIR_QUOTE=%%G && del bb.txt  && nmake  $(NMAKE_VERBOSE) /f $(CURFILE) COM_TARGET=$(COM_TARGET)
+	$(QUIETCMD)echo off && $(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) quotestring $(CURDIR) >bb.txt && FOR /F "delims=" %%G in (bb.txt) do set CURDIR_QUOTE=%%G&& del bb.txt  && nmake  $(NMAKE_VERBOSE) /f $(CURFILE) COM_TARGET=$(COM_TARGET)
 !ENDIF
 
 !IFNDEF MAIN_SRC
 main_src_target:
-	$(QUIETCMD)echo off && $(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvaldatafiles main >bb.txt && FOR /F "delims=" %%G in (bb.txt) do set MAIN_SRC=%%G && del bb.txt  && nmake  $(NMAKE_VERBOSE) /f $(CURFILE) COM_TARGET=$(COM_TARGET)
+	$(QUIETCMD)echo off && $(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvaldatafiles main >bb.txt && FOR /F "delims=" %%G in (bb.txt) do set MAIN_SRC=%%G&& del bb.txt  && nmake  $(NMAKE_VERBOSE) /f $(CURFILE) COM_TARGET=$(COM_TARGET)
 !ENDIF
 
 !IFNDEF MAIN2_SRC
 main2_src_target:
-	$(QUIETCMD)echo off && $(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvaldatafiles main2 >cc.txt && FOR /F "delims=" %%G in (cc.txt) do set MAIN2_SRC=%%G  && del cc.txt && nmake $(NMAKE_VERBOSE) /f $(CURFILE) COM_TARGET=$(COM_TARGET)
+	$(QUIETCMD)echo off && $(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvaldatafiles main2 >cc.txt && FOR /F "delims=" %%G in (cc.txt) do set MAIN2_SRC=%%G&& del cc.txt && nmake $(NMAKE_VERBOSE) /f $(CURFILE) COM_TARGET=$(COM_TARGET)
 !ENDIF
 
 !IFNDEF MAIN_EXIT_SRC
 main_exit_src_target:
-	$(QUIETCMD)echo off && $(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvalexitfiles main >dd.txt && FOR /F "delims=" %%G in (dd.txt) do set MAIN_EXIT_SRC=%%G && del dd.txt  && nmake $(NMAKE_VERBOSE) /f $(CURFILE) COM_TARGET=$(COM_TARGET)
+	$(QUIETCMD)echo off && $(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvalexitfiles main >dd.txt && FOR /F "delims=" %%G in (dd.txt) do set MAIN_EXIT_SRC=%%G&& del dd.txt  && nmake $(NMAKE_VERBOSE) /f $(CURFILE) COM_TARGET=$(COM_TARGET)
 !ENDIF
 
 !IFNDEF MAIN2_EXIT_SRC
 main2_exit_src_target:
-	$(QUIETCMD)echo off && $(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvalexitfiles main2 >ee.txt && FOR /F "delims=" %%G in (ee.txt) do set MAIN2_EXIT_SRC=%%G  && del ee.txt && nmake  $(NMAKE_VERBOSE) /f $(CURFILE) COM_TARGET=$(COM_TARGET) $(COM_TARGET)
+	$(QUIETCMD)echo off && $(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) chkvalexitfiles main2 >ee.txt && FOR /F "delims=" %%G in (ee.txt) do set MAIN2_EXIT_SRC=%%G&& del ee.txt && nmake  $(NMAKE_VERBOSE) /f $(CURFILE) COM_TARGET=$(COM_TARGET) $(COM_TARGET)
 !ENDIF
 
 
@@ -195,18 +195,6 @@ $(MAIN_EXIT_SRC):
 
 $(MAIN2_EXIT_SRC):
 	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_EXIT_FMT) -i "$(CURDIR)\\handle_exit.cpp.tmpl" --obchkkey main2
-
-#$(CURDIR)\main.cpp:$(CURDIR)\main_bak.cpp $(CURDIR)\handle_exit.h
-#	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -o $@ -i $(CURDIR)\main_bak.cpp --obchkkey main
-
-#$(CURDIR)\main2.cpp:$(CURDIR)\main2_bak.cpp $(CURDIR)\handle_exit.h
-#	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -o $@ -i $(CURDIR)\main2_bak.cpp --obchkkey main2
-
-#$(CURDIR)\callc.cpp:$(CURDIR)\callc_bak.cpp $(CURDIR)\handle_exit.h
-#	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -o $@ -i $(CURDIR)\callc_bak.cpp --obchkkey main
-
-#$(CURDIR)\callc2.cpp:$(CURDIR)\callc_bak.cpp $(CURDIR)\handle_exit.h
-#	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -o $@ -i $(CURDIR)\callc_bak.cpp --obchkkey main2
 
 $(CURDIR)\handle_exit.h:$(MAIN_EXIT_SRC) $(MAIN2_EXIT_SRC)
 	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_EXIT_HEADER_FMT) -o $@ main main2

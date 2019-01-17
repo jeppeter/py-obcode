@@ -68,19 +68,6 @@ ${CURDIR}/handle_exit.h:$(shell ${PYTHON} ${TOPDIR}/obchkval.py  chkvalexitfiles
 	$(call OB_CHKVAL_FMT_EXIT_HEADER,-o $@ main main2)
 
 
-#${CURDIR}/main.c:${CURDIR}/main_bak.c ${CURDIR}/chk_main.h
-#	$(call OB_CHKVAL_REPLS,-o $@ -i ${CURDIR}/main_bak.c  --obchkkey main)
-
-#${CURDIR}/main2.c:${CURDIR}/main2_bak.c ${CURDIR}/chk_main2.h 
-#	$(call OB_CHKVAL_REPLS,-o $@ -i ${CURDIR}/main2_bak.c --obchkkey main2)
-
-#${CURDIR}/callc.c:${CURDIR}/callc_bak.c ${CURDIR}/chk_main.h
-#	$(call OB_CHKVAL_REPLS,-o $@ -i ${CURDIR}/callc_bak.c --obchkkey main)
-
-#${CURDIR}/callc2.c:${CURDIR}/callc_bak.c ${CURDIR}/chk_main2.h
-#	$(call OB_CHKVAL_REPLS, -o $@ -i ${CURDIR}/callc_bak.c --obchkkey main2)
-
-
 $(shell ${PYTHON} ${TOPDIR}/obchkval.py chkvalexitfiles main):${CURDIR}/handle_exit.cpp.tmpl
 	$(call OB_CHKVAL_EXIT_FMT,-i ${CURDIR}/handle_exit.cpp.tmpl --obchkkey main)
 
