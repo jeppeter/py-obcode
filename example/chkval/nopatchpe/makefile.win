@@ -75,7 +75,10 @@ CFLAGS  =  $(NOLOGO_CFLAGS) $(STATIC_LIB_CFLAGS) $(INC_CFLAGS) $(COM_CFLAGS) $(R
 LDFLAGS = $(NOLOGO_LDFLAGS) $(INC_LDFLAGS) $(REL_LDFLAGS) -DEBUG
 #LDFLAGS = $(NOLOGO_LDFLAGS) $(INC_LDFLAGS) $(REL_LDFLAGS)
 
-
+!IFNDEF CURDIR_QUOTE
+curdir_src_target:
+	$(QUIETCMD)echo off && $(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) quotestring $(CURDIR) >bb.txt && FOR /F "delims=" %%G in (bb.txt) do set CURDIR_QUOTE=%%G && del bb.txt  && nmake  $(NMAKE_VERBOSE) /f $(CURFILE) COM_TARGET=$(COM_TARGET)
+!ENDIF
 
 !IFNDEF MAIN_SRC
 main_src_target:
@@ -159,16 +162,16 @@ $(CURDIR)\main2.exe:$(main2_OBJECTS)
 
 
 $(CURDIR)\main.obj:$(CURDIR)\main.cpp $(CURDIR)\chk_main.h $(CURDIR)\handle_exit.h
-	$(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $(CURDIR)\main.cpp
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -o $(CURDIR)\main_new.cpp -i $(CURDIR)\main.cpp --obchkkey main &&  $(QUIETCMD)$(CC) $(CFLAGS) /DC_FILE="\"$(CURDIR_QUOTE)\\main.cpp\""  -c -Fo$@ $(CURDIR)\main_new.cpp && del /Q $(CURDIR)\main_new.cpp
 
 $(CURDIR)\main2.obj:$(CURDIR)\main2.cpp $(CURDIR)\chk_main2.h $(CURDIR)\handle_exit.h
-	$(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $(CURDIR)\main2.cpp
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -o $(CURDIR)\main2_new.cpp -i $(CURDIR)\main2.cpp --obchkkey main2 && $(QUIETCMD)$(CC) $(CFLAGS) /DC_FILE="\"$(CURDIR_QUOTE)\\main2.cpp\"" -c -Fo$@ $(CURDIR)\main2_new.cpp && del /Q $(CURDIR)\main2_new.cpp
 
 $(CURDIR)\callc.obj:$(CURDIR)\callc.cpp $(CURDIR)\chk_main.h $(CURDIR)\chk_main2.h $(CURDIR)\handle_exit.h
-	$(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $(CURDIR)\callc.cpp
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -o $(CURDIR)\callc_new.cpp -i $(CURDIR)\callc.cpp --obchkkey main && $(QUIETCMD)$(CC) $(CFLAGS) /DC_FILE="\"$(CURDIR_QUOTE)\\callc.cpp\"" -c -Fo$@ $(CURDIR)\callc_new.cpp && del /Q $(CURDIR)\callc_new.cpp
 
-$(CURDIR)\callc2.obj:$(CURDIR)\callc2.cpp $(CURDIR)\chk_main.h $(CURDIR)\chk_main2.h $(CURDIR)\handle_exit.h
-	$(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $(CURDIR)\callc2.cpp
+$(CURDIR)\callc2.obj:$(CURDIR)\callc.cpp $(CURDIR)\chk_main.h $(CURDIR)\chk_main2.h $(CURDIR)\handle_exit.h
+	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -o $(CURDIR)\callc2_new.cpp -i $(CURDIR)\callc.cpp --obchkkey main2 && $(QUIETCMD)$(CC) $(CFLAGS) /DC_FILE="\"$(CURDIR_QUOTE)\\callc.cpp\"" -c -Fo$@ $(CURDIR)\callc2_new.cpp && del /Q $(CURDIR)\callc2_new.cpp
 
 .cpp.obj:
 	$(QUIETCMD)$(CC) $(CFLAGS) -c -Fo$@ $<
@@ -193,17 +196,17 @@ $(MAIN_EXIT_SRC):
 $(MAIN2_EXIT_SRC):
 	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_EXIT_FMT) -i "$(CURDIR)\\handle_exit.cpp.tmpl" --obchkkey main2
 
-$(CURDIR)\main.cpp:$(CURDIR)\main_bak.cpp $(CURDIR)\handle_exit.h
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -o $@ -i $(CURDIR)\main_bak.cpp --obchkkey main
+#$(CURDIR)\main.cpp:$(CURDIR)\main_bak.cpp $(CURDIR)\handle_exit.h
+#	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -o $@ -i $(CURDIR)\main_bak.cpp --obchkkey main
 
-$(CURDIR)\main2.cpp:$(CURDIR)\main2_bak.cpp $(CURDIR)\handle_exit.h
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -o $@ -i $(CURDIR)\main2_bak.cpp --obchkkey main2
+#$(CURDIR)\main2.cpp:$(CURDIR)\main2_bak.cpp $(CURDIR)\handle_exit.h
+#	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -o $@ -i $(CURDIR)\main2_bak.cpp --obchkkey main2
 
-$(CURDIR)\callc.cpp:$(CURDIR)\callc_bak.cpp $(CURDIR)\handle_exit.h
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -o $@ -i $(CURDIR)\callc_bak.cpp --obchkkey main
+#$(CURDIR)\callc.cpp:$(CURDIR)\callc_bak.cpp $(CURDIR)\handle_exit.h
+#	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -o $@ -i $(CURDIR)\callc_bak.cpp --obchkkey main
 
-$(CURDIR)\callc2.cpp:$(CURDIR)\callc_bak.cpp $(CURDIR)\handle_exit.h
-	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -o $@ -i $(CURDIR)\callc_bak.cpp --obchkkey main2
+#$(CURDIR)\callc2.cpp:$(CURDIR)\callc_bak.cpp $(CURDIR)\handle_exit.h
+#	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_REPL) -o $@ -i $(CURDIR)\callc_bak.cpp --obchkkey main2
 
 $(CURDIR)\handle_exit.h:$(MAIN_EXIT_SRC) $(MAIN2_EXIT_SRC)
 	$(QUIETCMD)$(PYTHON) $(TOPDIR)\obchkval.py $(PYTHON_VERBOSE) $(CHKVAL_EXIT_HEADER_FMT) -o $@ main main2
@@ -211,7 +214,6 @@ $(CURDIR)\handle_exit.h:$(MAIN_EXIT_SRC) $(MAIN2_EXIT_SRC)
 clean:
 	$(QUIETCMD)del $(CURDIR)\main.exe $(CURDIR)\main2.exe 2>NUL
 	$(QUIETCMD)del *.ilk *.pdb 2>NUL
-	$(QUIETCMD)del $(CURDIR)\main.cpp $(CURDIR)\main2.cpp $(CURDIR)\callc.cpp $(CURDIR)\callc2.cpp 2>NUL
 	$(QUIETCMD)del $(CURDIR)\chk_main.h $(CURDIR)\chk_main2.h $(CURDIR)\handle_exit.h 2>NUL
 	$(QUIETCMD)del $(main2_OBJECTS) $(main_OBJECTS) 2>NUL
 	$(QUIETCMD)del $(MAIN_SRC) $(MAIN2_SRC)	2>NUL
