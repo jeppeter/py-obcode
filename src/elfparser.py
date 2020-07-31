@@ -76,6 +76,10 @@ class RelocInfo(object):
 		if (self.__type & 0xffff) == ENUM_RELOC_TYPE_x64['R_X86_64_GOTPCREL'] and is64:
 			self.__vaddr = (vaddr - 3)
 			self.__size = 7
+		elif (self.__type & 0xffff) == 0x2a and is64:
+			# this is the type of R_X86_64_REX_GOTP so we should give this one
+			self.__vaddr = (vaddr - 3)
+			self.__size = 7
 		elif not is64 and ((self.__type & 0xff) == 0x2b):
 			# this is the coding for i386
 			self.__vaddr = (vaddr - 2)
